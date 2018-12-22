@@ -1,0 +1,3 @@
+KeePass: Copyright (C) 2003-2018 Dominik Reichl <dominik.reichl@t-online.de>.
+
+Source code available here: https://sourceforge.net/projects/keepass/files/KeePass 2.x/
