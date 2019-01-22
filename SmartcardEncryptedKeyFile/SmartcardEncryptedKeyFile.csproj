@@ -56,6 +56,7 @@
     <Compile Include="Crypto\ProtectedBinaryExtensions.cs" />
     <Compile Include="Crypto\RsaSmartcardKeyPairs.cs" />
     <Compile Include="Crypto\RSACryptoServiceProviderKeyPair.cs" />
+    <Compile Include="Crypto\Windows\NativeCapi.cs" />
     <Compile Include="KeyProvider\SmartcardEncryptedKeyProvider.cs" />
     <Compile Include="Plugin\SmartcardEncryptedKeyFileExt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
