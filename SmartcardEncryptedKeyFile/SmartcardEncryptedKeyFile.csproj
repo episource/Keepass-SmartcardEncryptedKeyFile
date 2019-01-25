@@ -54,10 +54,15 @@
     <Compile Include="Crypto\IKeyPair.cs" />
     <Compile Include="Crypto\LimitedAccessKeyFile.cs" />
     <Compile Include="Crypto\ProtectedBinaryExtensions.cs" />
+    <Compile Include="Crypto\RandomKeyGenerator.cs" />
     <Compile Include="Crypto\RSASmartcardKeyPairs.cs" />
     <Compile Include="Crypto\RSACryptoServiceProviderKeyPair.cs" />
     <Compile Include="Crypto\Windows\NativeCapi.cs" />
     <Compile Include="KeyProvider\SmartcardEncryptedKeyProvider.cs" />
+    <Compile Include="Keys\LiveKeyDataStore.cs" />
+    <Compile Include="Keys\IKeyDataStore.cs" />
+    <Compile Include="Keys\ImportedKeyDataStore.cs" />
+    <Compile Include="Keys\RandomKeyDataStore.cs" />
     <Compile Include="Plugin\SmartcardEncryptedKeyFileExt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\CertificateListViewItem.cs" />

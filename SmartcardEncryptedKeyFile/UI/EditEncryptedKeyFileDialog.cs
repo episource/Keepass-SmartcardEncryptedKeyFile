@@ -1,118 +1,134 @@
 using System;
-using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
 using Episource.KeePass.Ekf.KeyProvider;
 using Episource.KeePass.EKF.Crypto;
+using Episource.KeePass.EKF.Keys;
 
-using KeePassLib;
-using KeePassLib.Cryptography;
 using KeePassLib.Keys;
 using KeePassLib.Serialization;
 
 namespace Episource.KeePass.EKF.UI {
     public partial class EditEncryptedKeyFileDialog {
-        private EditEncryptedKeyFileDialog(IOConnectionInfo dbPath, IUserKey existingKey, IKeyPairProvider authCandidates) {
-            this.dbPath = dbPath;
-            this.keyFile = existingKey;
 
-            var customKey = existingKey as KcpCustomKey;
-            if (existingKey == null) {
-                this.keyFileDescription = "Random Key";
-            } else if (existingKey is KcpKeyFile) {
-                this.keyFileDescription = "Current Plaintext Key File";
-            } else if (customKey != null && customKey.Name == SmartcardEncryptedKeyProvider.ProviderName) {
-                this.keyFileDescription = "Current Encrypted Key File";
-            } else {
-              throw new ArgumentException(message: "Unsupported existing key type", paramName: "existingKey");  
-            }
-            
+        private readonly bool permitNewKey;
+        private readonly IOConnectionInfo dbPath;
+        
+        private LiveKeyDataStore activeDbKey;
+        private IKeyDataStore nextKey;
+        private bool keyWasExported;
+        
+        private EditEncryptedKeyFileDialog(IOConnectionInfo dbPath, IUserKey activeDbKey, IKeyPairProvider authCandidates, bool permitNewKey) {
+            this.dbPath = dbPath;
+            this.activeDbKey = activeDbKey == null ? null : new LiveKeyDataStore(activeDbKey);
+            this.nextKey = (IKeyDataStore) this.activeDbKey ?? new RandomKeyDataStore();
+            this.keyWasExported = false;
+            this.permitNewKey = permitNewKey;
+
             this.InitializeUI();
-            
+
+            // AddKeyIfNew requires UI to be initialized!
             foreach (var keyPair in authCandidates.GetAvailableKeyPairs()) {
                 if (!this.AddKeyIfNew(keyPair)) {
                     throw new ArgumentException(
-                        message: "Duplicated key pair: " + keyPair.KeyPair.Certificate.Thumbprint,
-                        paramName: "authCandidates");
-                } 
+                        "Duplicated key pair: " + keyPair.KeyPair.Certificate.Thumbprint,
+                        "authCandidates");
+                }
             }
-
-            this.Validate();
+            
+            this.ValidateInput();
         }
        
-        public static KeyEncryptionRequest AskForNewEncryptedKeyFile(IOConnectionInfo dbPath) {
+        public static KeyEncryptionRequest AskForNewEncryptedKeyFile(IOConnectionInfo dbPath, IUserKey activeDbKey) {
             if (dbPath == null) {
-                throw new ArgumentNullException(paramName: "dbPath");
+                throw new ArgumentNullException("dbPath");
             }
+            // activeDbKey is optional - might be new db
 
-            var dialog = new EditEncryptedKeyFileDialog(dbPath, existingKey: null,
-                authCandidates: new DefaultKeyPairProvider(dbPath));
-            if (dialog.ShowDialog() == DialogResult.OK) {
-                return dialog.GenerateEncryptionRequest();
-            }
-            
-            return null;
+            var dialog = new EditEncryptedKeyFileDialog(dbPath, activeDbKey, new DefaultKeyPairProvider(dbPath), true);
+            return dialog.ShowDialogAndGenerateEncryptionRequest();
         }
         
-        public static KeyEncryptionRequest AskForAuthorization(IOConnectionInfo dbPath, IUserKey keyFile) {
+        public static KeyEncryptionRequest AskForSettings(IOConnectionInfo dbPath, IUserKey keyFile) {
             if (dbPath == null) {
-                throw new ArgumentNullException(paramName: "dbPath");
+                throw new ArgumentNullException("dbPath");
             }
             if (keyFile == null) {
-                throw new ArgumentNullException(paramName: "keyFile");
+                throw new ArgumentNullException("keyFile");
             }
-            
-            var dialog = new EditEncryptedKeyFileDialog(dbPath, keyFile, new DefaultKeyPairProvider(dbPath));
-            if (dialog.ShowDialog() == DialogResult.OK) {
-                return dialog.GenerateEncryptionRequest();
-            }
-            
-            return null;
-        }
-
-        private byte[] GenerateRandomKey() {
-            using (var ms = new MemoryStream())
-            using (var msWriter = new BinaryWriter(ms)) {
-                foreach (var keyPairModel in this.keyList.Values) {
-                    var cert = keyPairModel.KeyPair.Certificate;
-                    msWriter.Write(cert.Thumbprint);
+            if (!(keyFile is KcpKeyFile)) {
+                var customKey = keyFile as KcpCustomKey;
+                if (customKey == null || customKey.Name != SmartcardEncryptedKeyProvider.ProviderName) {
+                    throw new ArgumentException("Unsupported existing key type", "keyFile"); 
                 }
-                msWriter.Write(CryptoRandom.Instance.GetRandomBytes(uRequestedBytes: 32));
-
-                return CryptoUtil.HashSha256(ms.ToArray());
-            }
-        }
-
-        private KeyEncryptionRequest GenerateEncryptionRequest() {
-            if (this.DialogResult != DialogResult.OK) {
-                throw new InvalidOperationException(message: "Dialog result is not OK");
             }
             
-            if (this.keyFile == null) {
-                return new KeyEncryptionRequest(this.dbPath, this.GenerateRandomKey(), this.GetSelectedKeyPairs());
-            } else {
-                return new KeyEncryptionRequest(this.dbPath, this.keyFile.KeyData, this.GetSelectedKeyPairs());
-            }
+            var dialog = new EditEncryptedKeyFileDialog(dbPath, keyFile, new DefaultKeyPairProvider(dbPath), false);
+            return dialog.ShowDialogAndGenerateEncryptionRequest();
         }
-        
-        private bool Validate() {
+
+        private void ExportKey() {
+            
+        }
+
+        private void ImportKey() {
+        }
+
+        private void RevertToActiveKey() {
+            
+        }
+
+        private void GenerateRandomKey() {
+            this.nextKey = new RandomKeyDataStore();
+            this.keyWasExported = false;
+        }
+
+        private KeyEncryptionRequest ShowDialogAndGenerateEncryptionRequest() {
+            this.ShowDialog();
+            if (this.DialogResult != DialogResult.OK) {
+                return null;
+            }
+
+            var authorizationChanged =
+                this.DialogResult == DialogResult.OK ||
+                this.keyList.Values
+                    .Select(x => x.NextAuthorization != x.CurrentAuthorization)
+                    .FirstOrDefault();
+            if (!authorizationChanged) {
+                return null;
+            }
+
+            var selectedKeys =
+                this.keyList.Values
+                    .Where(x => x.NextAuthorization == KeyPairModel.Authorization.Authorized)
+                    .Select(x => x.KeyPair);
+            return new KeyEncryptionRequest(this.dbPath, this.nextKey.KeyData, selectedKeys);
+        }
+
+        private bool ValidateInput() {
             if (this.keyList.Count == 0) {
-                this.ShowValidationError(message: "No smartcard found.");
-                return false;        
+                this.ShowValidationError("No smartcard found.");
+                return false;
+            }
+
+            var requiresExport = this.nextKey is RandomKeyDataStore && !this.keyWasExported;
+            if (requiresExport) {
+                this.ShowValidationError("Key must be exported before use. Please store safely.");
+                return false;
             }
 
             var anyKeySelected =
                 this.keyList.Any(x => x.Value.NextAuthorization == KeyPairModel.Authorization.Authorized);
             if (!anyKeySelected) {
-                this.ShowValidationError(message: "Please select at least one smart card.");
+                this.ShowValidationError("Please select at least one smart card.");
                 return false;
             }
 
             return true;
         }
 
-        private string FormatAuthorization(KeyPairModel.Authorization auth) {
+        private string DescribeAuthorization(KeyPairModel.Authorization auth) {
             switch (auth) {
                 case KeyPairModel.Authorization.Authorized:
                     return "authorized";
@@ -124,7 +140,7 @@ namespace Episource.KeePass.EKF.UI {
             }
         }
 
-        private string FormatKeyProvider(KeyPairModel.KeyProvider keySource) {
+        private string DescribeKeyProvider(KeyPairModel.KeyProvider keySource) {
             switch (keySource) {
                 case KeyPairModel.KeyProvider.Piv:
                     return "PIV / Windows";
@@ -137,6 +153,19 @@ namespace Episource.KeePass.EKF.UI {
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+        
+        private string DescribeKeySource() {
+            if (this.nextKey == this.activeDbKey) {
+                return "Key file of active database";
+            } 
+            if (this.nextKey is RandomKeyDataStore) {
+                return "Randomly generated key";
+            } 
+            if (this.nextKey is ImportedKeyDataStore) {
+                return "Imported from user selected key file";
+            } 
+            return "Unknown key data";
         }
     }
 }

@@ -1,47 +1,35 @@
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
-using System.Runtime.Remoting.Channels;
-using System.Security.Cryptography.X509Certificates;
 using System.Windows.Forms;
-
-using Episource.KeePass.Ekf.KeyProvider;
-using Episource.KeePass.EKF.Crypto;
 
 using KeePass.UI;
 
-using KeePassLib;
-using KeePassLib.Keys;
-using KeePassLib.Serialization;
-
 namespace Episource.KeePass.EKF.UI {
     public partial class EditEncryptedKeyFileDialog : Form {
-        private const int DefaultButtonHeight = 23;
-
-        private readonly IOConnectionInfo dbPath;
-        private readonly IUserKey keyFile;
-        private readonly string keyFileDescription;
+        // height chosen to match a single line text box
+        private const int DefaultButtonHeight = 22;
+        private const int DefaultButtonWidth = 75;
 
         private readonly TableLayoutPanel layout = new TableLayoutPanel();
         private readonly CustomListViewEx keyListView = new CustomListViewEx();
 
+        private TextBox txtKeySource;
+        
         private Label lblValidationError;
         private Button btnOk;
 
         private readonly Dictionary<string, KeyPairModel> keyList = new Dictionary<string, KeyPairModel>();
 
+        // ReSharper disable once InconsistentNaming
         private void InitializeUI() {
             this.SuspendLayout();
 
             this.AutoSize = true;
             this.AutoScaleMode = AutoScaleMode.Font;
-            this.AutoScaleDimensions = new SizeF(width: 6F, height: 13F);
-            this.Padding = new Padding(all: 12);
-            this.MinimumSize = new Size(width: 520, height: 150);
-            this.Size = new Size(width: 740, height: 300);
+            this.AutoScaleDimensions = new SizeF(6F, 13F);
+            this.Padding = new Padding(12);
+            this.MinimumSize = new Size(520, 150);
+            this.Size = new Size( 780,  300);
 
             this.layout.Top = 0;
             this.layout.Left = 0;
@@ -60,13 +48,14 @@ namespace Episource.KeePass.EKF.UI {
             this.layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             this.layout.RowStyles.Add(new RowStyle(SizeType.Percent, height: 100.0f));
             this.layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            this.Controls.Add(layout);
+            this.Controls.Add(this.layout);
 
             this.InitializeTopBar();
             //this.InitializeSeparator();
             this.InitializeKeyList();
             this.InitializeDialogButtons();
 
+            this.RenewKeySourceDisplay();
             this.ResumeLayout();
         }
 
@@ -74,7 +63,7 @@ namespace Episource.KeePass.EKF.UI {
             var lblDb = new Label {
                 Text = "Database:",
                 AutoSize = true,
-                Dock = DockStyle.Fill,
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Bottom,
                 TextAlign = ContentAlignment.MiddleLeft
             };
             this.layout.Controls.Add(lblDb, column: 0, row: 0);
@@ -84,7 +73,6 @@ namespace Episource.KeePass.EKF.UI {
                 Text = this.dbPath.Path,
                 AutoSize = true,
                 Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top | AnchorStyles.Bottom,
-                //Margin = new Padding(left: 0, top: 4, right: 0, bottom: 0),
                 TabStop = false
             };
             this.layout.Controls.Add(txtDb, column: 1, row: 0);
@@ -93,24 +81,52 @@ namespace Episource.KeePass.EKF.UI {
             var lblKeySource = new Label {
                 Text = "Key Source:",
                 AutoSize = true,
-                Dock = DockStyle.Fill,
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Bottom,
                 TextAlign = ContentAlignment.MiddleLeft
             };
             this.layout.Controls.Add(lblKeySource, column: 0, row: 1);
 
-            var txtKeySource = new TextBox() {
-                Text = keyFileDescription,
+            this.txtKeySource = new TextBox {
                 ReadOnly = true,
                 AutoSize = true,
-                Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top | AnchorStyles.Bottom,
-                //Margin = new Padding(left: 0, top: 4, right: 0, bottom: 0),
-                TabStop = false,
+                Anchor = AnchorStyles.Left | AnchorStyles.Right,
+                TabStop = false
             };
             
-            this.layout.Controls.Add(txtKeySource, column: 1, row: 1);
-            this.layout.SetColumnSpan(txtKeySource, value: 3);
+            this.layout.Controls.Add(this.txtKeySource, column: 1, row: 1);
+            this.layout.SetColumnSpan(this.txtKeySource, value: 2);
+
+            // TODO: SplitButtonEx currently supports windows only! DropDown not shown on other platforms.
+            var btnExport = new SplitButtonEx {
+                Text = "Export",
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowOnly,
+                Height = DefaultButtonHeight,
+                Width = DefaultButtonWidth,
+                UseVisualStyleBackColor = true,
+                SplitDropDownMenu = new CustomContextMenuStripEx()
+            };
+            btnExport.Click += (sender, args) => this.ExportKey();
+            
+            var btnActiveKey = new ToolStripMenuItem("Select active key file");
+            btnActiveKey.Enabled = this.permitNewKey;
+            btnActiveKey.Click += (sender, args) => this.RevertToActiveKey();
+            btnExport.SplitDropDownMenu.Items.Add(btnActiveKey);
+            
+            var btnRandomKey = new ToolStripMenuItem("Generate random key");
+            btnRandomKey.Enabled = this.permitNewKey;
+            btnRandomKey.Click += (sender, args) => this.GenerateRandomKey();
+            btnExport.SplitDropDownMenu.Items.Add(btnRandomKey);
+            
+            var btnImportKey = new ToolStripMenuItem("Import key file");
+            btnImportKey.Enabled = this.permitNewKey;
+            btnImportKey.Click += (sender, args) => this.ImportKey();
+            btnExport.SplitDropDownMenu.Items.Add(btnImportKey);
+
+            this.layout.Controls.Add(btnExport, 3, 1);
         }
 
+        // ReSharper disable once UnusedMember.Local
         private void InitializeSeparator() {
             var hLine = new Label {
                 AutoSize = false,
@@ -134,7 +150,8 @@ namespace Episource.KeePass.EKF.UI {
             this.btnOk = new Button {
                 Text = "OK",
                 DialogResult = DialogResult.OK,
-                Size = new Size(width: 75, height: DefaultButtonHeight),
+                Height = DefaultButtonHeight,
+                Width = DefaultButtonWidth,
                 TabIndex = 0
             };
             this.layout.Controls.Add(this.btnOk, column: 2, row: 5);
@@ -143,7 +160,8 @@ namespace Episource.KeePass.EKF.UI {
             var btnCancel = new Button {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Size = new Size(width: 75, height: DefaultButtonHeight),
+                Height = DefaultButtonHeight,
+                Width = DefaultButtonWidth,
                 TabIndex = 1
             };
             this.layout.Controls.Add(btnCancel, column: 3, row: 5);
@@ -207,7 +225,7 @@ namespace Episource.KeePass.EKF.UI {
                     item.Font = null;
                 }
 
-                OnContentChanged();
+                this.OnContentChanged();
             };
 
             // make sure the last columns spans all the remaining width
@@ -218,7 +236,7 @@ namespace Episource.KeePass.EKF.UI {
         }
 
         private void OnContentChanged() {
-            this.btnOk.Enabled = this.Validate();
+            this.btnOk.Enabled = this.ValidateInput();
             if (this.btnOk.Enabled) {
                 this.lblValidationError.Text = "";
             }
@@ -238,8 +256,8 @@ namespace Episource.KeePass.EKF.UI {
             item.Tag = keyModel;
             item.Checked = keyModel.NextAuthorization == KeyPairModel.Authorization.Authorized;
             item.SubItems.Add(cert.Subject);
-            item.SubItems.Add(FormatAuthorization(keyModel.CurrentAuthorization));
-            item.SubItems.Add(FormatKeyProvider(keyModel.Provider));
+            item.SubItems.Add(this.DescribeAuthorization(keyModel.CurrentAuthorization));
+            item.SubItems.Add(this.DescribeKeyProvider(keyModel.Provider));
             
             this.keyList.Add(cert.Thumbprint, keyModel);
             this.keyListView.Items.Add(item);
@@ -251,10 +269,8 @@ namespace Episource.KeePass.EKF.UI {
             return true;
         }
 
-        private IEnumerable<IKeyPair> GetSelectedKeyPairs() {
-            return this.keyList.Values
-                       .Where(x => x.NextAuthorization == KeyPairModel.Authorization.Authorized)
-                       .Select(x => x.KeyPair);
+        private void RenewKeySourceDisplay() {
+            this.txtKeySource.Text = "(" + this.DescribeKeySource() + ")";
         }
     }
 }

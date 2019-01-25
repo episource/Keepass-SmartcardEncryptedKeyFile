@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.Windows.Forms;
+using System.Linq;
 
 using Episource.KeePass.EKF.Crypto;
 using Episource.KeePass.EKF.UI;
@@ -63,7 +62,15 @@ namespace Episource.KeePass.Ekf.KeyProvider {
         }
 
         private byte[] CreateNewKey(KeyProviderQueryContext ctx) {
-            var encryptionRequest = EditEncryptedKeyFileDialog.AskForNewEncryptedKeyFile(ctx.DatabaseIOInfo);
+            var activeDb = this.pluginHost.Database;
+            IUserKey activeKey = null;
+            if (string.Equals(ctx.DatabaseIOInfo.Path, activeDb.IOConnectionInfo.Path,
+                StringComparison.InvariantCultureIgnoreCase)) {
+                activeKey = activeDb.MasterKey.UserKeys.SingleOrDefault(k =>
+                    k is KcpKeyFile || k is KcpCustomKey && ((KcpCustomKey) k).Name == ProviderName);
+            }
+            
+            var encryptionRequest = EditEncryptedKeyFileDialog.AskForNewEncryptedKeyFile(ctx.DatabaseIOInfo, activeKey);
             if (encryptionRequest == null) {
                 return null;
             }
