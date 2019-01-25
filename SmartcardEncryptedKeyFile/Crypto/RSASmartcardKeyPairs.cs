@@ -1,12 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Episource.KeePass.EKF.Crypto {
-    public static class RsaSmartcardKeyPairs {       
+    public static class RSASmartcardKeyPairs {       
         /// <summary>
         /// Gets all encryption key pairs backed by smartcards implementing the PIV (personal identity verification)
         /// standard. Basic support for these smartcards is provided by windows without additional drivers.
@@ -29,7 +26,7 @@ namespace Episource.KeePass.EKF.Crypto {
                                   .Select(cGroup =>
                                       (IKeyPair) RSACryptoServiceProviderKeyPair.FromX509CertificateOrNull(
                                           cGroup.First()));
-                return encryptionCardsAsList(certs);
+                return ListEncryptionCardsAsList(certs);
             }
         }
 
@@ -37,7 +34,7 @@ namespace Episource.KeePass.EKF.Crypto {
             return GetAllPivKeyPairs();
         }
 
-        private static IList<IKeyPair> encryptionCardsAsList(IEnumerable<IKeyPair> unfilteredKeyPairs) {
+        private static IList<IKeyPair> ListEncryptionCardsAsList(IEnumerable<IKeyPair> unfilteredKeyPairs) {
             return unfilteredKeyPairs.Where(c => c != null && c.IsSmartcard && c.CanEncrypt && c.CanDecrypt)
                                      .ToList().AsReadOnly();
         }

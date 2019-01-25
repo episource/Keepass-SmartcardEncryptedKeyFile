@@ -2,13 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 
-using KeePassLib.Security;
-using KeePassLib.Serialization;
 using KeePassLib.Utility;
 
 namespace Episource.KeePass.EKF.Crypto {
@@ -56,10 +53,10 @@ namespace Episource.KeePass.EKF.Crypto {
             var store = new EnvelopedCms();
             store.Decode(encryptedKeyStore);
 
-            var localKeyPairs = RsaSmartcardKeyPairs.GetAllKeyPairs().ToDictionary(c => c.Certificate.Thumbprint);
+            var localKeyPairs = RSASmartcardKeyPairs.GetAllKeyPairs().ToDictionary(c => c.Certificate.Thumbprint);
             var authorization = store.Certificates
                                      .Cast<X509Certificate2>()
-                                     .Select(c =>
+                                     .Select(c => // ReSharper disable once AssignNullToNotNullAttribute
                                          localKeyPairs.ContainsKey(c.Thumbprint)
                                              ? localKeyPairs[c.Thumbprint]
                                              : RSACryptoServiceProviderKeyPair.FromX509CertificateOrNull(c))

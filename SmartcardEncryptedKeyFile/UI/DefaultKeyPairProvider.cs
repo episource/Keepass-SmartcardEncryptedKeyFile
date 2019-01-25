@@ -1,12 +1,8 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Security.Cryptography.Pkcs;
-using System.Security.Cryptography.X509Certificates;
 
 using Episource.KeePass.EKF.Crypto;
 
-using KeePassLib;
 using KeePassLib.Serialization;
 
 namespace Episource.KeePass.EKF.UI {
@@ -25,7 +21,7 @@ namespace Episource.KeePass.EKF.UI {
                     this.authorizedKeys = ekf.Authorization
                                           .Select(c => c.Certificate.Thumbprint)
                                           .ToHashSet();
-                    AddKeys(ekf.Authorization, KeyPairModel.KeyProvider.EkfAuthorizationList);
+                    this.AddKeys(ekf.Authorization, KeyPairModel.KeyProvider.EkfAuthorizationList);
                 }
             } else {
                 this.authorizedKeys = new HashSet<string>();
@@ -33,7 +29,7 @@ namespace Episource.KeePass.EKF.UI {
             
             
             // add piv cards last: replace existing keys from other sources (piv is primary provider)
-            AddKeys(RsaSmartcardKeyPairs.GetAllPivKeyPairs(), KeyPairModel.KeyProvider.Piv);
+            this.AddKeys(RSASmartcardKeyPairs.GetAllPivKeyPairs(), KeyPairModel.KeyProvider.Piv);
         }
 
         private void AddKeys(IEnumerable<IKeyPair> keyPairs, KeyPairModel.KeyProvider provider) {
@@ -48,6 +44,7 @@ namespace Episource.KeePass.EKF.UI {
                 }
 
                 // replace existing keys with same thumbprint but different provider
+                // ReSharper disable once AssignNullToNotNullAttribute
                 this.knownKeys[thumbprint] = model;
             }
         }

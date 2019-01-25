@@ -2,7 +2,11 @@ using Episource.KeePass.Ekf.KeyProvider;
 
 using KeePass.Plugins;
 
+// KeePass requirement:
+// ReSharper disable once CheckNamespace
 namespace SmartcardEncryptedKeyFile {
+    // KeePass requirement:
+    // ReSharper disable once UnusedMember.Global
     public class SmartcardEncryptedKeyFileExt : Plugin {
         private IPluginHost pluginHost;
 

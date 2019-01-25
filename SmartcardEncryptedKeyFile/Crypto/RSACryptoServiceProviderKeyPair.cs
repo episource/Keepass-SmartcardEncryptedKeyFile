@@ -19,11 +19,11 @@ namespace Episource.KeePass.EKF.Crypto {
         }
 
         public static RSACryptoServiceProviderKeyPair FromX509Certificate(X509Certificate2 cert) {
-            return FromX509CertificateInternal(cert, nullOnError: false);  
+            return FromX509CertificateInternal(cert, false);  
         }
         
         public static RSACryptoServiceProviderKeyPair FromX509CertificateOrNull(X509Certificate2 cert) {
-            return FromX509CertificateInternal(cert, nullOnError: true);
+            return FromX509CertificateInternal(cert, true);
         }
 
         private static RSACryptoServiceProviderKeyPair FromX509CertificateInternal(X509Certificate2 cert,
@@ -33,7 +33,7 @@ namespace Episource.KeePass.EKF.Crypto {
                 if (nullOnError) {
                     return null;
                 }
-                throw new ArgumentNullException(paramName: "cert");
+                throw new ArgumentNullException("cert");
             }
 
             var isRsa = cert.PublicKey.Key is RSA;
@@ -41,7 +41,7 @@ namespace Episource.KeePass.EKF.Crypto {
                 if (nullOnError) {
                     return null;
                 }
-                throw new ArgumentException(message: "Not an RSA based certificate.", paramName: "cert");
+                throw new ArgumentException("Not an RSA based certificate.",  "cert");
             }
 
 
@@ -61,8 +61,8 @@ namespace Episource.KeePass.EKF.Crypto {
                     return null;
                 }
                 
-                throw new ArgumentException(message: "Certificate not backed by windows crypto service provider.",
-                    paramName: "cert");
+                throw new ArgumentException("Certificate not backed by windows crypto service provider.",
+                    "cert");
             }
         }
 
@@ -86,9 +86,10 @@ namespace Episource.KeePass.EKF.Crypto {
         public bool CanEncrypt {
             get {
                 try {
+                    // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                     return this.cert.PublicKey != null && this.keyInfo.KeyNumber == KeyNumber.Exchange;
                 }
-                catch (CryptographicException e) {
+                catch (CryptographicException) {
                     return false;
                 }
             }

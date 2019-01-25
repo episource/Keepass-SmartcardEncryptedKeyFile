@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Episource.KeePass.EKF.Crypto {

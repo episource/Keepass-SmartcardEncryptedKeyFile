@@ -5,33 +5,32 @@ using System.Windows.Forms;
 
 namespace Episource.KeePass.EKF.UI {
     public class CertificateListViewItem {
-        private ListViewItem boundItem = null;
+        private ListViewItem boundItem;
 
         public CertificateListViewItem(X509Certificate2 cert) {
             if (cert == null) {
-                throw new ArgumentNullException(paramName: "cert");
+                throw new ArgumentNullException("cert");
             }
 
             if (!cert.HasPrivateKey) {
-                throw new ArgumentException(paramName: "cert", message: "Certificate without private key.");
+                throw new ArgumentException("Certificate without private key.", "cert");
             }
             
             if (!(cert.PrivateKey is RSA)) {
-                throw new ArgumentException(paramName: "cert", message: "Not an RSA certificate.");
+                throw new ArgumentException("Not an RSA certificate.", "cert");
             }
 
             this.certificate = cert;
         }
 
         private readonly X509Certificate2 certificate;
-        private readonly PublicKey publicKey;
 
         public X509Certificate2 Certificate {
             get { return this.certificate; }
         }
 
         public PublicKey PublicKey {
-            get { return this.publicKey; }
+            get { return this.Certificate.PublicKey; }
         }
 
         public void AddToList(ListView listView) {
