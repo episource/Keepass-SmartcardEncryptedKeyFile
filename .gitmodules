@@ -1,0 +1,3 @@
+[submodule "SmartcardEncryptedKeyFile/Unblocker"]
+	path = SmartcardEncryptedKeyFile/Unblocker
+	url = git@github.com:episource/unblocker.git

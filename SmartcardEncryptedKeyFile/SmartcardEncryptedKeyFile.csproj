@@ -39,10 +39,12 @@
       <HintPath>..\ThirdParty\KeePass\KeePass.exe</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.Linq" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Remoting" />
     <Reference Include="System.Security" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -73,6 +75,8 @@
     <Compile Include="UI\EditEncryptedKeyFileDialog.cs" />
     <Compile Include="UI\IKeyPairProvider.cs" />
     <Compile Include="UI\KeyPairModel.cs" />
+    <Compile Include="Unblocker\episource.unblocker\**\*.cs" Exclude="Unblocker\episource.unblocker\properties\*" />
+    <Compile Include="Util\UnblockerSingleton.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
