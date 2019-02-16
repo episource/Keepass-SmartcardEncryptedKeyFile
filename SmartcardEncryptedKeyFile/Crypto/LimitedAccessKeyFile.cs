@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 namespace Episource.KeePass.EKF.Crypto {
+    [Serializable]
     public abstract class LimitedAccessKeyFile {
         private readonly IList<IKeyPair> authorization;
         
@@ -9,7 +10,16 @@ namespace Episource.KeePass.EKF.Crypto {
             if (authorization == null) {
                 throw new ArgumentNullException("authorization");
             }
-            this.authorization = new List<IKeyPair>(authorization).AsReadOnly();
+
+            var copyOfAuthorization = new List<IKeyPair>();
+            foreach (var kp in authorization) {
+                if (!kp.GetType().IsSerializable) {
+                    throw new ArgumentException("Not all authorized keys are serializable.", "authorization");
+                }
+                copyOfAuthorization.Add(kp);
+            }
+
+            this.authorization = copyOfAuthorization.AsReadOnly();
         }
         
         public IList<IKeyPair> Authorization {

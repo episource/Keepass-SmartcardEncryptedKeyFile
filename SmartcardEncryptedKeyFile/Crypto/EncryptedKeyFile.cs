@@ -9,14 +9,15 @@ using System.Security.Cryptography.X509Certificates;
 using KeePassLib.Utility;
 
 namespace Episource.KeePass.EKF.Crypto {
+    [Serializable]
     public sealed class EncryptedKeyFile : LimitedAccessKeyFile {
-        private readonly Oid oidContentData =
-            Oid.FromOidValue(oidValue: "1.2.840.113549.1.7.1", group: OidGroup.ExtensionOrAttribute);
+        private static readonly Oid oidContentData =
+            Oid.FromOidValue("1.2.840.113549.1.7.1", OidGroup.ExtensionOrAttribute);
 
-        private readonly AlgorithmIdentifier algorithmAes256Cbc =
+        private static readonly AlgorithmIdentifier algorithmAes256Cbc =
             new AlgorithmIdentifier(
-                Oid.FromOidValue(oidValue: "2.16.840.1.101.3.4.1.42", group: OidGroup.EncryptionAlgorithm),
-                keyLength: 256);
+                Oid.FromOidValue("2.16.840.1.101.3.4.1.42", OidGroup.EncryptionAlgorithm),
+                256);
         
         // invariant: always encrypted!
         private readonly byte[] encryptedKeyStore;
@@ -27,8 +28,8 @@ namespace Episource.KeePass.EKF.Crypto {
                 throw new ArgumentNullException("plaintext");
             }
             
-            var content = new ContentInfo(this.oidContentData, plaintext.PlaintextKey);
-            var store = new EnvelopedCms(content, this.algorithmAes256Cbc);
+            var content = new ContentInfo(oidContentData, plaintext.PlaintextKey);
+            var store = new EnvelopedCms(content, algorithmAes256Cbc);
             var recipients = new CmsRecipientCollection();
 
             foreach (var keyPair in plaintext.Authorization) {
@@ -72,6 +73,16 @@ namespace Episource.KeePass.EKF.Crypto {
             return Decode(buffer.ToArray());
         }
 
+        /// <summary>
+        /// Decrypt the key file using one of the authorized smartcards.
+        /// This operation requires the user to provide an authorized smartcard and unlock it. How the user needs to
+        /// unlock the smartcard depends on the smartcard and reader that are used. Usually a pin must be enter in
+        /// a software prompt or at the reader. Some smartcards require a button to be pressed, as well.
+        /// The operation blocks until the user has successfully unlocked the smartcard or the operation times out. 
+        /// </summary>
+        /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
+        /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
+        /// out or no authorized smartcard was found.</exception>
         public DecryptedKeyFile Decrypt() {
             var store = new EnvelopedCms();
             store.Decode(this.encryptedKeyStore);

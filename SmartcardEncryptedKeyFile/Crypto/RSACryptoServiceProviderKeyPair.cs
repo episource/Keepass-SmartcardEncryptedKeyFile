@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -8,10 +9,13 @@ namespace Episource.KeePass.EKF.Crypto {
     /// <summary>
     /// Gives access to RSA smart cards that are compatible with the windows crypto service provider framework.
     /// </summary>
+    [Serializable]
     public class RSACryptoServiceProviderKeyPair : IKeyPair {
 
         private readonly X509Certificate2 cert;
-        private readonly CspKeyContainerInfo keyInfo;
+        
+        [NonSerialized]
+        private CspKeyContainerInfo keyInfo;
         
         private RSACryptoServiceProviderKeyPair(X509Certificate2 cert, CspKeyContainerInfo keyInfo) {
             this.cert = cert;
@@ -44,26 +48,15 @@ namespace Episource.KeePass.EKF.Crypto {
                 throw new ArgumentException("Not an RSA based certificate.",  "cert");
             }
 
-
-            // Important: Try to avoid accessing cert.PrivateKey to retrieve cspInfo if possible!
-            // Accessing cert.PrivateKey requests access to the private key itself, asking the user for its pin!
-            try {
-                var cspParams = NativeCapi.GetParameters(cert);
-                var cspInfo = new CspKeyContainerInfo(cspParams);
+            var cspInfo = GetKeyContainerInfoFromCert(cert);
+            if (cspInfo != null) {
                 return new RSACryptoServiceProviderKeyPair(cert, cspInfo);
-            } catch (DllNotFoundException) {
-                // this is likely to cause a pin prompt!
-                var cspAlgorithm = cert.PrivateKey as ICspAsymmetricAlgorithm;
-                if (cspAlgorithm != null) {
-                    return new RSACryptoServiceProviderKeyPair(cert, cspAlgorithm.CspKeyContainerInfo);
-                }
-                if (nullOnError) {
-                    return null;
-                }
-                
-                throw new ArgumentException("Certificate not backed by windows crypto service provider.",
-                    "cert");
             }
+            if (nullOnError) {
+                return null;
+            }
+            throw new ArgumentException("Certificate not backed by windows crypto service provider.",
+                "cert"); 
         }
 
         public bool IsSmartcard {
@@ -100,6 +93,24 @@ namespace Episource.KeePass.EKF.Crypto {
         }
         public X509Certificate2 Certificate {
             get { return this.cert;  }
+        }
+        
+        [OnDeserialized]
+        private void OnDeserializedSetKeyInfo(StreamingContext context) {
+            this.keyInfo = GetKeyContainerInfoFromCert(this.Certificate);
+        }
+
+        private static CspKeyContainerInfo GetKeyContainerInfoFromCert(X509Certificate2 cert) {
+            // Important: Try to avoid accessing cert.PrivateKey to retrieve cspInfo if possible!
+            // Accessing cert.PrivateKey requests access to the private key itself, asking the user for its pin!
+            try {
+                var cspParams = NativeCapi.GetParameters(cert);
+                return cspParams == null ? null : new CspKeyContainerInfo(cspParams);
+            } catch (DllNotFoundException) {
+                // this is likely to cause a pin prompt!
+                var cspAlgorithm = cert.PrivateKey as ICspAsymmetricAlgorithm;
+                return cspAlgorithm == null ? null : cspAlgorithm.CspKeyContainerInfo;
+            }
         }
     }
 }
