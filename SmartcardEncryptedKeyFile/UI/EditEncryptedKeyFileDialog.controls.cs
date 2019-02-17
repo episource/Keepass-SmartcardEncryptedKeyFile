@@ -6,10 +6,6 @@ using KeePass.UI;
 
 namespace Episource.KeePass.EKF.UI {
     public partial class EditEncryptedKeyFileDialog : Form {
-        // height chosen to match a single line text box
-        private const int DefaultButtonHeight = 22;
-        private const int DefaultButtonWidth = 75;
-
         private readonly TableLayoutPanel layout = new TableLayoutPanel();
         private readonly CustomListViewEx keyListView = new CustomListViewEx();
 
@@ -25,8 +21,8 @@ namespace Episource.KeePass.EKF.UI {
             this.SuspendLayout();
 
             this.AutoSize = true;
-            this.AutoScaleMode = AutoScaleMode.Font;
-            this.AutoScaleDimensions = new SizeF(6F, 13F);
+            this.AutoScaleMode = UIConstants.AutoScaleMode;
+            this.AutoScaleDimensions = UIConstants.AutoScaleDimensions;
             this.Padding = new Padding(12);
             this.MinimumSize = new Size(520, 150);
             this.Size = new Size( 780,  300);
@@ -101,8 +97,8 @@ namespace Episource.KeePass.EKF.UI {
                 Text = "Export",
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowOnly,
-                Height = DefaultButtonHeight,
-                Width = DefaultButtonWidth,
+                Height = UIConstants.DefaultButtonHeight,
+                Width = UIConstants.DefaultButtonWidth,
                 UseVisualStyleBackColor = true,
                 SplitDropDownMenu = new CustomContextMenuStripEx()
             };
@@ -150,8 +146,8 @@ namespace Episource.KeePass.EKF.UI {
             this.btnOk = new Button {
                 Text = "OK",
                 DialogResult = DialogResult.OK,
-                Height = DefaultButtonHeight,
-                Width = DefaultButtonWidth,
+                Height = UIConstants.DefaultButtonHeight,
+                Width = UIConstants.DefaultButtonWidth,
                 TabIndex = 0
             };
             this.layout.Controls.Add(this.btnOk, column: 2, row: 5);
@@ -160,8 +156,8 @@ namespace Episource.KeePass.EKF.UI {
             var btnCancel = new Button {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Height = DefaultButtonHeight,
-                Width = DefaultButtonWidth,
+                Height = UIConstants.DefaultButtonHeight,
+                Width = UIConstants.DefaultButtonWidth,
                 TabIndex = 1
             };
             this.layout.Controls.Add(btnCancel, column: 3, row: 5);

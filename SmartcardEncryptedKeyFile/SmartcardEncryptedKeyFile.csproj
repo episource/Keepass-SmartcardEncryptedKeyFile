@@ -48,6 +48,7 @@
     <Reference Include="System.Security" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Crypto\DecryptedKeyFile.cs" />
@@ -75,7 +76,12 @@
     <Compile Include="UI\EditEncryptedKeyFileDialog.cs" />
     <Compile Include="UI\IKeyPairProvider.cs" />
     <Compile Include="UI\KeyPairModel.cs" />
+    <Compile Include="UI\SmartcardRequiredDialog.cs" />
+    <Compile Include="UI\UIConstants.cs" />
+    <Compile Include="UI\Windows\NativeWinEvents.cs" />
+    <Compile Include="UI\Windows\NativeForms.cs" />
     <Compile Include="Unblocker\episource.unblocker\**\*.cs" Exclude="Unblocker\episource.unblocker\properties\*" />
+    <Compile Include="Util\TaskExtensions.cs" />
     <Compile Include="Util\UnblockerSingleton.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
