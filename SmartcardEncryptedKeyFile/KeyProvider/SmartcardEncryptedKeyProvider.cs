@@ -90,7 +90,7 @@ namespace Episource.KeePass.Ekf.KeyProvider {
             return encryptionRequest.PlaintextKey;
         }
 
-        private static byte[] DecryptEncryptedKeyFile(KeyProviderQueryContext ctx) {
+        private static byte[] DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true) {
             var ekfPath = ctx.DatabaseIOInfo.CloneDeep();
             ekfPath.Path += ".ekf";
 
@@ -105,10 +105,19 @@ namespace Episource.KeePass.Ekf.KeyProvider {
             } catch (TaskCanceledException) {
                 return null;
             } catch (AggregateException e) {
-                if (e.InnerExceptions.Count == 1 && e.InnerException is CryptographicException) {
-                    // operation was canceled using windows dialog or failed otherwise
-                    return null;
-                }
+                if (e.InnerExceptions.Count == 1) {
+                    if (e.InnerException is CryptographicException) {
+                        // operation was canceled using windows dialog or failed otherwise
+                        return null;
+                    } 
+                    if (e.InnerException is TaskCrashedException && retryOnCrash) {
+                        // there's a known bug in win 10 credentials ui, that causes a crash when opening the dialog
+                        // -> https://github.com/mRemoteNG/mRemoteNG/issues/853
+                        // -> https://developercommunity.visualstudio.com/content/problem/352484/buffer-overflow-within-windowsuixamlhostdll-when-p.html
+                        // retry once before failing!
+                        return DecryptEncryptedKeyFile(ctx, false);
+                    }
+                } 
 
                 throw;
             }
