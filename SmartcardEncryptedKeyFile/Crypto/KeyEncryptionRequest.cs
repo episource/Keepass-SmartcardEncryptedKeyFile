@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 
+using Episource.KeePass.Ekf.KeyProvider;
+
 using KeePassLib.Security;
 using KeePassLib.Serialization;
 
@@ -23,11 +25,7 @@ namespace Episource.KeePass.EKF.Crypto {
         }
 
         public IOConnectionInfo EncryptedKeyFilePath {
-            get {
-                var path = this.dbPath.CloneDeep();
-                path.Path = path.Path + ".ekf";
-                return path;
-            }
+            get { return this.dbPath.ResolveEncryptedKeyFile(); }
         }
         
         /// <summary>

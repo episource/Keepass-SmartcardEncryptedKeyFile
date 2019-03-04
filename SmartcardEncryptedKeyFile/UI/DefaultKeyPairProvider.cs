@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using Episource.KeePass.Ekf.KeyProvider;
 using Episource.KeePass.EKF.Crypto;
 
 using KeePassLib.Serialization;
@@ -11,8 +12,7 @@ namespace Episource.KeePass.EKF.UI {
         private readonly IDictionary<string, KeyPairModel> knownKeys = new Dictionary<string, KeyPairModel>();
         
         public DefaultKeyPairProvider(IOConnectionInfo dbPath) {
-            var ekfPath = dbPath.CloneDeep();
-            ekfPath.Path += ".ekf";
+            var ekfPath = dbPath.ResolveEncryptedKeyFile();
 
             if (IOConnection.FileExists(ekfPath)) {
                 using (var stream = IOConnection.OpenRead(ekfPath)) {
