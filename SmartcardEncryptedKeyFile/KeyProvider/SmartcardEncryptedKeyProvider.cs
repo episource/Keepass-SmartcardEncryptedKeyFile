@@ -1,18 +1,14 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using episource.unblocker;
 using episource.unblocker.hosting;
 
 using Episource.KeePass.EKF.Crypto;
-using Episource.KeePass.EKF.Crypto.Windows;
 using Episource.KeePass.EKF.UI;
 
 using KeePass.Plugins;
@@ -20,8 +16,6 @@ using KeePass.Plugins;
 using KeePassLib.Keys;
 using KeePassLib.Serialization;
 using KeePassLib.Utility;
-
-using Microsoft.Win32.SafeHandles;
 
 namespace Episource.KeePass.Ekf.KeyProvider {
     
@@ -37,6 +31,14 @@ namespace Episource.KeePass.Ekf.KeyProvider {
             }
 
             this.pluginHost = pluginHost;
+            
+            var editMenu = new ToolStripMenuItem("Edit Encrypted Key File");
+            editMenu.Enabled = false;
+            editMenu.Click += (sender, args) => this.EditEkf();
+            this.pluginHost.MainWindow.ToolsMenu.DropDownItems.Add(editMenu);
+
+            this.pluginHost.MainWindow.FileOpened += (sender, args) => editMenu.Enabled = this.CanEditEkf();
+            this.pluginHost.MainWindow.FileClosed += (sender, args) => editMenu.Enabled = this.CanEditEkf();
         }
 
         public override byte[] GetKey(KeyProviderQueryContext ctx) {
@@ -71,14 +73,38 @@ namespace Episource.KeePass.Ekf.KeyProvider {
             }
         }
 
+        private void EditEkf() {
+            if (CanEditEkf()) {
+                var encryptionRequest = EditEncryptedKeyFileDialog.AskForSettings(
+                    this.pluginHost.Database.IOConnectionInfo, this.GetActiveEkfKey());
+                if (encryptionRequest != null) {
+                    encryptionRequest.WriteEncryptedKeyFile();
+                }
+            }
+        }
+
+        
+        private bool CanEditEkf() {
+            return this.pluginHost.Database.HasEncryptedKeyFile() && this.GetActiveEkfKey() != null;
+        }
+        
+        private IUserKey GetActiveEkfKey() {
+            var db = this.pluginHost.Database;
+            if (db == null) {
+                return null;
+            }
+            
+            return db.MasterKey.UserKeys.SingleOrDefault(k =>
+                k is KcpKeyFile ||
+                k is KcpCustomKey && ((KcpCustomKey) k).Name == ProviderName);
+        }
+
         private byte[] CreateNewKey(KeyProviderQueryContext ctx) {
             var activeDb = this.pluginHost.Database;
             IUserKey activeKey = null;
             if (string.Equals(ctx.DatabaseIOInfo.Path, activeDb.IOConnectionInfo.Path,
                 StringComparison.InvariantCultureIgnoreCase)) {
-                activeKey = activeDb.MasterKey.UserKeys.SingleOrDefault(k =>
-                    k is KcpKeyFile ||
-                    k is KcpCustomKey && ((KcpCustomKey) k).Name == ProviderName);
+                activeKey = this.GetActiveEkfKey();
             }
 
             var encryptionRequest = EditEncryptedKeyFileDialog.AskForNewEncryptedKeyFile(ctx.DatabaseIOInfo, activeKey);
@@ -91,8 +117,7 @@ namespace Episource.KeePass.Ekf.KeyProvider {
         }
 
         private static byte[] DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true) {
-            var ekfPath = ctx.DatabaseIOInfo.CloneDeep();
-            ekfPath.Path += ".ekf";
+            var ekfPath = ctx.DatabaseIOInfo.ResolveEncryptedKeyFile();
 
             EncryptedKeyFile ekfFile;
             using (var stream = IOConnection.OpenRead(ekfPath)) {
