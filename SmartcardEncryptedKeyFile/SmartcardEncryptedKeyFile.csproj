@@ -83,7 +83,6 @@
     <Compile Include="UI\Windows\NativeForms.cs" />
     <Compile Include="Unblocker\episource.unblocker\**\*.cs" Exclude="Unblocker\episource.unblocker\properties\*" />
     <Compile Include="Util\TaskExtensions.cs" />
-    <Compile Include="Util\UnblockerSingleton.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
