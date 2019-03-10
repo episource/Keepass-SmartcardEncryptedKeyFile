@@ -69,7 +69,8 @@ namespace Episource.KeePass.EKF.UI {
             }
             
         }
-        
+
+        private const int GracefulAbortTimeoutMs = 100;
         private const string DefaultDesktopName = "Default";
         
         // A dedicated worker process pool is used:
@@ -192,38 +193,33 @@ namespace Episource.KeePass.EKF.UI {
         #region DoCrypto factory methods
 
         public static void DoCryptoWithMessagePump(
-            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken),
-            ForcedCancellationMode forcedCancellationMode = ForcedCancellationMode.KillImmediately
+            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken)
         ) {
-            DoCryptoAsync(cryptoOperation, ct, forcedCancellationMode).AwaitWithMessagePump();
+            DoCryptoAsync(cryptoOperation, ct).AwaitWithMessagePump();
         }
         
         public static T DoCryptoWithMessagePump<T>(
-            Expression<Func<CancellationToken, T>> cryptoOperation, CancellationToken ct = default(CancellationToken),
-            ForcedCancellationMode forcedCancellationMode = ForcedCancellationMode.KillImmediately
+            Expression<Func<CancellationToken, T>> cryptoOperation, CancellationToken ct = default(CancellationToken)
         ) {
-            return DoCryptoAsync(cryptoOperation, ct, forcedCancellationMode).AwaitWithMessagePump();
+            return DoCryptoAsync(cryptoOperation, ct).AwaitWithMessagePump();
         }
 
         public static async Task DoCryptoAsync(
-            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken),
-            ForcedCancellationMode forcedCancellationMode = ForcedCancellationMode.KillImmediately
+            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken)
         ) {
-            await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation), ct, forcedCancellationMode)
+            await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation), ct)
                 .ConfigureAwait(false);
         }
         
         public static async Task<T> DoCryptoAsync<T>(
-            Expression<Func<CancellationToken, T>> cryptoOperation, CancellationToken ct = default(CancellationToken),
-            ForcedCancellationMode forcedCancellationMode = ForcedCancellationMode.KillImmediately
+            Expression<Func<CancellationToken, T>> cryptoOperation, CancellationToken ct = default(CancellationToken)
         ) {
-            return (T) await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation), ct, forcedCancellationMode)
+            return (T) await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation), ct)
                 .ConfigureAwait(false);
         }
 
         private static async Task<object> DoCryptoImpl(
-            InvocationRequest cryptoOperationRequest, CancellationToken ct,
-            ForcedCancellationMode forcedCancellationMode
+            InvocationRequest cryptoOperationRequest, CancellationToken ct
         ) {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             var pRef = new WorkerProcessRef();
@@ -239,8 +235,8 @@ namespace Episource.KeePass.EKF.UI {
                     GetAndResetRemainingHandles());
                 
                 var cryptoTask = smartcardWorker.InvokeAsync(
-                    desktopBoundInvocation, cts.Token, forcedCancellationMode: forcedCancellationMode,
-                    workerProcessRef: pRef);
+                    desktopBoundInvocation, cts.Token, TimeSpan.FromMilliseconds(GracefulAbortTimeoutMs),
+                    ForcedCancellationMode.CleanupBeforeCancellation, workerProcessRef: pRef);
                 using (var cryptoProcessWinEvents = new NativeWinEvents(pRef.WorkerProcess)) {
                     cryptoProcessWinEvents.ForegroundChanged +=
                         (sender, args) => NativeForms.SetOwner(args.EventSource, activeForm);
@@ -321,6 +317,7 @@ namespace Episource.KeePass.EKF.UI {
                 }
 
                 try {
+                    ct.Register(() => Process.GetCurrentProcess().CloseMainWindow());
                     var invocationResult = request.ToInvocationRequest().Invoke(ct);
                     result.SetResult(invocationResult);
                 } catch (Exception e) {
