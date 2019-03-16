@@ -1,7 +1,5 @@
 using System;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -29,7 +27,7 @@ namespace Episource.KeePass.Ekf.KeyProvider {
             if (pluginHost == null) {
                 throw new ArgumentNullException("pluginHost");
             }
-
+            
             this.pluginHost = pluginHost;
             
             var editMenu = new ToolStripMenuItem("Edit Encrypted Key File");

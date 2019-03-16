@@ -1,10 +1,8 @@
 using System;
 using System.Threading.Tasks;
-using System.Windows.Threading;
 
 namespace Episource.KeePass.EKF.Util {
     public static class TaskExtensions {
-        
         public static async Task IgnoreResult<T>(this Task<T> task) {
             await task;
         }
@@ -24,11 +22,11 @@ namespace Episource.KeePass.EKF.Util {
         /// <exception cref="TaskCanceledException">The task was canceled.</exception>
         /// <exception cref="AggregateException">The task failed.</exception>
         public static T AwaitWithMessagePump<T>(this Task<T> task) {
-            var dispatcherFrame = new DispatcherFrame();
-            
+            var dispatcherFrame = new System.Windows.Threading.DispatcherFrame();
+
             task.ContinueWith(t => dispatcherFrame.Continue = false,
                 TaskContinuationOptions.ExecuteSynchronously);
-            Dispatcher.PushFrame(dispatcherFrame);
+            System.Windows.Threading.Dispatcher.PushFrame(dispatcherFrame);
 
             try {
                 return task.Result;
@@ -40,7 +38,7 @@ namespace Episource.KeePass.EKF.Util {
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Block until given task has finished. Keeps message pump active while blocking, therefore any UI remains
         /// responsive.
