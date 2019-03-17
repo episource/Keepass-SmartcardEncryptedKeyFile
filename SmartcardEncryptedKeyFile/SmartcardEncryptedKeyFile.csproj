@@ -79,6 +79,9 @@
     <Compile Include="UI\KeyPairModel.cs" />
     <Compile Include="UI\SmartcardRequiredDialog.cs" />
     <Compile Include="UI\UIConstants.cs" />
+    <Compile Include="UI\Windows\NativeForms.pinvoke.cs">
+      <DependentUpon>NativeForms.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Windows\NativeWinEvents.cs" />
     <Compile Include="UI\Windows\NativeForms.cs" />
     <Compile Include="Unblocker\episource.unblocker\**\*.cs" Exclude="Unblocker\episource.unblocker\properties\*" />
