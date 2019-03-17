@@ -6,16 +6,6 @@ namespace Episource.KeePass.EKF.UI.Windows {
     public static partial class NativeForms {
         
         /// <summary>
-        /// Subset of the nIndex values valid for GetWindowLong:
-        /// https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-getwindowlongw
-        /// </summary>
-        private enum WindowParamIndex {
-            GWL_EXSTYLE = -20,
-            GWL_HWNDPARENT = -8,
-            GWL_STYLE = -16
-        }
-
-        /// <summary>
         /// Subset of: https://docs.microsoft.com/de-de/windows/desktop/winstation/desktop-security-and-access-rights
         /// </summary>
         [Flags]
@@ -29,6 +19,24 @@ namespace Episource.KeePass.EKF.UI.Windows {
             ReadObjects = 0x0001,
             SwitchDesktop = 0x0100,
             WriteObjects = 0x0080
+        }
+        
+        /// <summary>
+        /// Subset of the nIndex values valid for GetWindowLong:
+        /// https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-getwindowlongw
+        /// </summary>
+        private enum WindowParamIndex {
+            GWL_EXSTYLE = -20,
+            GWL_HWNDPARENT = -8,
+            GWL_STYLE = -16
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WindowRect {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
         }
 
         private static class NativeFormsPinvoke {
@@ -81,6 +89,21 @@ namespace Episource.KeePass.EKF.UI.Windows {
                 IntPtr hObj, int nIndex, IntPtr pvInfo, uint nLength, ref uint lpnLengthNeeded
             );
 
+            [DllImport("User32.dll", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool GetWindowRect(IntPtr hwnd, ref WindowRect lpRect);
+            
+            [DllImport("User32.dll", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+            [DllImport("User32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool IsWindowVisible(IntPtr hwnd);
+            
+            [DllImport("User32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool IsZoomed(IntPtr hwnd);
         }
         
         private static IntPtr GetWindowLongImpl(IntPtr hWnd, WindowParamIndex nIndex) {

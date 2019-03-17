@@ -1,8 +1,11 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+
+using Episource.KeePass.EKF.Crypto.Windows;
 
 namespace Episource.KeePass.EKF.UI.Windows {
     public static partial class NativeForms {
@@ -140,6 +143,80 @@ namespace Episource.KeePass.EKF.UI.Windows {
         /// </summary>
         public static IntPtr SetOwner(IntPtr windowHwnd, IWin32Window newOwner) {
             return SetOwner(windowHwnd, newOwner.Handle);
+        }
+        
+        #endregion
+        
+        #region WindowPosition
+
+        public static Rectangle GetWindowRectangle(IntPtr hwnd) {
+            var nativeRect = new WindowRect();
+            if (!NativeFormsPinvoke.GetWindowRect(hwnd, ref nativeRect)) {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+            
+            return new Rectangle(
+                nativeRect.Left, nativeRect.Top, 
+                nativeRect.Right - nativeRect.Left, nativeRect.Bottom - nativeRect.Top);
+        }
+
+        public static void MoveWindow(IntPtr hwnd, Point location) {
+            MoveWindow(hwnd, location.X, location.Y);
+        }
+
+        public static void MoveWindow(IntPtr hwnd, int x, int y) {
+            // https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-setwindowpos
+            const uint noSize = 0x0001;
+            const uint noZOrder = 0x0004;
+
+            if (!NativeFormsPinvoke.SetWindowPos(
+                hwnd, IntPtr.Zero, x, y, 0, 0, noSize | noZOrder)) {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+        }
+
+        public static Rectangle CenterWindow(IntPtr hwnd, IntPtr hwndParent) {
+            var currentRect = GetWindowRectangle(hwnd);
+            var parentRect = GetWindowRectangle(hwndParent);
+            
+            var newRect = CalculateCenteredRectangle(currentRect, parentRect);
+            MoveWindow(hwnd, newRect.Location);
+            return newRect;
+        }
+
+        public static Rectangle CenterWindow(IntPtr hwnd, Form parent) {
+            return CenterWindow(hwnd, parent.Handle);
+        }
+
+        public static bool IsCenteredWindow(IntPtr hwnd, IntPtr hwndParent) {
+            var currentRect = GetWindowRectangle(hwnd);
+            var parentRect = GetWindowRectangle(hwndParent);
+            var centeredRect = CalculateCenteredRectangle(currentRect, parentRect);
+
+            return centeredRect == currentRect;
+        }
+
+        public static bool IsCenteredWindow(IntPtr hwnd, Form parent) {
+            return IsCenteredWindow(hwnd, parent.Handle);
+        }
+
+        private static Rectangle CalculateCenteredRectangle(Rectangle currentRect, Rectangle parentRect) {
+            var newRect = currentRect;
+            newRect.X = parentRect.X + (parentRect.Width  - currentRect.Width)  / 2;
+            newRect.Y = parentRect.Y + (parentRect.Height - currentRect.Height) / 2;
+            return newRect;
+        }
+        
+        #endregion
+        
+        #region OtherLayout
+
+        public static bool IsWindowVisible(IntPtr hwnd) {
+            return NativeFormsPinvoke.IsWindowVisible(hwnd);
+        }
+
+        public static bool IsWindowMaximized(IntPtr hwnd) {
+            return NativeFormsPinvoke.IsZoomed(hwnd);
         }
         
         #endregion

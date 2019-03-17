@@ -104,6 +104,8 @@ namespace Episource.KeePass.EKF.UI {
         private void InitializeUI() {
             this.SuspendLayout();
 
+            this.StartPosition = FormStartPosition.CenterParent;
+
             this.AutoSize = true;
             this.Size = new Size(0, 0);
             this.AutoScaleMode = UIConstants.AutoScaleMode;
@@ -172,6 +174,14 @@ namespace Episource.KeePass.EKF.UI {
             this.ResumeLayout();
         }
 
+        protected override void OnLoad(EventArgs e) {
+            base.OnLoad(e);
+
+            if (this.Owner != null) {
+                this.CenterToParent();
+            }
+        }
+
         protected override void OnShown(EventArgs e) {
             base.OnShown(e);
 
@@ -238,8 +248,27 @@ namespace Episource.KeePass.EKF.UI {
                     desktopBoundInvocation, cts.Token, TimeSpan.FromMilliseconds(GracefulAbortTimeoutMs),
                     ForcedCancellationMode.CleanupBeforeCancellation, workerProcessRef: pRef);
                 using (var cryptoProcessWinEvents = new NativeWinEvents(pRef.WorkerProcess)) {
-                    cryptoProcessWinEvents.ForegroundChanged +=
-                        (sender, args) => NativeForms.SetOwner(args.EventSource, activeForm);
+                    var uiCentered = false;
+                    var knownWindows = new HashSet<IntPtr>();
+                    cryptoProcessWinEvents.ObjectShown +=
+                        (sender, args) => {
+                            if (knownWindows.Add(args.EventSource)) {
+                                NativeForms.SetOwner(args.EventSource, activeForm);
+                            }
+
+                            if (!uiCentered) {
+                                var windowRect = NativeForms.GetWindowRectangle(args.EventSource);
+                                var maximized = NativeForms.IsWindowMaximized(args.EventSource);
+                                
+                                // Win 10 security dialog starts "pseudo"-maximized, that is as empty window filling the
+                                // whole screen. A little bit later it resizes to its actual bounds and centers at
+                                // the primary screen. Moving the window is not effective when done earlier.
+                                if (!maximized && windowRect.Size != Screen.PrimaryScreen.WorkingArea.Size) {
+                                    NativeForms.CenterWindow(args.EventSource, activeForm);
+                                    uiCentered = true;
+                                }
+                            }
+                        };
                     
                     // continueOnCapturedContext: true => finally must run within UI thread!
                     var retVal = await cryptoTask.ConfigureAwait(true);
