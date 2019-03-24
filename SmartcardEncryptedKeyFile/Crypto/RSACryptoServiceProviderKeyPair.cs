@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.Remoting.Messaging;
 using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -16,6 +17,10 @@ namespace Episource.KeePass.EKF.Crypto {
         
         [NonSerialized]
         private CspKeyContainerInfo keyInfo;
+
+        private CspKeyContainerInfo KeyInfo {
+            get { return this.keyInfo ?? (this.keyInfo = GetKeyContainerInfoFromCert(this.cert)); }
+        }
         
         private RSACryptoServiceProviderKeyPair(X509Certificate2 cert, CspKeyContainerInfo keyInfo) {
             this.cert = cert;
@@ -23,15 +28,19 @@ namespace Episource.KeePass.EKF.Crypto {
         }
 
         public static RSACryptoServiceProviderKeyPair FromX509Certificate(X509Certificate2 cert) {
-            return FromX509CertificateInternal(cert, false);  
+            return FromX509CertificateInternal(cert, false, false);  
         }
         
         public static RSACryptoServiceProviderKeyPair FromX509CertificateOrNull(X509Certificate2 cert) {
-            return FromX509CertificateInternal(cert, true);
+            return FromX509CertificateInternal(cert, false, true);
+        }
+
+        public static RSACryptoServiceProviderKeyPair FromX509CertificateAssumeCspOrNull(X509Certificate2 cert) {
+            return FromX509CertificateInternal(cert, true, true);
         }
 
         private static RSACryptoServiceProviderKeyPair FromX509CertificateInternal(X509Certificate2 cert,
-            bool nullOnError) {
+            bool permitLazyCspInfo, bool nullOnError) {
             
             if (cert == null) {
                 if (nullOnError) {
@@ -49,9 +58,10 @@ namespace Episource.KeePass.EKF.Crypto {
             }
 
             var cspInfo = GetKeyContainerInfoFromCert(cert);
-            if (cspInfo != null) {
+            if (cspInfo != null || permitLazyCspInfo) {
                 return new RSACryptoServiceProviderKeyPair(cert, cspInfo);
-            }
+            } 
+            
             if (nullOnError) {
                 return null;
             }
@@ -59,28 +69,40 @@ namespace Episource.KeePass.EKF.Crypto {
                 "cert"); 
         }
 
-        public bool IsSmartcard {
-            get { return this.keyInfo.HardwareDevice; }
+        public bool? IsSmartcard {
+            get { return this.KeyInfo == null ? (bool?)null : this.KeyInfo.HardwareDevice; }
         }
         
         public bool IsSmartcardAvailable {
-            get { return this.keyInfo.Accessible; }
+            // ReSharper disable once SimplifyConditionalTernaryExpression
+            get { return this.KeyInfo == null ? false : this.keyInfo.Accessible; }
         }
-        public bool CanExportPrivateKey {
-            get { return this.cert.HasPrivateKey && this.keyInfo.Exportable; }
+        public bool? CanExportPrivateKey {
+            get {
+                var info = this.keyInfo;
+                if (info == null) {
+                    return null;
+                }
+                
+                return this.cert.HasPrivateKey && info.Exportable;
+            }
         }
-        public bool IsRemovable {
-            get { return this.keyInfo.Removable; }
+        public bool? IsRemovable {
+            get { return this.keyInfo == null ? (bool?)null : this.KeyInfo.Removable; }
         }
         public bool CanSign {
-            get { return this.keyInfo.KeyNumber == KeyNumber.Signature || this.keyInfo.KeyNumber == KeyNumber.Exchange; }
+            get {
+                return this.KeyInfo != null && (this.KeyInfo.KeyNumber == KeyNumber.Signature ||
+                                                this.KeyInfo.KeyNumber == KeyNumber.Exchange);
+            }
         }
 
         public bool CanEncrypt {
             get {
                 try {
                     // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                    return this.cert.PublicKey != null && this.keyInfo.KeyNumber == KeyNumber.Exchange;
+                    return this.KeyInfo           != null && this.cert.PublicKey != null &&
+                           this.KeyInfo.KeyNumber == KeyNumber.Exchange;
                 }
                 catch (CryptographicException) {
                     return false;
@@ -89,7 +111,9 @@ namespace Episource.KeePass.EKF.Crypto {
         }
 
         public bool CanDecrypt {
-            get { return this.cert.HasPrivateKey && this.keyInfo.KeyNumber == KeyNumber.Exchange; }
+            get {
+                return this.KeyInfo != null && this.cert.HasPrivateKey && this.KeyInfo.KeyNumber == KeyNumber.Exchange;
+            }
         }
         public X509Certificate2 Certificate {
             get { return this.cert;  }

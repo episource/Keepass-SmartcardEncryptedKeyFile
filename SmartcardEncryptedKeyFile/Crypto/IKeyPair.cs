@@ -6,9 +6,10 @@ namespace Episource.KeePass.EKF.Crypto {
         /// Retrieves whether the key pair is provided by a smart card.
         /// </summary>
         /// <returns>
-        /// <code>true</code> when backed by smart card, <code>false</code> otherwise.
+        /// <code>true</code> when backed by smart card, <code>false</code> if not and <code>null</code> if
+        /// unknown.
         /// </returns>
-        bool IsSmartcard { get; }
+        bool? IsSmartcard { get; }
         
         /// <summary>
         /// Is smartcard available for sign and decryption operations.
@@ -23,20 +24,20 @@ namespace Episource.KeePass.EKF.Crypto {
         /// private key cannot leave the smartcard.
         /// </summary>
         /// <returns>
-        /// <code>false</code> when the smart card is safe and the private key cannot be exported, otherwise
-        /// <code>true</code>.
+        /// <code>false</code> when the smart card is safe and the private key cannot be exported, <code>null</code> if
+        /// unknown and otherwise <code>true</code>.
         /// </returns>
-        bool CanExportPrivateKey { get; }
+        bool? CanExportPrivateKey { get; }
 
         /// <summary>
         /// Retrieves whether the smartcard is hot-pluggable can can be attached/removed while the system is up. In case
         /// of removable smart cards, any operation may fail at any time because the card has been detached.
         /// </summary>
         /// <returns>
-        /// <code>true</code> if the smart card can be attached/removed while the system is up, otherwise
-        /// <code>false</code>.
+        /// <code>true</code> if the smart card can be attached/removed while the system is up, <code>false</code> if
+        /// not. <code>null</code> if unknown.
         /// </returns>
-        bool IsRemovable { get; }
+        bool? IsRemovable { get; }
 
         /// <summary>
         /// Retrieves whether the sign operation is likely to succeed.

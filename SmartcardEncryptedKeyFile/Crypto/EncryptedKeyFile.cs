@@ -60,7 +60,7 @@ namespace Episource.KeePass.EKF.Crypto {
                                      .Select(c => // ReSharper disable once AssignNullToNotNullAttribute
                                          localKeyPairs.ContainsKey(c.Thumbprint)
                                              ? localKeyPairs[c.Thumbprint]
-                                             : RSACryptoServiceProviderKeyPair.FromX509CertificateOrNull(c))
+                                             : RSACryptoServiceProviderKeyPair.FromX509CertificateAssumeCspOrNull(c))
                                      .Where(c => c != null);
 
             return new EncryptedKeyFile(authorization, encryptedKeyStore);
