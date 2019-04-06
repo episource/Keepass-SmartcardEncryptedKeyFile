@@ -128,18 +128,6 @@ namespace Episource.KeePass.EKF.UI {
             return true;
         }
 
-        private string DescribeAuthorization(KeyPairModel.Authorization auth) {
-            switch (auth) {
-                case KeyPairModel.Authorization.Authorized:
-                    return "authorized";
-                case KeyPairModel.Authorization.Rejected:
-                    return "rejected";
-                default:
-                    throw new ArgumentOutOfRangeException(paramName: "auth");
-                    
-            }
-        }
-
         private string DescribeKeyProvider(KeyPairModel.KeyProvider keySource) {
             switch (keySource) {
                 case KeyPairModel.KeyProvider.Piv:

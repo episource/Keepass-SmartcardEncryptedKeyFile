@@ -1,14 +1,22 @@
+using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
+using System.Windows.Forms.VisualStyles;
 
 using KeePass.UI;
+
+using ContentAlignment = System.Drawing.ContentAlignment;
 
 namespace Episource.KeePass.EKF.UI {
     public partial class EditEncryptedKeyFileDialog : Form {
         private readonly TableLayoutPanel layout = new TableLayoutPanel();
         private readonly CustomListViewEx keyListView = new CustomListViewEx();
+        private const string noChangeCaption = "(none)";
+        private const int maxAutoWidth = 800;
 
+        private int listViewRowHeight = 0;
         private TextBox txtKeySource;
         
         private Label lblValidationError;
@@ -25,7 +33,7 @@ namespace Episource.KeePass.EKF.UI {
             this.AutoScaleDimensions = UIConstants.AutoScaleDimensions;
             this.Padding = new Padding(12);
             this.MinimumSize = new Size(520, 150);
-            this.Size = new Size( 780,  300);
+            this.Size = new Size( this.MinimumSize.Width,  300); // width autosized depending on content
 
             this.layout.Top = 0;
             this.layout.Left = 0;
@@ -165,23 +173,34 @@ namespace Episource.KeePass.EKF.UI {
         }
 
         private void InitializeKeyList() {
+            const FontStyle actionFont = FontStyle.Bold; 
+            const string newKeyAction = "add";
+            const string delKeyAction = "remove";
+
             this.keyListView.Dock = DockStyle.Fill;
             this.keyListView.AutoSize = true;
             this.keyListView.FullRowSelect = true;
             this.keyListView.CheckBoxes = true;
             this.keyListView.View = View.Details;
             this.keyListView.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+            this.keyListView.ShowItemToolTips = false;
             this.keyListView.TabIndex = 4;
-
+            
             // width "-2" -> auto size respecting header width
-            this.keyListView.Columns.Add(text: "☑ Thumbprint", width: -2);
-            this.keyListView.Columns.Add(text: "Subject", width: -2);
-            this.keyListView.Columns.Add(text: "Current", width: -2);
-            this.keyListView.Columns.Add(text: "Provider", width: -2);
+            this.keyListView.Columns.Add("☑ Change", -2);
+            this.keyListView.Columns.Add("Subject", -2);
+            this.keyListView.Columns.Add("Serial#", -2);
+            this.keyListView.Columns.Add("Provider", -2);
 
-            UIUtil.SetExplorerTheme(this.keyListView, bUseListFont: false);
-            this.layout.Controls.Add(this.keyListView, column: 0, row: 4);
+            UIUtil.SetExplorerTheme(this.keyListView, false);
+            this.layout.Controls.Add(this.keyListView, 0, 4);
             this.layout.SetColumnSpan(this.keyListView, this.layout.ColumnCount);
+            
+            // Add every possible change value for proper sizing
+            // Dummy items will be deleted after size has been calculated (form load event)
+            this.keyListView.Items.Add(newKeyAction).Font = new Font(this.keyListView.Font, actionFont);
+            this.keyListView.Items.Add(delKeyAction).Font = new Font(this.keyListView.Font, actionFont);
+            this.keyListView.Items.Add(noChangeCaption);
             
             // prevent changing column width
             this.keyListView.ColumnWidthChanging += (sender, args) => {
@@ -212,22 +231,65 @@ namespace Episource.KeePass.EKF.UI {
                     KeyPairModel.Authorization.Authorized : KeyPairModel.Authorization.Rejected;
 
                 if (model.CurrentAuthorization != model.NextAuthorization) {
+                    item.Font = new Font(item.Font, actionFont);
+                    
                     if (model.NextAuthorization == KeyPairModel.Authorization.Authorized) {
-                        item.Font = new Font(item.Font, FontStyle.Underline);
+                        item.Text = newKeyAction;
                     } else {
-                        item.Font = new Font(item.Font, FontStyle.Strikeout);
+                        item.Text = delKeyAction;
                     }
                 } else {
                     item.Font = null;
+                    item.Text = noChangeCaption;
                 }
 
                 this.OnContentChanged();
+            };
+            
+            // show tooltip for all columns
+            ToolTip listViewTooltip = null;
+            this.keyListView.MouseMove += (sender, args) => {
+                var hitTest = this.keyListView.HitTest(args.Location);
+                if (listViewTooltip != null) {
+                    if (hitTest == null || hitTest.Item == null || hitTest.Item != listViewTooltip.Tag) {
+                        listViewTooltip.Hide(this.keyListView);
+                        listViewTooltip.RemoveAll();
+                        listViewTooltip.Dispose();
+                        listViewTooltip = null;
+                    }
+                } else if (hitTest.Item != null) {
+                    listViewTooltip = new ToolTip {
+                        Tag = hitTest.Item,
+                        Active = true,
+                        ShowAlways = true
+                    };
+                    listViewTooltip.SetToolTip(this.keyListView, hitTest.Item.ToolTipText);
+                }
             };
 
             // make sure the last columns spans all the remaining width
             this.Resize += (sender, args) => { 
                 // -2: auto size using header and content & last column stretches
-                this.keyListView.Columns[this.keyListView.Columns.Count - 1].Width = -2; 
+                this.keyListView.Columns[this.keyListView.Columns.Count - 1].Width = -2;
+            };
+
+            this.Load += (sender, args) => {
+                // we know there are at least two dummy items
+                this.listViewRowHeight = this.keyListView.Items[1].Position.Y - this.keyListView.Items[0].Position.Y;
+                
+                // remove dummy items used for autosizing
+                for (var i = this.keyListView.Items.Count - 1; i >= 0; --i) {
+                    var item = this.keyListView.Items[i];
+                    if (item.Tag == null) { // dummy for width calculation
+                        this.keyListView.Items.Remove(item);
+                    }
+                }
+
+                // autosize width depending on content
+                var wantedSize = this.keyListView.Columns.OfType<ColumnHeader>().Sum(c => c.Width);
+                var maxDelta = Math.Max(0, maxAutoWidth - this.Width);
+                this.Width += Math.Min(maxDelta, 
+                    wantedSize - this.keyListView.Width + 3 * SystemInformation.VerticalScrollBarWidth / 2);
             };
         }
 
@@ -248,12 +310,14 @@ namespace Episource.KeePass.EKF.UI {
                 return false;
             }
             
-            var item = new ListViewItem(cert.Thumbprint);
+            var item = new ListViewItem(noChangeCaption);
+            item.UseItemStyleForSubItems = false;
             item.Tag = keyModel;
             item.Checked = keyModel.NextAuthorization == KeyPairModel.Authorization.Authorized;
             item.SubItems.Add(cert.Subject);
-            item.SubItems.Add(this.DescribeAuthorization(keyModel.CurrentAuthorization));
+            item.SubItems.Add(cert.SerialNumber);
             item.SubItems.Add(this.DescribeKeyProvider(keyModel.Provider));
+            item.ToolTipText = "Thumbprint: " + cert.Thumbprint;
             
             this.keyList.Add(cert.Thumbprint, keyModel);
             this.keyListView.Items.Add(item);
