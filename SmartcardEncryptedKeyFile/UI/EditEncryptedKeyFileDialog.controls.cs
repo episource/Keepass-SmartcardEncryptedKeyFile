@@ -14,9 +14,7 @@ namespace Episource.KeePass.EKF.UI {
         private readonly TableLayoutPanel layout = new TableLayoutPanel();
         private readonly CustomListViewEx keyListView = new CustomListViewEx();
         private const string noChangeCaption = "(none)";
-        private const int maxAutoWidth = 800;
 
-        private int listViewRowHeight = 0;
         private TextBox txtKeySource;
         
         private Label lblValidationError;
@@ -274,9 +272,6 @@ namespace Episource.KeePass.EKF.UI {
             };
 
             this.Load += (sender, args) => {
-                // we know there are at least two dummy items
-                this.listViewRowHeight = this.keyListView.Items[1].Position.Y - this.keyListView.Items[0].Position.Y;
-                
                 // remove dummy items used for autosizing
                 for (var i = this.keyListView.Items.Count - 1; i >= 0; --i) {
                     var item = this.keyListView.Items[i];
@@ -287,7 +282,7 @@ namespace Episource.KeePass.EKF.UI {
 
                 // autosize width depending on content
                 var wantedSize = this.keyListView.Columns.OfType<ColumnHeader>().Sum(c => c.Width);
-                var maxDelta = Math.Max(0, maxAutoWidth - this.Width);
+                var maxDelta = Math.Max(0, UIConstants.MaxAutoWidth - this.Width);
                 this.Width += Math.Min(maxDelta, 
                     wantedSize - this.keyListView.Width + 3 * SystemInformation.VerticalScrollBarWidth / 2);
             };
