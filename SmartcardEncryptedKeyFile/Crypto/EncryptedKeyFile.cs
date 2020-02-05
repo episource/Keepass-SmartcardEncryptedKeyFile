@@ -33,7 +33,11 @@ namespace Episource.KeePass.EKF.Crypto {
             var recipients = new CmsRecipientCollection();
 
             foreach (var keyPair in plaintext.Authorization) {
+                // embed  list of authorized certificates as originator info
+                // doing so permits re-encryption without having all certificates installed locally
                 store.Certificates.Add(keyPair.Certificate);
+                
+                // recipient list controls which certificates can decrypt the ekf
                 recipients.Add(new CmsRecipient(keyPair.Certificate));
             }
 
