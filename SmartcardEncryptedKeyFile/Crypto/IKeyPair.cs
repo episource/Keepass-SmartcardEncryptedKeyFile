@@ -6,19 +6,49 @@ namespace Episource.KeePass.EKF.Crypto {
         /// Retrieves whether the key pair is provided by a smart card.
         /// </summary>
         /// <returns>
-        /// <code>true</code> when backed by smart card, <code>false</code> if not and <code>null</code> if
-        /// unknown.
+        /// <code>true</code> when backed by smartcard or other other secure hardware security module,
+        /// <code>false</code> if not backed by hardware and <code>null</code> if unknown.
         /// </returns>
         bool? IsSmartcard { get; }
         
         /// <summary>
-        /// Is smartcard available for sign and decryption operations.
+        /// Retrieves whether the key container is accessible. Operations using the private key might,
+        /// still require confirmation before succeeding. Removable smartcards must be connected before the key
+        /// container accessible. Encryption operation might be available even if the key container is not accessible.
+        /// This will be reported by <see cref="IsReadyForEncrypt"/>. 
         /// </summary>
         /// <returns>
-        /// <code>true</code> when smartcard is available, otherwise <code>false</code>.
+        /// <code>true</code> when the key container is accessible, otherwise <code>false</code>.
         /// </returns>
-        bool IsSmartcardAvailable { get; }
-
+        bool IsAccessible { get; }
+        
+        /// <summary>
+        /// Retrieves whether the decrypt operation is likely to succeed now. Some hardware devices might require
+        /// confirmation for this operation to succeed.
+        /// </summary>
+        /// <returns>
+        /// <code>true</code> if decryption is likely to succeed, otherwise <code>false</code>.
+        /// </returns>
+        bool IsReadyForDecrypt { get; }
+        
+        /// <summary>
+        /// Retrieves whether the encrypt operation is likely to succeed now. Some hardware devices might require
+        /// confirmation for this operation to succeed.
+        /// </summary>
+        /// <returns>
+        /// <code>true</code> if encryption is likely to succeed, otherwise <code>false</code>.
+        /// </returns>
+        bool IsReadyForEncrypt { get; }
+        
+        /// <summary>
+        /// Retrieves whether the sign operation is likely to succeed now. Some hardware devices might require
+        /// confirmation for this operation to succeed.
+        /// </summary>
+        /// <returns>
+        /// <code>true</code> if signing is likely to succeed, otherwise <code>false</code>.
+        /// </returns>
+        bool IsReadyForSign { get; }
+        
         /// <summary>
         /// Retrieves whether the private key can be exported from the smartcard. A smartcard is only safe if the
         /// private key cannot leave the smartcard.
@@ -38,34 +68,31 @@ namespace Episource.KeePass.EKF.Crypto {
         /// not. <code>null</code> if unknown.
         /// </returns>
         bool? IsRemovable { get; }
-
+        
         /// <summary>
-        /// Retrieves whether the sign operation is likely to succeed.
+        /// Retrieves whether in principle the decrypt operation is supported by this key pair.
         /// </summary>
         /// <returns>
-        /// <code>true</code> if signing is possible with the current state of the smart card, otherwise
-        /// <code>false</code>.
+        /// <code>true</code> if decryption is eventually possible with this key pair, otherwise <code>false</code>
         /// </returns>
-        bool CanSign { get; }
-
+        bool CanDecrypt { get; }
+        
         /// <summary>
-        /// Retrieves whether the encrypt operation is likely to succeed.
+        /// Retrieves whether in principle the encrypt operation is supported by this key pair.
         /// </summary>
         /// <returns>
-        /// <code>true</code> if encryption is possible with the current state of the smart card, otherwise
-        /// <code>false</code>.
+        /// <code>true</code> if encryption is eventually possible with this key pair, otherwise <code>false</code>
         /// </returns>
         bool CanEncrypt { get; }
         
         /// <summary>
-        /// Retrieves whether the decrypt operation is likely to succeed.
+        /// Retrieves whether in principle the sign operation is supported by this key pair.
         /// </summary>
         /// <returns>
-        /// <code>true</code> if decryption is possible with the current state of the smart card, otherwise
-        /// <code>false</code>.
+        /// <code>true</code> if signing is eventually possible with this key pair, otherwise <code>false</code>
         /// </returns>
-        bool CanDecrypt { get; }
-        
+        bool CanSign { get; }
+
         /// <summary>
         /// Retrieves a X509 certificate wrapping the current key pair.
         /// </summary>
