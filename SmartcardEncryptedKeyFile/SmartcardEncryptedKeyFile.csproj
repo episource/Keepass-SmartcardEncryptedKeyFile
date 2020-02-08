@@ -85,7 +85,19 @@
     <Compile Include="UI\Windows\NativeWinEvents.cs" />
     <Compile Include="UI\Windows\NativeForms.cs" />
     <Compile Include="Unblocker\episource.unblocker\**\*.cs" Exclude="Unblocker\episource.unblocker\properties\*" />
+    <Compile Include="Util\PinvokeUtil.cs" />
     <Compile Include="Util\TaskExtensions.cs" />
+    <Compile Include="Util\Windows\NativeDevice.cs" />
+    <Compile Include="Util\Windows\NativeDevice.pinvoke.cs">
+      <DependentUpon>NativeDevice.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Util\Windows\NativeDeviceEvents.cs" />
+    <Compile Include="Util\Windows\NativeDeviceEvents.pinvoke.cs">
+      <DependentUpon>NativeDeviceEvents.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Util\Windows\NativeDeviceEvents.types.cs">
+      <DependentUpon>NativeDeviceEvents.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
