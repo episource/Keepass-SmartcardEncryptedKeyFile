@@ -338,9 +338,9 @@ namespace Episource.KeePass.EKF.UI {
             var prevCheckedItems = new HashSet<string>();
             try {
                 if (this.loaded) {
-                    if (!this.keyPairProvider.Refresh()) {
-                        return; 
-                    }
+                    // note: result == false does not imply, that IsReadyForDecrypt to be unchanged!
+                    // => replace list independent of result
+                    this.keyPairProvider.Refresh();
 
                     prevCheckedItems = this.keyListView.CheckedItems.Cast<ListViewItem>()
                                            .Select(i => i.Tag as KeyPairModel)
