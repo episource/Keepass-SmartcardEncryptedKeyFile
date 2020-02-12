@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography.Xml;
 
 using KeePassLib.Utility;
 
@@ -91,6 +92,38 @@ namespace Episource.KeePass.EKF.Crypto {
             var store = new EnvelopedCms();
             store.Decode(this.encryptedKeyStore);
             store.Decrypt();
+            
+            return new DecryptedKeyFile(this.Authorization, store.ContentInfo.Content);
+        }
+
+        /// <summary>
+        /// Decrypt the key file using the given recipient key information.
+        /// This operation requires the user to provide an authorized smartcard and unlock it. How the user needs to
+        /// unlock the smartcard depends on the smartcard and reader that are used. Usually a pin must be enter in
+        /// a software prompt or at the reader. Some smartcards require a button to be pressed, as well.
+        /// The operation blocks until the user has successfully unlocked the smartcard or the operation times out. 
+        /// </summary>
+        /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
+        /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
+        /// out or no authorized smartcard was found.</exception>
+        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair) {
+            var store = new EnvelopedCms();
+            store.Decode(this.encryptedKeyStore);
+
+            var recipient = store.RecipientInfos.OfType<RecipientInfo>()
+                                 .Where(r => r.RecipientIdentifier.Value is X509IssuerSerial)
+                                 .Select(r => new Tuple<X509IssuerSerial, RecipientInfo>(
+                                     (X509IssuerSerial) r.RecipientIdentifier.Value, r))
+                                 .Where(r =>
+                                     r.Item1.IssuerName   == recipientKeyPair.Certificate.IssuerName.Name &&
+                                     r.Item1.SerialNumber == recipientKeyPair.Certificate.SerialNumber)
+                                 .Select(r => r.Item2).FirstOrDefault();
+                
+            if (recipient == null) {
+                throw new ArgumentOutOfRangeException(
+                    "recipientKeyPair not authorized", "recipientKeyPair");
+            }
+            store.Decrypt(recipient);
             
             return new DecryptedKeyFile(this.Authorization, store.ContentInfo.Content);
         }

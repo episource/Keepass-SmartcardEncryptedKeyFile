@@ -5,7 +5,9 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -13,293 +15,72 @@ using System.Windows.Forms;
 using episource.unblocker;
 using episource.unblocker.hosting;
 
+using Episource.KeePass.EKF.Crypto;
 using Episource.KeePass.EKF.UI.Windows;
 using Episource.KeePass.EKF.Util;
+using Episource.KeePass.EKF.Util.Windows;
+
+using KeePass.UI;
+
+using Timer = System.Windows.Forms.Timer;
 
 namespace Episource.KeePass.EKF.UI {
     public sealed class SmartcardRequiredDialog : Form {
+
+        private const string StateConnected = "connected";
+        private const string StateNotConnected = "not connected";
         
-        #region WorkerResult
-        
-        [Serializable]
-        private class WorkerResult {
+        private bool loaded = false;
 
-            private readonly LinkedList<Exception> exceptions = new LinkedList<Exception>();
-            
-            private object result;
-            
-            // ReSharper disable once MemberHidesStaticFromOuterClass
-            private IEnumerable<IntPtr> remainingDesktopHandles;
-            
-            public IEnumerable<IntPtr> RemainingDesktopHandles {
-                get {
-                    if (this.remainingDesktopHandles == null) {
-                        throw new InvalidOperationException("remainingDesktopHandles not set");
-                    }
-                    return this.remainingDesktopHandles;
-                }
-            }
+        private readonly TableLayoutPanel layout = new TableLayoutPanel();
+        private readonly CustomListViewEx keyListView = new CustomListViewEx();
+        private Button btnOk;
 
-            public object GetResultOrThrow() {
-                if (this.exceptions.Count > 1) {
-                    throw new AggregateException("Smartcard operation failed.", this.exceptions);
-                } 
-                if (this.exceptions.Count == 1) {
-                    ExceptionDispatchInfo.Capture(this.exceptions.First()).Throw();
-                    throw new InvalidOperationException("This code should be unreachable...");
-                }
+        private NativeDeviceEvents deviceEventListener;
+        private readonly Timer refreshDelayTimer = new Timer() { Interval = 250 };
+        private readonly Timer redrawAfterScrollDelayTimer = new Timer() { Interval = 150 };
 
-                return this.result;
-            }
+        private readonly IKeyPairProvider keyPairProvider;
 
-            public void AddException(Exception e) {
-                this.exceptions.AddLast(e);
-            }
-
-            // ReSharper disable once ParameterHidesMember
-            public void SetResult(object result) {
-                this.result = result;
-            }
-
-            // ReSharper disable once ParameterHidesMember
-            public void SetRemainingDesktopHandles(IEnumerable<IntPtr> remainingDesktopHandles) {
-                if (this.remainingDesktopHandles != null) {
-                    throw new InvalidOperationException("remainingDesktopHandles already set");
-                }
-                
-                this.remainingDesktopHandles = remainingDesktopHandles;
-            }
-            
+        public static IKeyPair ChooseKeyPairForDecryption(EncryptedKeyFile ekf, Form owner = null) {
+            var keyPairProvider = new DefaultKeyPairProvider(ekf);
+            return ChooseKeyPairForDecryption(keyPairProvider, owner);
         }
         
-        #endregion
+        public static IKeyPair ChooseKeyPairForDecryption(IKeyPairProvider keyProvider, Form owner = null) {
+            var candidates = keyProvider.GetAuthorizedKeyPairs();
+            if (candidates.Count == 0) {
+                return null;
+            }
 
-        private const int GracefulAbortTimeoutMs = 100;
-        private const string DefaultDesktopName = "Default";
+            var readyKeyPair = candidates.FirstOrDefault(kp => kp.KeyPair.IsReadyForDecrypt);
+            if (readyKeyPair != null) {
+                return readyKeyPair.KeyPair;
+            }
+
+            var dialog = new SmartcardRequiredDialog(null, keyProvider);
+            var result = dialog.ShowDialog();
+            if (result != DialogResult.OK || dialog.keyListView.CheckedItems.Count == 0) {
+                return null;
+            }
+
+            return dialog.keyListView.CheckedItems.Cast<ListViewItem>()
+                         .Select(i => i.Tag as KeyPairModel)
+                         .Select(m => m.KeyPair).First();
+        }
         
-        // A dedicated worker process pool is used:
-        // - smartcard operations involve native code without support for cancellation; hence the process needs
-        // to be killed to cancel
-        // - Some smartcards require the pin to be entered just once. This is bound to the requesting process. Hence
-        // the standby timeout is chosen quite long.
-        // - Worker limit is set to one, such that smartcard operations are not done in parallel.
-        // - Unblocker creates the first worker process on first invocation only, therefore there's no need for
-        // explicit lazy initialization
-        private static Unblocker smartcardWorker = new Unblocker(
-            standbyDelay: TimeSpan.FromSeconds(500000), maxWorkers: 1, debug: DebugMode.None);
-
-        // set via ReplaceRemainingHandles only
-        private static volatile ISet<IntPtr> remainingDesktopHandles = new HashSet<IntPtr>();
-        
-        private readonly TableLayoutPanel layout = new TableLayoutPanel();
-        private readonly CancellationTokenSource cts;
-
-        private SmartcardRequiredDialog(Form owner, CancellationTokenSource cts) {
-            this.cts = cts;
-            this.InitializeUI();
-
+        private SmartcardRequiredDialog(Form owner, IKeyPairProvider keyPairProvider) {
             if (owner != null) {
                 this.Owner = owner;
             }
-        }
-        
-        #region DoCrypto factory methods
 
-        public static void DoCryptoWithMessagePump(
-            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken)
-        ) {
-            DoCryptoAsync(cryptoOperation, ct).AwaitWithMessagePump();
-        }
-        
-        public static T DoCryptoWithMessagePump<T>(
-            Expression<Func<CancellationToken, T>> cryptoOperation, CancellationToken ct = default(CancellationToken)
-        ) {
-            return DoCryptoAsync(cryptoOperation, ct).AwaitWithMessagePump();
-        }
-
-        public static async Task DoCryptoAsync(
-            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken)
-        ) {
-            await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation), ct)
-                .ConfigureAwait(false);
-        }
-        
-        public static async Task<T> DoCryptoAsync<T>(
-            Expression<Func<CancellationToken, T>> cryptoOperation, CancellationToken ct = default(CancellationToken)
-        ) {
-            return (T) await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation), ct)
-                .ConfigureAwait(false);
-        }
-
-        private static async Task<object> DoCryptoImpl(
-            InvocationRequest cryptoOperationRequest, CancellationToken ct
-        ) {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            var pRef = new WorkerProcessRef();
-
-            var activeForm = NativeForms.GetActiveWindow();
+            this.keyPairProvider = keyPairProvider;
             
-            var scRequiredDialog = new SmartcardRequiredDialog(activeForm, cts);
-            scRequiredDialog.Show(activeForm);
+            this.InitializeUI();
+            this.ReplaceList();
 
-            try {
-                Expression<Func<CancellationToken, WorkerResult>> desktopBoundInvocation = cct => SetDesktopAndExecute(
-                    cct, cryptoOperationRequest.ToPortableInvocationRequest(), NativeForms.GetCurrentThreadDesktopName(),
-                    GetAndResetRemainingHandles());
-                
-                var cryptoTask = smartcardWorker.InvokeAsync(
-                    desktopBoundInvocation, cts.Token, TimeSpan.FromMilliseconds(GracefulAbortTimeoutMs),
-                    ForcedCancellationMode.CleanupBeforeCancellation, workerProcessRef: pRef);
-                using (var cryptoProcessWinEvents = new NativeWinEvents(pRef.WorkerProcess)) {
-                    var uiCentered = false;
-                    var knownWindows = new HashSet<IntPtr>();
-                    cryptoProcessWinEvents.ObjectShown +=
-                        (sender, args) => {
-                            if (knownWindows.Add(args.EventSource)) {
-                                NativeForms.SetOwner(args.EventSource, activeForm);
-                            }
-
-                            if (!uiCentered) {
-                                var windowRect = NativeForms.GetWindowRectangle(args.EventSource);
-                                var maximized = NativeForms.IsWindowMaximized(args.EventSource);
-                                
-                                // Win 10 security dialog starts "pseudo"-maximized, that is as empty window filling the
-                                // whole screen. A little bit later it resizes to its actual bounds and centers at
-                                // the primary screen. Moving the window is not effective when done earlier.
-                                if (!maximized && windowRect.Size != Screen.PrimaryScreen.WorkingArea.Size) {
-                                    NativeForms.CenterWindow(args.EventSource, activeForm);
-                                    uiCentered = true;
-                                }
-                            }
-                        };
-                    
-                    // continueOnCapturedContext: true => finally must run within UI thread!
-                    var retVal = await cryptoTask.ConfigureAwait(true);
-                    AddRemainingHandles(retVal.RemainingDesktopHandles);
-                    return retVal.GetResultOrThrow();
-                }
-            } finally {
-                scRequiredDialog.Close();
-            }
+            this.refreshDelayTimer.Tick += this.OnRefreshRequested;
         }
-
-        private static IEnumerable<IntPtr> GetAndResetRemainingHandles() {
-            ISet<IntPtr> currentRemainingHandles;
-            var nextRemainingHandles = new HashSet<IntPtr>();
-            
-            do {
-                currentRemainingHandles = remainingDesktopHandles;
-
-                // currently this succeeds immediately, as the maxWorker setting effectively serialized things
-                // but: be 100% sure in case of future changes
-            } while(currentRemainingHandles != Interlocked.CompareExchange(ref remainingDesktopHandles,
-                        nextRemainingHandles, currentRemainingHandles));
-
-            return currentRemainingHandles;
-        }
-        private static void AddRemainingHandles(IEnumerable<IntPtr> newRemainingHandles) {
-            ISet<IntPtr> currentRemainingHandles;
-            ISet<IntPtr> nextRemainingHandles;
-            
-            do {
-                currentRemainingHandles = remainingDesktopHandles;
-                nextRemainingHandles = new HashSet<IntPtr>(currentRemainingHandles);
-                foreach (var handle in newRemainingHandles) {
-                    nextRemainingHandles.Add(handle);
-                }
-
-                // currently this succeeds immediately, as the maxWorker setting effectively serialized things
-                // but: be 100% sure in case of future changes
-            } while(currentRemainingHandles != Interlocked.CompareExchange(ref remainingDesktopHandles,
-                nextRemainingHandles, currentRemainingHandles));
-            
-        }
-
-        // Switch to "secure" desktop prior to smart card operations: This is needed for any user interaction to
-        // be visible if "secure" desktop is used.
-        // Note: Some system components, e.g. Win 10 smartcard dialogs, keep running in background for a while after
-        // the dialog has ended. This prevents the secure desktop handle to be closed immediately. An attempt to close
-        // remaining handles is done with every smartcard operation.
-        // As long as desktop handles are not closed, the temporary "secure" desktop created by keepass remains active.
-        // Therefore, if immediate closing fails, the temporary desktop is kept alive longer than needed, e.g. until
-        // the next smartcard operation. This is tolerated. It doesn't affect user experience, but increases resource
-        // consumption.
-        // At latest, all desktop handles are released when the worker process shuts down, that is after the chosen
-        // standby timeout has passed without user operation.
-        private static WorkerResult SetDesktopAndExecute(
-            CancellationToken ct, InvocationRequest.PortableInvocationRequest request, string desktop,
-            IEnumerable<IntPtr> desktopHandlesToClose) {
-
-            var remainingHandles = new List<IntPtr>(desktopHandlesToClose);
-            var currentDesktopHandle = IntPtr.Zero;
-
-            var result = new WorkerResult();
-
-            try {
-                if (desktop != null && desktop != DefaultDesktopName ) {
-                    currentDesktopHandle = NativeForms.GetCurrentThreadDesktop();
-                    var secureDesktopHandle = NativeForms.OpenDesktop(desktop);
-
-                    if (currentDesktopHandle != secureDesktopHandle) {
-                        NativeForms.SetCurrentThreadDesktop(secureDesktopHandle);
-                        remainingHandles.Add(secureDesktopHandle);
-                    } else {
-                        NativeForms.CloseDesktop(secureDesktopHandle);
-                    }
-                }
-
-                try {
-                    ct.Register(() => Process.GetCurrentProcess().CloseMainWindow());
-                    var invocationResult = request.ToInvocationRequest().Invoke(ct);
-                    result.SetResult(invocationResult);
-                } catch (Exception e) {
-                    result.AddException(e);
-                }
-            } finally {
-                try {
-                    Process.GetCurrentProcess().CloseMainWindow();
-                } catch { /* try anyway - no need to forward exception */ }
-
-                try {
-                    if (currentDesktopHandle != IntPtr.Zero) {
-                        NativeForms.SetCurrentThreadDesktop(currentDesktopHandle);
-                    }
-                } catch (Exception e) {
-                    result.AddException(e);
-                }
-
-                result.SetRemainingDesktopHandles(remainingHandles.Where(h => {
-                    try {
-                        NativeForms.CloseDesktop(h);
-                        return false;
-                    } catch (Win32Exception e) {
-                        const int errorBusy =  0x000000AA;
-                        const int errorInvalid = 0x00000006;
-
-                        switch (e.NativeErrorCode) {
-                            case errorBusy:
-                                // try again next time
-                                return true;
-                            case errorInvalid:
-                                // desktop has already been disposed (maybe new worker process)
-                                return false;
-                            default:
-                                result.AddException(e);
-                                return true;
-                        }
-                    } catch (Exception e) {
-                        result.AddException(e);
-                        return true;
-                    }
-                }).ToList());
-            }
-
-            return result;
-        }
-                
-        #endregion
-
-        #region UI
         
         private void InitializeUI() {
             this.SuspendLayout();
@@ -316,35 +97,37 @@ namespace Episource.KeePass.EKF.UI {
 
             this.MinimizeBox = false;
             this.MaximizeBox = false;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.FormBorderStyle = FormBorderStyle.Sizable;
             this.ShowInTaskbar = false;
 
             this.layout.Top = 0;
             this.layout.Left = 0;
             this.layout.AutoSize = true;
             this.layout.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            this.layout.GrowStyle = TableLayoutPanelGrowStyle.FixedSize;
             this.layout.Dock = DockStyle.Fill;
-            this.layout.ColumnCount = 4;
-            this.layout.RowCount = 6;
+            this.layout.ColumnCount = 2;
+            this.layout.RowCount = 3;
             this.layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             this.layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             this.layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            this.layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            this.layout.RowStyles.Add(new RowStyle(SizeType.Percent, 1.0f));
             this.layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             this.Controls.Add(this.layout);
 
             var iconBox = new PictureBox {
                 Width = SystemIcons.Information.Width,
+                Height = SystemIcons.Information.Height,
                 Image = SystemIcons.Information.ToBitmap(),
                 Margin = new Padding(0, 0, this.Padding.Right / 2, this.Padding.Bottom / 2)
             };
             this.layout.Controls.Add(iconBox, 0, 0);
             this.layout.SetRowSpan(iconBox, 2);
 
-            var maxLabelSize = new Size(300, 0);
+            var maxLabelSize = new Size(350, 0);
             var titleText = new Label {
                 MaximumSize = maxLabelSize,
-                Text = "Please unlock your smartcard.",
+                Text = "Please insert and select a smartcard from the list below.",
                 AutoSize = true,
             };
             titleText.Font = new Font(titleText.Font, FontStyle.Bold);
@@ -353,27 +136,276 @@ namespace Episource.KeePass.EKF.UI {
             var msgText = new Label {
                 MaximumSize = maxLabelSize,
                 Text =
-                    "Among others, this may require entering a PIN or pressing a button. Details depend on the type of smartcard and reader you are using.",
+                    "This dialog will not show up if exactly one authorized smartcard is connected to the host.",
                 AutoSize = true
             };
-            this.layout.Controls.Add(msgText, 1, 1);
+            this.InitializeKeyList();
 
-            var btnAbort = new Button {
-                Text = "Abort",
-                DialogResult = DialogResult.Abort,
+            var layoutBtn = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                RowCount = 2, // one more row needed to work around autosize bug
+                ColumnCount = 2,
+                DockPadding = { All = 0},
+                Padding = new Padding(0) ,
+                ColumnStyles = {
+                    new ColumnStyle(SizeType.Percent, 0.5f),
+                    new ColumnStyle(SizeType.Percent, 0.5f)
+                },
+                RowStyles = { new RowStyle(SizeType.AutoSize) }
+            };
+            this.layout.Controls.Add(layoutBtn, 0, 2);
+            this.layout.SetColumnSpan(layoutBtn, this.layout.ColumnCount);
+            this.btnOk = new Button {
+                Text = "OK",
+                DialogResult = DialogResult.OK,
                 Height = UIConstants.DefaultButtonHeight,
                 Width = UIConstants.DefaultButtonWidth,
                 MaximumSize = new Size(UIConstants.DefaultButtonWidth, UIConstants.DefaultButtonHeight),
-                Anchor = AnchorStyles.None,
+                Anchor = AnchorStyles.Right,
+                TabIndex = 1,
+                Enabled = false
+            };
+            layoutBtn.Controls.Add(this.btnOk, 0, 0);
+            var btnCancel = new Button {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Height = UIConstants.DefaultButtonHeight,
+                Width = UIConstants.DefaultButtonWidth,
+                MaximumSize = new Size(UIConstants.DefaultButtonWidth, UIConstants.DefaultButtonHeight),
+                Anchor = AnchorStyles.Left,
                 TabIndex = 1
             };
-            btnAbort.Click += (sender, args) => this.cts.Cancel();
-            this.layout.Controls.Add(btnAbort, 0, 2);
-            this.layout.SetColumnSpan(btnAbort, this.layout.ColumnCount);
+            layoutBtn.Controls.Add(btnCancel, 1, 0);
 
             this.ResumeLayout();
         }
 
+        private void InitializeKeyList() {
+            this.keyListView.Dock = DockStyle.Fill;
+            this.keyListView.AutoSize = true;
+            this.keyListView.FullRowSelect = true;
+            this.keyListView.CheckBoxes = true;
+            this.keyListView.View = View.Details;
+            this.keyListView.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+            this.keyListView.ShowItemToolTips = false;
+            this.keyListView.TabIndex = 4;
+
+            this.keyListView.OwnerDraw = true;
+            var keyListViewScrollDetectionReferenceLocation = Point.Empty;
+            this.keyListView.DrawItem += (sender, args) => {
+                var tag = args.Item.Tag as KeyPairModel;
+                var enabled = tag != null && tag.KeyPair.IsReadyForDecrypt;
+                
+                args.DrawBackground();
+
+                if (args.Item.Focused) {
+                    ControlPaint.DrawFocusRectangle(args.Graphics, args.Bounds, args.Item.ForeColor, args.Item.BackColor);
+                }
+                
+                var checkboxRect = args.Bounds;
+                checkboxRect.Y += 1;
+                checkboxRect.X += 2;
+                checkboxRect.Height -= 2;
+                checkboxRect.Width = checkboxRect.Height;
+                var buttonStateChecked = enabled && args.Item.Checked ? ButtonState.Checked : 0;
+                var buttonStateInactive = !enabled ? ButtonState.Inactive : 0;
+                ControlPaint.DrawCheckBox(args.Graphics, checkboxRect, 
+                    ButtonState.Flat | buttonStateChecked | buttonStateInactive);
+
+                var itemTextBounds = checkboxRect;
+                itemTextBounds.Y += 1;
+                itemTextBounds.X += checkboxRect.Width + 1;
+                itemTextBounds.Width = args.Item.SubItems.Count > 0 ? args.Item.SubItems[1].Bounds.X : args.Bounds.Width;
+                itemTextBounds.Height = checkboxRect.Height + 1;
+                TextRenderer.DrawText(args.Graphics, args.Item.Text, args.Item.Font, itemTextBounds, enabled ? args.Item.ForeColor : SystemColors.GrayText, TextFormatFlags.NoClipping);
+                
+                // note: first subitem is item itself!
+                foreach (var subItem in args.Item.SubItems.Cast<ListViewItem.ListViewSubItem>().Skip(1)) {
+                    var subItemTextBounds = subItem.Bounds;
+                    subItemTextBounds.X += 2;
+                    subItemTextBounds.Y = itemTextBounds.Y;
+                    subItemTextBounds.Width -= 2;
+                    subItemTextBounds.Height = checkboxRect.Height;
+                    TextRenderer.DrawText(args.Graphics, subItem.Text, subItem.Font, subItemTextBounds, enabled ? subItem.ForeColor : SystemColors.GrayText, TextFormatFlags.Default);
+                }
+
+                args.DrawDefault = false;
+
+                // detect scrolling and redraw control after scrolling has finished (using delay)
+                if (args.ItemIndex == 0 && args.Bounds.Location != keyListViewScrollDetectionReferenceLocation) {
+                    keyListViewScrollDetectionReferenceLocation = args.Bounds.Location;
+                    RestartFormsTimer(this.redrawAfterScrollDelayTimer);
+                }
+            };
+            this.keyListView.DrawColumnHeader += (sender, args) => args.DrawDefault = true;
+            this.keyListView.DrawSubItem += (sender, args) => args.DrawDefault = false;
+
+            this.redrawAfterScrollDelayTimer.Tick += (sender, args) => {
+                this.redrawAfterScrollDelayTimer.Stop();
+                Console.WriteLine("Invalidate");
+                this.keyListView.Invalidate();
+            };
+            
+            // width "-2" -> auto size respecting header width
+            this.keyListView.Columns.Add("☑ Ready", -2);
+            this.keyListView.Columns.Add("Subject", -2);
+            this.keyListView.Columns.Add("Serial#", -2);
+            this.keyListView.Columns.Add("Provider", -2);
+
+            UIUtil.SetExplorerTheme(this.keyListView, false);
+            this.layout.Controls.Add(this.keyListView, 1, 1);
+            
+            // Add every possible state value for proper sizing
+            // Dummy items will be deleted after size has been calculated (form load event)
+            this.keyListView.Items.Add(StateConnected);
+            this.keyListView.Items.Add(StateNotConnected);
+            
+            // prevent changing column width
+            this.keyListView.ColumnWidthChanging += (sender, args) => {
+                args.Cancel = true;
+                args.NewWidth = this.keyListView.Columns[args.ColumnIndex].Width;
+            };
+            
+            // don't highlight selection
+            this.keyListView.ItemSelectionChanged += (sender, args) => {
+                if (args.IsSelected) {
+                    args.Item.Selected = false;
+                }
+            };
+
+            // check on click
+            this.keyListView.MouseClick += (sender, args) => {
+                var hitTest = this.keyListView.HitTest(args.Location);
+                if (hitTest.Item != null && hitTest.Location != ListViewHitTestLocations.StateImage) {
+                    hitTest.Item.Checked = !hitTest.Item.Checked;
+                }
+            };
+            
+            // handle state change of checkbox
+            // permit only one checked item
+            this.keyListView.ItemCheck += (sender, args) => {
+                if (args.NewValue == CheckState.Checked) {
+                    var model = this.keyListView.Items[args.Index].Tag as KeyPairModel;
+                    if (model == null || !model.KeyPair.IsReadyForDecrypt) {
+                        args.NewValue = args.CurrentValue;
+                        return;
+                    }
+                    
+                    for (int i = 0; i < this.keyListView.Items.Count; ++i) {
+                        if (i != args.Index) {
+                            this.keyListView.Items[i].Checked = false;
+                        }
+                    }
+                }
+
+                // do this after programmatically unchecking items!
+                this.btnOk.Enabled = args.NewValue == CheckState.Checked;
+                if (this.btnOk.Enabled) {
+                    this.btnOk.Focus();
+                }
+            };
+
+            // make sure the last columns spans all the remaining width
+            this.Resize += (sender, args) => { 
+                // -2: auto size using header and content & last column stretches
+                this.keyListView.Columns[this.keyListView.Columns.Count - 1].Width = -2;
+            };
+
+            this.Load += (sender, args) => {
+                // remove dummy items used for autosizing
+                for (var i = this.keyListView.Items.Count - 1; i >= 0; --i) {
+                    var item = this.keyListView.Items[i];
+                    if (item.Tag == null) { // dummy for width calculation
+                        this.keyListView.Items.Remove(item);
+                    }
+                }
+
+                // autosize width depending on content
+                var wantedSize = this.keyListView.Columns.OfType<ColumnHeader>().Sum(c => c.Width);
+                var maxDelta = Math.Max(0, UIConstants.MaxAutoWidth - this.Width);
+                this.Width += Math.Min(maxDelta, 
+                    wantedSize - this.keyListView.Width + 3 * SystemInformation.VerticalScrollBarWidth / 2);
+
+                this.loaded = true;
+            };
+            
+        }
+
+        private void ReplaceList() {
+            this.keyListView.BeginUpdate();
+            var prevCheckedItems = new HashSet<string>();
+            try {
+                if (this.loaded) {
+                    if (!this.keyPairProvider.Refresh()) {
+                        return; 
+                    }
+
+                    prevCheckedItems = this.keyListView.CheckedItems.Cast<ListViewItem>()
+                                           .Select(i => i.Tag as KeyPairModel)
+                                           .Select(m => m.KeyPair.Certificate.Thumbprint)
+                                           .ToHashSet();
+                    this.keyListView.Items.Clear();
+                    
+                    // re-enabled by checking an item
+                    this.btnOk.Enabled = false; 
+                }
+
+                ListViewItem firstAvailItem = null;
+                var availItemCount = 0;
+                foreach (var kpm in this.keyPairProvider.GetAuthorizedKeyPairs()
+                                      .GroupBy(kp => kp.KeyPair.Certificate.Thumbprint)
+                                      .Select(g => g.First())) {
+
+                    var cert = kpm.KeyPair.Certificate;
+                    var stateText = StateNotConnected;
+                    if (kpm.KeyPair.IsReadyForDecrypt) {
+                        stateText = StateConnected;
+                    }
+
+                    var item = new ListViewItem(stateText);
+                    item.UseItemStyleForSubItems = false;
+                    item.Tag = kpm;
+                    item.SubItems.Add(cert.Subject);
+                    item.SubItems.Add(cert.SerialNumber);
+                    item.SubItems.Add(kpm.Provider.ToString());
+                    item.ToolTipText = "Thumbprint: " + cert.Thumbprint;
+                    this.keyListView.Items.Add(item);
+
+                    if (kpm.KeyPair.IsReadyForDecrypt) {
+                        item.Checked = prevCheckedItems.Contains(cert.Thumbprint);
+                        firstAvailItem = firstAvailItem ?? item;
+                        availItemCount++;
+                    }
+                }
+
+                if (firstAvailItem != null && this.keyListView.CheckedItems.Count == 0) {
+                    firstAvailItem.Checked = true;
+                }
+
+                if (this.loaded && availItemCount == 1) {
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                    return;
+                }
+            }
+            finally {
+                if (!this.Disposing && !this.IsDisposed) {
+                    this.keyListView.EndUpdate();
+                }
+            }
+
+            // autosize
+            this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
+            this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
+        }
+
+        private void OnRefreshRequested(object sender, EventArgs args) {
+            this.refreshDelayTimer.Stop();
+            this.ReplaceList();
+        }
+        
         protected override void OnLoad(EventArgs e) {
             base.OnLoad(e);
 
@@ -388,6 +420,26 @@ namespace Episource.KeePass.EKF.UI {
             if (this.Owner != null) {
                 this.Owner.Enabled = false;
             }
+
+            if (this.deviceEventListener == null) {
+                this.deviceEventListener = new NativeDeviceEvents();
+
+                this.deviceEventListener.AnyDeviceEvent += (sender, args) => {
+                    if (args.Reason == NativeDeviceEvents.NotificationReason.Unknown) {
+                        // ignore unrelated events
+                        return;
+                    }
+                    
+                    var startTimerIfNeeded = new Action(() => { });
+                    if (this.InvokeRequired) {
+                        this.Invoke((MethodInvoker)(() => RestartFormsTimer(this.refreshDelayTimer)));
+                    }
+                    else {
+                        RestartFormsTimer(this.refreshDelayTimer);
+                    }
+                    
+                };
+            }
         }
 
         protected override void OnClosed(EventArgs e) {
@@ -396,9 +448,22 @@ namespace Episource.KeePass.EKF.UI {
             if (this.Owner != null) {
                 this.Owner.Enabled = true;
             }
+
+            if (this.deviceEventListener != null) {
+                this.deviceEventListener.Dispose();
+                this.deviceEventListener = null;
+            }
         }
-        
-        #endregion
+
+        private static void RestartFormsTimer(Timer t) {
+            t.Stop();
+            
+            // restart timer: force change of interval; else interval continues!
+            var modulo = t.Interval % 5;
+            t.Interval += modulo == 0 ? 1 : -1 * modulo;
+            
+            t.Start();
+        }
 
     }
 }

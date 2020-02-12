@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -118,7 +119,7 @@ namespace Episource.KeePass.Ekf.KeyProvider {
             return encryptionRequest.PlaintextKey;
         }
 
-        private static byte[] DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true) {
+        private byte[] DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true) {
             var ekfPath = ctx.DatabaseIOInfo.ResolveEncryptedKeyFile();
 
             EncryptedKeyFile ekfFile;
@@ -126,9 +127,11 @@ namespace Episource.KeePass.Ekf.KeyProvider {
                 ekfFile = EncryptedKeyFile.Read(stream);
             }
 
+            var recipient = SmartcardRequiredDialog.ChooseKeyPairForDecryption(ekfFile, this.pluginHost.MainWindow);
+
             try {
-                return SmartcardRequiredDialog
-                       .DoCryptoWithMessagePump(ct => ekfFile.Decrypt()).PlaintextKey;
+                return SmartcardOperationDialog
+                       .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient)).PlaintextKey;
             } catch (TaskCanceledException) {
                 return null;
             } catch (AggregateException e) {
