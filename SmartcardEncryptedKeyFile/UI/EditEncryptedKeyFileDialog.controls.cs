@@ -5,6 +5,8 @@ using System.Linq;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 
+using Episource.KeePass.Ekf.KeyProvider;
+
 using KeePass.UI;
 
 using ContentAlignment = System.Drawing.ContentAlignment;
@@ -32,6 +34,7 @@ namespace Episource.KeePass.EKF.UI {
             this.Padding = new Padding(12);
             this.MinimumSize = new Size(520, 150);
             this.Size = new Size( this.MinimumSize.Width,  300); // width autosized depending on content
+            this.Text = SmartcardEncryptedKeyProvider.ProviderName;
 
             this.layout.Top = 0;
             this.layout.Left = 0;
