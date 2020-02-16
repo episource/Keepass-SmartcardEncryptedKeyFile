@@ -45,7 +45,17 @@ namespace Episource.KeePass.Ekf.KeyProvider {
         }
 
         public override byte[] GetKey(KeyProviderQueryContext ctx) {
-            var plainKey = ctx.CreatingNewKey ? this.CreateNewKey(ctx) : DecryptEncryptedKeyFile(ctx);
+            byte[] plainKey = null;
+            try {
+                plainKey = ctx.CreatingNewKey ? this.CreateNewKey(ctx) : DecryptEncryptedKeyFile(ctx);
+            }
+            catch (FileNotFoundException e) {
+                MessageBox.Show(
+                    "Failed to locate encrypted key file. Are you sure, this KeePass database has been setup for use with the " +
+                    ProviderName  + "?", ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return null;
+            }
+            
             if (plainKey == null) {
                 return null;
             }
