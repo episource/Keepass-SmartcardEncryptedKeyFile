@@ -106,7 +106,17 @@ namespace Episource.KeePass.EKF.Crypto {
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
         /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
         /// out or no authorized smartcard was found.</exception>
+        /// <exception cref="ArgumentNullException">The provided key pair is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The provided key pair is not suitable to decrypt the key
+        /// file.</exception>
         public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair) {
+            if (recipientKeyPair == null) {
+                throw new ArgumentNullException("recipientKeyPair");
+            }
+            if (recipientKeyPair.Certificate == null) {
+                throw new ArgumentOutOfRangeException("recipientKeyPair", "recipientKeyPair not ready for decrypt.");
+            }
+            
             var store = new EnvelopedCms();
             store.Decode(this.encryptedKeyStore);
 
@@ -121,7 +131,7 @@ namespace Episource.KeePass.EKF.Crypto {
                 
             if (recipient == null) {
                 throw new ArgumentOutOfRangeException(
-                    "recipientKeyPair not authorized", "recipientKeyPair");
+                    "recipientKeyPair", "recipientKeyPair not authorized");
             }
             store.Decrypt(recipient);
             
