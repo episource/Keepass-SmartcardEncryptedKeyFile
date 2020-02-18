@@ -63,6 +63,7 @@
     <Compile Include="Crypto\Windows\NativeCapi.cs" />
     <Compile Include="KeyProvider\KeyFileLocation.cs" />
     <Compile Include="KeyProvider\SmartcardEncryptedKeyProvider.cs" />
+    <Compile Include="Keys\KeyDataStoreExtensions.cs" />
     <Compile Include="Keys\LiveKeyDataStore.cs" />
     <Compile Include="Keys\IKeyDataStore.cs" />
     <Compile Include="Keys\ImportedKeyDataStore.cs" />
