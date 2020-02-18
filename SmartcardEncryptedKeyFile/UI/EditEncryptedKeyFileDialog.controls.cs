@@ -60,7 +60,7 @@ namespace Episource.KeePass.EKF.UI {
             this.InitializeKeyList();
             this.InitializeDialogButtons();
 
-            this.RenewKeySourceDisplay();
+            this.OnContentChanged();
             this.ResumeLayout();
         }
 
@@ -114,7 +114,7 @@ namespace Episource.KeePass.EKF.UI {
             btnExport.Click += (sender, args) => this.ExportKey();
             
             var btnActiveKey = new ToolStripMenuItem("Select active key file");
-            btnActiveKey.Enabled = this.permitNewKey;
+            btnActiveKey.Enabled = this.permitNewKey && this.activeDbKey != null;
             btnActiveKey.Click += (sender, args) => this.RevertToActiveKey();
             btnExport.SplitDropDownMenu.Items.Add(btnActiveKey);
             
@@ -292,6 +292,7 @@ namespace Episource.KeePass.EKF.UI {
         }
 
         private void OnContentChanged() {
+            this.txtKeySource.Text = this.DescribeKeySource();
             this.btnOk.Enabled = this.ValidateInput();
             if (this.btnOk.Enabled) {
                 this.lblValidationError.Text = "";
@@ -327,8 +328,5 @@ namespace Episource.KeePass.EKF.UI {
             return true;
         }
 
-        private void RenewKeySourceDisplay() {
-            this.txtKeySource.Text = "(" + this.DescribeKeySource() + ")";
-        }
     }
 }

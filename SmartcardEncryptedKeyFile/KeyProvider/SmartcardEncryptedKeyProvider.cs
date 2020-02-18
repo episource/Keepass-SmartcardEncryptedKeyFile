@@ -49,7 +49,7 @@ namespace Episource.KeePass.Ekf.KeyProvider {
             try {
                 plainKey = ctx.CreatingNewKey ? this.CreateNewKey(ctx) : DecryptEncryptedKeyFile(ctx);
             }
-            catch (FileNotFoundException e) {
+            catch (FileNotFoundException) {
                 MessageBox.Show(
                     "Failed to locate encrypted key file. Are you sure, this KeePass database has been setup for use with the " +
                     ProviderName  + "?", ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);

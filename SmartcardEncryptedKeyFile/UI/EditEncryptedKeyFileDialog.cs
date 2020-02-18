@@ -1,13 +1,21 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using System.Xml;
 
 using Episource.KeePass.Ekf.KeyProvider;
 using Episource.KeePass.EKF.Crypto;
 using Episource.KeePass.EKF.Keys;
 
+using KeePass.App;
+using KeePass.Forms;
+using KeePass.Resources;
+using KeePass.UI;
+
 using KeePassLib.Keys;
 using KeePassLib.Serialization;
+using KeePassLib.Utility;
 
 namespace Episource.KeePass.EKF.UI {
     public partial class EditEncryptedKeyFileDialog {
@@ -15,7 +23,7 @@ namespace Episource.KeePass.EKF.UI {
         private readonly bool permitNewKey;
         private readonly IOConnectionInfo dbPath;
         
-        private LiveKeyDataStore activeDbKey;
+        private readonly LiveKeyDataStore activeDbKey;
         private IKeyDataStore nextKey;
         private bool keyWasExported;
         
@@ -69,19 +77,68 @@ namespace Episource.KeePass.EKF.UI {
         }
 
         private void ExportKey() {
+            if (this.nextKey == null) {
+                return;
+            }
             
+            var saveFileDialog =  UIUtil.CreateSaveFileDialog(KPRes.KeyFileCreate, string.Empty, UIUtil.CreateFileTypeFilter("key", KPRes.KeyFiles, true), 1, "key", AppDefs.FileDialogContext.KeyFile);
+            if (saveFileDialog.ShowDialog() != DialogResult.OK) {
+                return;
+            }
+
+            try {
+                this.nextKey.WriteToXmlKeyFile(saveFileDialog.FileName);
+            }
+            catch (IOException e) {
+                MessageBox.Show("Failed to write key file: " + e, "IO Failure", MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+            
+            this.keyWasExported = true;
+            this.OnContentChanged();
         }
 
         private void ImportKey() {
+            var openFileDialog = UIUtil.CreateOpenFileDialog(KPRes.KeyFileSelect, UIUtil.CreateFileTypeFilter("key", KPRes.KeyFiles, true), 2, (string) null, false, AppDefs.FileDialogContext.KeyFile);
+            if (openFileDialog.ShowDialog() != DialogResult.OK) {
+                return;
+            }
+
+            if (!File.Exists(openFileDialog.FileName)) {
+                MessageBox.Show("File not found: " + openFileDialog.FileName, "File  not found", MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            this.nextKey = new ImportedKeyDataStore(openFileDialog.FileName);
+            this.keyWasExported = false;
+            
+            this.OnContentChanged();
         }
 
         private void RevertToActiveKey() {
+            if (this.activeDbKey == null) {
+                return;
+            }
+
+            this.nextKey = this.activeDbKey;
+            this.keyWasExported = false;
             
+            this.OnContentChanged();
         }
 
         private void GenerateRandomKey() {
-            this.nextKey = new RandomKeyDataStore();
+            var entropyForm = new EntropyForm();
+            var result = entropyForm.ShowDialog(this);
+            if (result != DialogResult.OK) {
+                return;
+            }
+            
+            this.nextKey = new RandomKeyDataStore(entropyForm.GeneratedEntropy);
             this.keyWasExported = false;
+            
+            this.OnContentChanged();
         }
 
         private KeyEncryptionRequest ShowDialogAndGenerateEncryptionRequest() {
@@ -145,15 +202,15 @@ namespace Episource.KeePass.EKF.UI {
         
         private string DescribeKeySource() {
             if (this.nextKey == this.activeDbKey) {
-                return "Key file of active database";
+                return "(Key file of active database)";
             } 
             if (this.nextKey is RandomKeyDataStore) {
-                return "Randomly generated key";
+                return "(Randomly generated key)";
             } 
             if (this.nextKey is ImportedKeyDataStore) {
-                return "Imported from user selected key file";
+                return ((ImportedKeyDataStore)this.nextKey).FileName;
             } 
-            return "Unknown key data";
+            return "(Unknown key data)";
         }
     }
 }
