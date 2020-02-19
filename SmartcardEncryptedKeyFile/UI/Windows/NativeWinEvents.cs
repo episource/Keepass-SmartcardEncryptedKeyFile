@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data.Linq.Mapping;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+// ReSharper disable InconsistentNaming
 
 namespace Episource.KeePass.EKF.UI.Windows {
     public sealed class NativeWinEvents : IDisposable {

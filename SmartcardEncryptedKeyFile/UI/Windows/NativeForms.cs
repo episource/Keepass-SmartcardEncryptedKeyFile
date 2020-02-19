@@ -5,8 +5,6 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-using Episource.KeePass.EKF.Crypto.Windows;
-
 namespace Episource.KeePass.EKF.UI.Windows {
     public static partial class NativeForms {
         

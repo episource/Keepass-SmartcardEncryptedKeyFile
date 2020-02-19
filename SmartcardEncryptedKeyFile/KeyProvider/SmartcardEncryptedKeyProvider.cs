@@ -1,8 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -17,8 +15,6 @@ using KeePass.Plugins;
 using KeePassLib.Keys;
 using KeePassLib.Serialization;
 using KeePassLib.Utility;
-
-using Microsoft.Win32.SafeHandles;
 
 namespace Episource.KeePass.Ekf.KeyProvider {
     

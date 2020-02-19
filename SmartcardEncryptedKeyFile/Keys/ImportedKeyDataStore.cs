@@ -1,6 +1,4 @@
 using System.IO;
-using System.Runtime.ConstrainedExecution;
-using System.Threading;
 
 using KeePassLib.Security;
 

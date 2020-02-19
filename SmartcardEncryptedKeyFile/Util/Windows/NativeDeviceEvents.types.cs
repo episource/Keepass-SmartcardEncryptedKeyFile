@@ -1,9 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
-using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Messaging;
 using System.Windows.Forms;
 
 namespace Episource.KeePass.EKF.Util.Windows {

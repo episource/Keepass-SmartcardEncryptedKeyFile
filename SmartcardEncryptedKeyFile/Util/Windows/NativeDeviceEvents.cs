@@ -1,9 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data.Linq.Mapping;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace Episource.KeePass.EKF.Util.Windows {
@@ -12,7 +7,7 @@ namespace Episource.KeePass.EKF.Util.Windows {
     /// </summary>
     public sealed partial class NativeDeviceEvents : IDisposable {
         
-        private readonly Guid UsbClassGuid = new Guid("A5DCBF10-6530-11D2-901F-00C04FB951ED");
+        private readonly Guid usbClassGuid = new Guid("A5DCBF10-6530-11D2-901F-00C04FB951ED");
        
         private readonly MessagePump receiver;
         private readonly IntPtr notificationHandle;
@@ -56,7 +51,7 @@ namespace Episource.KeePass.EKF.Util.Windows {
             if (interfaceArgs != null) {
                 RaiseEvent(this.AnyInterfaceEvent, interfaceArgs);
 
-                if (interfaceArgs.DeviceClassId == this.UsbClassGuid) {
+                if (interfaceArgs.DeviceClassId == this.usbClassGuid) {
                     RaiseEvent(this.UsbDeviceEvent, interfaceArgs);
                 }
             }

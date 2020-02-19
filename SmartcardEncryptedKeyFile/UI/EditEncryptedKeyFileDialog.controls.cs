@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 
 using Episource.KeePass.Ekf.KeyProvider;
 
@@ -13,9 +12,9 @@ using ContentAlignment = System.Drawing.ContentAlignment;
 
 namespace Episource.KeePass.EKF.UI {
     public partial class EditEncryptedKeyFileDialog : Form {
+        private const string noChangeCaption = "(none)";
         private readonly TableLayoutPanel layout = new TableLayoutPanel();
         private readonly CustomListViewEx keyListView = new CustomListViewEx();
-        private const string noChangeCaption = "(none)";
 
         private TextBox txtKeySource;
         

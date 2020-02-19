@@ -74,8 +74,8 @@ namespace Episource.KeePass.EKF.UI {
         
         #endregion
 
-        private const int GracefulAbortTimeoutMs = 100;
-        private const string DefaultDesktopName = "Default";
+        private const int gracefulAbortTimeoutMs = 100;
+        private const string defaultDesktopName = "Default";
         
         // A dedicated worker process pool is used:
         // - smartcard operations involve native code without support for cancellation; hence the process needs
@@ -85,7 +85,8 @@ namespace Episource.KeePass.EKF.UI {
         // - Worker limit is set to one, such that smartcard operations are not done in parallel.
         // - Unblocker creates the first worker process on first invocation only, therefore there's no need for
         // explicit lazy initialization
-        private static Unblocker smartcardWorker = new Unblocker(
+        // ReSharper disable once RedundantArgumentDefaultValue
+        private static readonly Unblocker smartcardWorker = new Unblocker(
             standbyDelay: TimeSpan.FromSeconds(500000), maxWorkers: 1, debug: DebugMode.None);
 
         // set via ReplaceRemainingHandles only
@@ -148,7 +149,7 @@ namespace Episource.KeePass.EKF.UI {
                     GetAndResetRemainingHandles());
                 
                 var cryptoTask = smartcardWorker.InvokeAsync(
-                    desktopBoundInvocation, cts.Token, TimeSpan.FromMilliseconds(GracefulAbortTimeoutMs),
+                    desktopBoundInvocation, cts.Token, TimeSpan.FromMilliseconds(gracefulAbortTimeoutMs),
                     ForcedCancellationMode.CleanupBeforeCancellation, workerProcessRef: pRef);
                 using (var cryptoProcessWinEvents = new NativeWinEvents(pRef.WorkerProcess)) {
                     var uiCentered = false;
@@ -204,6 +205,8 @@ namespace Episource.KeePass.EKF.UI {
             do {
                 currentRemainingHandles = remainingDesktopHandles;
                 nextRemainingHandles = new HashSet<IntPtr>(currentRemainingHandles);
+                
+                // ReSharper disable once PossibleMultipleEnumeration
                 foreach (var handle in newRemainingHandles) {
                     nextRemainingHandles.Add(handle);
                 }
@@ -236,7 +239,7 @@ namespace Episource.KeePass.EKF.UI {
             var result = new WorkerResult();
 
             try {
-                if (desktop != null && desktop != DefaultDesktopName ) {
+                if (desktop != null && desktop != defaultDesktopName ) {
                     currentDesktopHandle = NativeForms.GetCurrentThreadDesktop();
                     var secureDesktopHandle = NativeForms.OpenDesktop(desktop);
 

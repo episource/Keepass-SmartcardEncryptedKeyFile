@@ -1,8 +1,9 @@
 using System;
-using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Messaging;
 using System.Windows.Forms;
+// ReSharper disable UnusedMember.Local
+// ReSharper disable MemberCanBePrivate.Local
 
 namespace Episource.KeePass.EKF.Util.Windows {
     // this file contains all functionality and types specific to pinvoke
@@ -21,8 +22,9 @@ namespace Episource.KeePass.EKF.Util.Windows {
         // forces name to be empty when marshalling .net->native
         // retrieves only first char when marshalling native->.net
         [StructLayout(LayoutKind.Sequential)]
-        // ReSharper disable once InconsistentNaming
-        // ReSharper disable once IdentifierTypo
+        [SuppressMessage("ReSharper", "InconsistentNaming")]
+        [SuppressMessage("ReSharper", "IdentifierTypo")]
+        [SuppressMessage("ReSharper", "PrivateFieldCanBeConvertedToLocalVariable")]
         private struct DEV_BROADCAST_DEVICEINTERFACE_NO_NAME {
             // ReSharper disable once IdentifierTypo
             public DEV_BROADCAST_DEVICEINTERFACE_NO_NAME(Guid classGuid) {
@@ -33,11 +35,11 @@ namespace Episource.KeePass.EKF.Util.Windows {
                 this.dbcc_name = 0;
             }
 
-            public uint dbcc_size;
-            public uint dbcc_devicetype;
-            public uint dbcc_reserved;
-            public Guid dbcc_classguid;
-            private short dbcc_name;
+            public readonly uint dbcc_size;
+            public readonly uint dbcc_devicetype;
+            public readonly uint dbcc_reserved;
+            public readonly Guid dbcc_classguid;
+            private readonly short dbcc_name;
         }
 
         // https://docs.microsoft.com/de-de/windows/win32/api/winuser/nf-winuser-registerdevicenotificationa?redirectedfrom=MSDN
@@ -105,6 +107,7 @@ namespace Episource.KeePass.EKF.Util.Windows {
             }
         }
 
+        // ReSharper disable once UnusedParameter.Local
         private static InterfaceDeviceEventArgs ExtractInterfaceDeviceEventArgs(
             DEV_BROADCAST_HDR header, NotificationReason reason, IntPtr lParam) {
             var interfaceDeviceInfo = Marshal.PtrToStructure<DEV_BROADCAST_DEVICEINTERFACE_NO_NAME>(lParam);

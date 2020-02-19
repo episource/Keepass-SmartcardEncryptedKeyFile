@@ -7,6 +7,7 @@ using Microsoft.Win32.SafeHandles;
 // ReSharper disable InconsistentNaming
 // ReSharper disable IdentifierTypo
 // ReSharper disable MemberCanBePrivate.Local
+// ReSharper disable UnusedMember.Local
 
 namespace Episource.KeePass.EKF.Util.Windows {
     public static partial class NativeDevice {
@@ -230,7 +231,7 @@ namespace Episource.KeePass.EKF.Util.Windows {
         private sealed class BoundDeviceInfoHandle : SafeHandleZeroOrMinusOneIsInvalid {
             private readonly SP_DEVINFO_DATA handleData = SP_DEVINFO_DATA.DEFAULT;
             private readonly DeviceInfoListHandle listHandle;
-            private readonly GCHandle pinnedGcHandle;
+            private GCHandle pinnedGcHandle;
             private bool isPinned;
 
             public BoundDeviceInfoHandle(DeviceInfoListHandle listHandle) : base(true) {
@@ -302,6 +303,7 @@ namespace Episource.KeePass.EKF.Util.Windows {
             var deviceInfoHandle = new BoundDeviceInfoHandle(deviceInfoSet);
             try {
                 PinvokeUtil.DoPinvokeWithException(
+                    // ReSharper disable once AccessToDisposedClosure
                     () => NativeDevicePinvoke.SetupDiOpenDeviceInterface(deviceInfoSet, dbccName,
                         OpenDeviceInterfaceFlags.NONE, deviceInfoHandle));
             }
@@ -321,6 +323,7 @@ namespace Episource.KeePass.EKF.Util.Windows {
         
             var boundHandle = new BoundDeviceInfoHandle(deviceInfoSet);
             try {
+                // ReSharper disable once AccessToDisposedClosure
                 var success = PinvokeUtil.DoPinvokeWithException(
                     () => NativeDevicePinvoke.SetupDiEnumDeviceInfo(deviceInfoSet, memberIndex, boundHandle),
                     res => res || Marshal.GetLastWin32Error() == ERROR_NO_MORE_ITEMS);
@@ -348,7 +351,6 @@ namespace Episource.KeePass.EKF.Util.Windows {
             //https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
             const int ERROR_INVALID_DATA = 13;
             const int ERROR_INSUFFICIENT_BUFFER = 122;
-            Func<bool, bool> isGoodPredicate = res => res || Marshal.GetLastWin32Error() == ERROR_INVALID_DATA;
 
             uint dataType = 0;
             uint requiredSize = 0;

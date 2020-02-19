@@ -1,23 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.ExceptionServices;
-using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using episource.unblocker;
-using episource.unblocker.hosting;
-
 using Episource.KeePass.EKF.Crypto;
-using Episource.KeePass.EKF.UI.Windows;
-using Episource.KeePass.EKF.Util;
 using Episource.KeePass.EKF.Util.Windows;
 
 using KeePass.UI;
@@ -27,8 +14,8 @@ using Timer = System.Windows.Forms.Timer;
 namespace Episource.KeePass.EKF.UI {
     public sealed class SmartcardRequiredDialog : Form {
 
-        private const string StateConnected = "connected";
-        private const string StateNotConnected = "not connected";
+        private const string stateConnected = "connected";
+        private const string stateNotConnected = "not connected";
         
         private bool loaded = false;
 
@@ -66,6 +53,7 @@ namespace Episource.KeePass.EKF.UI {
 
             return dialog.keyListView.CheckedItems.Cast<ListViewItem>()
                          .Select(i => i.Tag as KeyPairModel)
+                         // ReSharper disable once PossibleNullReferenceException
                          .Select(m => m.KeyPair).First();
         }
         
@@ -133,12 +121,6 @@ namespace Episource.KeePass.EKF.UI {
             titleText.Font = new Font(titleText.Font, FontStyle.Bold);
             this.layout.Controls.Add(titleText, 1, 0);
 
-            var msgText = new Label {
-                MaximumSize = maxLabelSize,
-                Text =
-                    "This dialog will not show up if exactly one authorized smartcard is connected to the host.",
-                AutoSize = true
-            };
             this.InitializeKeyList();
 
             var layoutBtn = new TableLayoutPanel {
@@ -259,8 +241,8 @@ namespace Episource.KeePass.EKF.UI {
             
             // Add every possible state value for proper sizing
             // Dummy items will be deleted after size has been calculated (form load event)
-            this.keyListView.Items.Add(StateConnected);
-            this.keyListView.Items.Add(StateNotConnected);
+            this.keyListView.Items.Add(stateConnected);
+            this.keyListView.Items.Add(stateNotConnected);
             
             // prevent changing column width
             this.keyListView.ColumnWidthChanging += (sender, args) => {
@@ -359,9 +341,9 @@ namespace Episource.KeePass.EKF.UI {
                                       .Select(g => g.First())) {
 
                     var cert = kpm.KeyPair.Certificate;
-                    var stateText = StateNotConnected;
+                    var stateText = stateNotConnected;
                     if (kpm.KeyPair.IsReadyForDecrypt) {
-                        stateText = StateConnected;
+                        stateText = stateConnected;
                     }
 
                     var item = new ListViewItem(stateText);
@@ -430,7 +412,6 @@ namespace Episource.KeePass.EKF.UI {
                         return;
                     }
                     
-                    var startTimerIfNeeded = new Action(() => { });
                     if (this.InvokeRequired) {
                         this.Invoke((MethodInvoker)(() => RestartFormsTimer(this.refreshDelayTimer)));
                     }

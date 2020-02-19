@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using System.Xml;
 
 using Episource.KeePass.Ekf.KeyProvider;
 using Episource.KeePass.EKF.Crypto;
@@ -15,7 +14,6 @@ using KeePass.UI;
 
 using KeePassLib.Keys;
 using KeePassLib.Serialization;
-using KeePassLib.Utility;
 
 namespace Episource.KeePass.EKF.UI {
     public partial class EditEncryptedKeyFileDialog {
@@ -100,7 +98,7 @@ namespace Episource.KeePass.EKF.UI {
         }
 
         private void ImportKey() {
-            var openFileDialog = UIUtil.CreateOpenFileDialog(KPRes.KeyFileSelect, UIUtil.CreateFileTypeFilter("key", KPRes.KeyFiles, true), 2, (string) null, false, AppDefs.FileDialogContext.KeyFile);
+            var openFileDialog = UIUtil.CreateOpenFileDialog(KPRes.KeyFileSelect, UIUtil.CreateFileTypeFilter("key", KPRes.KeyFiles, true), 2, null, false, AppDefs.FileDialogContext.KeyFile);
             if (openFileDialog.ShowDialog() != DialogResult.OK) {
                 return;
             }

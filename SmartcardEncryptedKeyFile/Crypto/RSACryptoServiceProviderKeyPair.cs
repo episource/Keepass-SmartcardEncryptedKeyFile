@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.Remoting.Messaging;
 using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -11,6 +10,7 @@ namespace Episource.KeePass.EKF.Crypto {
     /// Gives access to RSA smart cards that are compatible with the windows crypto service provider framework.
     /// </summary>
     [Serializable]
+    // ReSharper disable once InconsistentNaming
     public class RSACryptoServiceProviderKeyPair : IKeyPair {
 
         private readonly X509Certificate2 cert;

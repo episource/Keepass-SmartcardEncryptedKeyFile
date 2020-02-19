@@ -6,6 +6,7 @@ namespace Episource.KeePass.EKF.UI {
     public class KeyPairModel {
         public enum KeyProvider {
             Piv,
+            // ReSharper disable once InconsistentNaming
             OpenPGP,
             HbciRdhCard,
             EkfAuthorizationList

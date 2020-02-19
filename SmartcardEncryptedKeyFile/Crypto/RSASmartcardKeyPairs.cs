@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Episource.KeePass.EKF.Crypto {
+    // ReSharper disable once InconsistentNaming
     public static class RSASmartcardKeyPairs {       
         /// <summary>
         /// Gets all encryption key pairs backed by smartcards implementing the PIV (personal identity verification)

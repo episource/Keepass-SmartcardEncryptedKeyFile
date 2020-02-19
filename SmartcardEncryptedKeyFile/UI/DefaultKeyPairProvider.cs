@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Input;
 
 using Episource.KeePass.Ekf.KeyProvider;
 using Episource.KeePass.EKF.Crypto;

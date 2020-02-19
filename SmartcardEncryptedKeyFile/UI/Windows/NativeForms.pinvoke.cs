@@ -1,6 +1,10 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+// ReSharper disable InconsistentNaming
+// ReSharper disable UnusedMember.Local
+// ReSharper disable IdentifierTypo
 
 namespace Episource.KeePass.EKF.UI.Windows {
     public static partial class NativeForms {
@@ -39,6 +43,7 @@ namespace Episource.KeePass.EKF.UI.Windows {
             public int Bottom;
         }
 
+        [SuppressMessage("ReSharper", "MemberHidesStaticFromOuterClass")]
         private static class NativeFormsPinvoke {
 
             [DllImport("user32.dll", CharSet = CharSet.Auto)]

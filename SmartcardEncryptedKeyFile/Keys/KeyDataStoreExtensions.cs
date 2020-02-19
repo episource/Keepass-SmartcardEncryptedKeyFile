@@ -3,8 +3,6 @@ using System.IO;
 using System.Text;
 using System.Xml;
 
-using KeePassLib.Utility;
-
 namespace Episource.KeePass.EKF.Keys {
     public static class KeyDataStoreExtensions {
         public static void WriteToXmlKeyFile(this IKeyDataStore keyData, string filePath) {
