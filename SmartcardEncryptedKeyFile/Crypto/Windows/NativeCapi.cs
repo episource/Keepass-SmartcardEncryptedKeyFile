@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -6,7 +7,7 @@ using System.Security.Cryptography.X509Certificates;
 // ReSharper disable EnumUnderlyingTypeIsInt
 
 namespace Episource.KeePass.EKF.Crypto.Windows {
-    public sealed class NativeCapi {
+    public static class NativeCapi {
         /// <summary>
         /// Subset of crypt32 certificate context property id.
         /// Reference: https://github.com/Alexpux/mingw-w64/blob/master/mingw-w64-headers/include/wincrypt.h
@@ -43,6 +44,8 @@ namespace Episource.KeePass.EKF.Crypto.Windows {
         /// Reference: https://docs.microsoft.com/de-de/windows/desktop/api/wincrypt/ns-wincrypt-_crypt_key_prov_info
         /// </summary>
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        [SuppressMessage("ReSharper", "FieldCanBeMadeReadOnly.Local")]
+        [SuppressMessage("ReSharper", "MemberCanBePrivate.Local")]
         private struct CRYPT_KEY_PROV_INFO
         {
             [MarshalAs(UnmanagedType.LPWStr)]
