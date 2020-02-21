@@ -102,7 +102,7 @@ Basic setup is possible using graphical tools only. Yubico default configuration
 
 Advanced setup requires using command line tools provided by yubico. Compared with basic setup, advanced configuration permits more variants for unlocking the YubiKey (pin-policy, touch-policy). E.g. the token can be configured for unlocking with PIN+button press, only button, and more. Yubico provides [an outdated pdf guide][7] to the YubiKey PIV Tool, that gives a good overview over available configuration options. Most recent information is available from [source code of the piv tool][8].
 
-Below are example commands to replace the certificate in slot 9a with a newly created self-signed certificate and custom unlock configuration (pin-policy, touch-policy). 
+Below are example commands to replace the certificate in slot 9a with a newly created self-signed certificate and custom unlock configuration (pin-policy, touch-policy). Note however, that pin-policy is currently not honored by windows builtin drivers and yubikey's minidriver. Pin will always be asked when performing the first private key operation. Touch-operations are fully supported, though.
 
 1. Delete existing key pair and securely create new one (private key exclusively stored inside hardware)
    <br/>`$ yubico-piv-tool.exe -s9a -k -adelete-certificate -agenerate --pin-policy=<pin-policy> --touch-policy=<touch-policy> --output=c:\temp\yubi_pub.tmp`
@@ -113,8 +113,10 @@ Below are example commands to replace the certificate in slot 9a with a newly cr
    <br/>`$ yubico-piv-tool.exe -s9a -averify -aselfsign-certificate -S"<subject>" --valid-days=<valid-days> --input=c:\temp\yubi_pub.tmp --output=c:\temp\yubi_cert.tmp`
    <br/>`subject` is a distinguished name following x.509 certificate rules. OSF-Syntax (`/` is separator) can be used. E.g.:  `/CN=YourName/DC=domain/DC=example/DC=com/L=Yubikey#42424242` (replace with apropriate values, such as your name, domain and serial number of your YubiKey)
    <br/>`valid-days` controls validity of the certificate. E.g. `18250` is roughly equal to 50 years.
+   <br/>Note: This step must be confirmed by pressing the YubiKey button when it starts blinking!
 3. Import certificate into YubiKey and renew chuid (required for windows to pick up the new certificate)
   <br/>`$ yubico-piv-tool.exe -k -s9a  -aimport-certificate --input=c:\temp\yubi_cert.tmp -aset-chuid -astatus`
+4. Disconnect and reconnect YubiKey
   
 # Build
 This project is best built using JetBrains Rider, but plain msbuild or Visual Studio should work as well. For debug builds, only the plugin dll is built. When using release configuration, a [plgx plugin file][9] with improved compatibility is built as well. Pre-built `plgx` builds are available as github releases.
