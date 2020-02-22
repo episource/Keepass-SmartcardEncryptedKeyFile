@@ -1,0 +1,167 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true"></xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>1.3</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="KeyPairModel.KeyProvider.Piv" xml:space="preserve">
+    <value>PIV / Windows</value>
+  </data>
+  <data name="KeyPairModel.UnknownKeyProvider" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="KeyPairModel.KeyProvider.OpenPGP" xml:space="preserve">
+    <value>OpenPGP Card</value>
+  </data>
+  <data name="KeyPairModel.KeyProvider.HbciRdhCard" xml:space="preserve">
+    <value>HBCI / RDH Card</value>
+  </data>
+  <data name="KeyPairModel.KeyProvider.EkfAuthorizationList" xml:space="preserve">
+    <value>Unknown / EKF</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.KeySourceActiveDb" xml:space="preserve">
+    <value>(Key file of active database)</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.KeySourceRandom" xml:space="preserve">
+    <value>(Randomly generated key)</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.KeySourceImported" xml:space="preserve">
+    <value>{0}</value>
+    <comment>{0} is path of key file</comment>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.KeySourceUnknown" xml:space="preserve">
+    <value>(Unknown key data)</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ValidationMessageKeyNeedsExport" xml:space="preserve">
+    <value>Key must be exported before use. Please store safely.</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ValidationMessageSelectSmartcard" xml:space="preserve">
+    <value>Please select at least one smart card.</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ValidationMessageNoSmartcard" xml:space="preserve">
+    <value>No smartcard found.</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.DialogTextFailureExportingKey" xml:space="preserve">
+    <value>Failed to write key file:  {0}</value>
+    <comment>{0} is exception as string, {1} is exception message, {2} is path or file name</comment>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.DialogTitleFailureExportingKey" xml:space="preserve">
+    <value>IO Failure</value>
+    
+  </data>
+  <data name="EdidEncryptedKeyFileDialog.DialogTextFileNotFound" xml:space="preserve">
+    <value>File not found: {0}</value>
+    <comment>{0} is path or file name</comment>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.DialogTitleFileNotFound" xml:space="preserve">
+    <value>File  not found</value>
+    
+  </data>
+  <data name="EditEncryptedKeyFileDialog.LabelDatabase" xml:space="preserve">
+    <value>Database:</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.KeyActionNoChange" xml:space="preserve">
+    <value>(none)</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.LabelKeySource" xml:space="preserve">
+    <value>Key Source:</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ButtonExport" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ButtonSelectActiveDbKeyFile" xml:space="preserve">
+    <value>Select active key file</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ButtonGenerateRandomKey" xml:space="preserve">
+    <value>Generate random key</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ButtonImportKey" xml:space="preserve">
+    <value>Import key file</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.KeyActionAuthorize" xml:space="preserve">
+    <value>add</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.KeyActionUnauthorize" xml:space="preserve">
+    <value>remove</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ColumnChange" xml:space="preserve">
+    <value>☑ Change</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ColumnSubject" xml:space="preserve">
+    <value>Subject</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ColumnSerial" xml:space="preserve">
+    <value>Serial#</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.ColumnProvider" xml:space="preserve">
+    <value>Provider</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.LabelThumbprint" xml:space="preserve">
+    <value>Thumbprint: {0}</value>
+    <comment>{0} is thumbprint</comment>
+  </data>
+  <data name="SmartcardOperationDialog.DialogTitle" xml:space="preserve">
+    <value>Waiting for smartcard...</value>
+  </data>
+  <data name="SmartcardOperationDialog.DialogHeading" xml:space="preserve">
+    <value>Please unlock your smartcard.</value>
+  </data>
+  <data name="SmartcardOperationDialog.DialogText" xml:space="preserve">
+    <value>Among others, this may require entering a PIN or pressing a button. Details depend on the type of smartcard and reader you are using.</value>
+  </data>
+  <data name="SmartcardRequiredDialog.DialogTitle" xml:space="preserve">
+    <value>Smartcard required</value>
+  </data>
+  <data name="SmartcardRequiredDialog.KeyStateConnected" xml:space="preserve">
+    <value>connected</value>
+  </data>
+  <data name="SmartcardRequiredDialog.KeyStateNotConnected" xml:space="preserve">
+    <value>not connected</value>
+  </data>
+  <data name="SmartcardRequiredDialog.DialogText" xml:space="preserve">
+    <value>Please insert and select a smartcard from the list below.</value>
+  </data>
+  <data name="AnyUI.ButtonOK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="AnyUI.ButtonCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="AnyUI.ButtonAbort" xml:space="preserve">
+    <value>Abort</value>
+  </data>
+  <data name="SmartcardRequiredDialog.ColumnReady" xml:space="preserve">
+    <value>☑ Ready</value>
+  </data>
+  <data name="SmartcardRequiredDialog.ColumnSubject" xml:space="preserve">
+    <value>Subject</value>
+  </data>
+  <data name="SmartcardRequiredDialog.ColumnSerial" xml:space="preserve">
+    <value>Serial#</value>
+  </data>
+  <data name="SmartcardRequiredDialog.ColumnProvider" xml:space="preserve">
+    <value>Provider</value>
+  </data>
+  <data name="SmartcardRequiredDialog.LabelThumbprint" xml:space="preserve">
+    <value>Thumbprint: {0}</value>
+    <comment>{0} is thumbprint</comment>
+  </data>
+  <data name="SmartcardEncryptedKeyProvider.ButtonEditKeyFile" xml:space="preserve">
+    <value>Edit Encrypted Key File</value>
+  </data>
+  <data name="SmartcardEncryptedKeyProvider.DialogTextEkfNotFound" xml:space="preserve">
+    <value>Failed to locate encrypted key file. Are you sure, this KeePass database has been setup for use with the {0}?</value>
+    <comment>{0} is the provider name</comment>
+  </data>
+</root>

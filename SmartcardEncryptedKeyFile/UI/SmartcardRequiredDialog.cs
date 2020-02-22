@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Forms;
 
 using Episource.KeePass.EKF.Crypto;
+using Episource.KeePass.EKF.Resources;
 using Episource.KeePass.EKF.Util.Windows;
 
 using KeePass.UI;
@@ -13,10 +14,9 @@ using Timer = System.Windows.Forms.Timer;
 
 namespace Episource.KeePass.EKF.UI {
     public sealed class SmartcardRequiredDialog : Form {
+        private static readonly string stateConnected = Strings.SmartcardRequiredDialog_KeyStateConnected;
+        private static readonly string stateNotConnected = Strings.SmartcardRequiredDialog_KeyStateNotConnected;
 
-        private const string stateConnected = "connected";
-        private const string stateNotConnected = "not connected";
-        
         private bool loaded = false;
 
         private readonly TableLayoutPanel layout = new TableLayoutPanel();
@@ -81,7 +81,7 @@ namespace Episource.KeePass.EKF.UI {
             this.AutoScaleDimensions = UIConstants.AutoScaleDimensions;
             this.Padding = new Padding(12);
 
-            this.Text = "Smartcard required";
+            this.Text = Strings.SmartcardRequiredDialog_DialogTitle;
 
             this.MinimizeBox = false;
             this.MaximizeBox = false;
@@ -115,7 +115,7 @@ namespace Episource.KeePass.EKF.UI {
             var maxLabelSize = new Size(350, 0);
             var titleText = new Label {
                 MaximumSize = maxLabelSize,
-                Text = "Please insert and select a smartcard from the list below.",
+                Text = Strings.SmartcardRequiredDialog_DialogText,
                 AutoSize = true,
             };
             titleText.Font = new Font(titleText.Font, FontStyle.Bold);
@@ -140,7 +140,7 @@ namespace Episource.KeePass.EKF.UI {
             this.layout.Controls.Add(layoutBtn, 0, 2);
             this.layout.SetColumnSpan(layoutBtn, this.layout.ColumnCount);
             this.btnOk = new Button {
-                Text = "OK",
+                Text = Strings.AnyUI_ButtonOK,
                 DialogResult = DialogResult.OK,
                 Height = UIConstants.DefaultButtonHeight,
                 Width = UIConstants.DefaultButtonWidth,
@@ -151,7 +151,7 @@ namespace Episource.KeePass.EKF.UI {
             };
             layoutBtn.Controls.Add(this.btnOk, 0, 0);
             var btnCancel = new Button {
-                Text = "Cancel",
+                Text = Strings.AnyUI_ButtonCancel,
                 DialogResult = DialogResult.Cancel,
                 Height = UIConstants.DefaultButtonHeight,
                 Width = UIConstants.DefaultButtonWidth,
@@ -226,15 +226,15 @@ namespace Episource.KeePass.EKF.UI {
 
             this.redrawAfterScrollDelayTimer.Tick += (sender, args) => {
                 this.redrawAfterScrollDelayTimer.Stop();
-                Console.WriteLine("Invalidate");
                 this.keyListView.Invalidate();
             };
             
             // width "-2" -> auto size respecting header width
-            this.keyListView.Columns.Add("☑ Ready", -2);
-            this.keyListView.Columns.Add("Subject", -2);
-            this.keyListView.Columns.Add("Serial#", -2);
-            this.keyListView.Columns.Add("Provider", -2);
+            const int autoSizeHeader = -2;
+            this.keyListView.Columns.Add(Strings.SmartcardRequiredDialog_ColumnReady, autoSizeHeader);
+            this.keyListView.Columns.Add(Strings.SmartcardRequiredDialog_ColumnSubject, autoSizeHeader);
+            this.keyListView.Columns.Add(Strings.SmartcardRequiredDialog_ColumnSerial, autoSizeHeader);
+            this.keyListView.Columns.Add(Strings.SmartcardRequiredDialog_ColumnProvider, autoSizeHeader);
 
             UIUtil.SetExplorerTheme(this.keyListView, false);
             this.layout.Controls.Add(this.keyListView, 1, 1);
@@ -352,7 +352,7 @@ namespace Episource.KeePass.EKF.UI {
                     item.SubItems.Add(cert.Subject);
                     item.SubItems.Add(cert.SerialNumber);
                     item.SubItems.Add(kpm.Provider.ToString());
-                    item.ToolTipText = "Thumbprint: " + cert.Thumbprint;
+                    item.ToolTipText = string.Format(Strings.Culture, Strings.SmartcardRequiredDialog_LabelThumbprint, cert.Thumbprint);
                     this.keyListView.Items.Add(item);
 
                     if (kpm.KeyPair.IsReadyForDecrypt) {

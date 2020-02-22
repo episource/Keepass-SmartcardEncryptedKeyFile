@@ -10,6 +10,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using Episource.KeePass.EKF.Resources;
+
 using episource.unblocker;
 using episource.unblocker.hosting;
 
@@ -315,7 +317,7 @@ namespace Episource.KeePass.EKF.UI {
             this.AutoScaleDimensions = UIConstants.AutoScaleDimensions;
             this.Padding = new Padding(12);
 
-            this.Text = "Waiting for smartcard...";
+            this.Text = Strings.SmartcardOperationDialog_DialogTitle;
 
             this.MinimizeBox = false;
             this.MaximizeBox = false;
@@ -347,7 +349,7 @@ namespace Episource.KeePass.EKF.UI {
             var maxLabelSize = new Size(300, 0);
             var titleText = new Label {
                 MaximumSize = maxLabelSize,
-                Text = "Please unlock your smartcard.",
+                Text = Strings.SmartcardOperationDialog_DialogHeading,
                 AutoSize = true,
             };
             titleText.Font = new Font(titleText.Font, FontStyle.Bold);
@@ -355,14 +357,13 @@ namespace Episource.KeePass.EKF.UI {
 
             var msgText = new Label {
                 MaximumSize = maxLabelSize,
-                Text =
-                    "Among others, this may require entering a PIN or pressing a button. Details depend on the type of smartcard and reader you are using.",
+                Text = Strings.SmartcardOperationDialog_DialogText,
                 AutoSize = true
             };
             this.layout.Controls.Add(msgText, 1, 1);
 
             var btnAbort = new Button {
-                Text = "Abort",
+                Text = Strings.AnyUI_ButtonAbort,
                 DialogResult = DialogResult.Abort,
                 Height = UIConstants.DefaultButtonHeight,
                 Width = UIConstants.DefaultButtonWidth,

@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using episource.unblocker.hosting;
 
 using Episource.KeePass.EKF.Crypto;
+using Episource.KeePass.EKF.Resources;
 using Episource.KeePass.EKF.UI;
 
 using KeePass.Plugins;
@@ -31,7 +32,7 @@ namespace Episource.KeePass.Ekf.KeyProvider {
             
             this.pluginHost = pluginHost;
             
-            var editMenu = new ToolStripMenuItem("Edit Encrypted Key File");
+            var editMenu = new ToolStripMenuItem(Strings.SmartcardEncryptedKeyProvider_ButtonEditKeyFile);
             editMenu.Enabled = false;
             editMenu.Click += (sender, args) => this.EditEkf();
             this.pluginHost.MainWindow.ToolsMenu.DropDownItems.Add(editMenu);
@@ -46,9 +47,8 @@ namespace Episource.KeePass.Ekf.KeyProvider {
                 plainKey = ctx.CreatingNewKey ? this.CreateNewKey(ctx) : DecryptEncryptedKeyFile(ctx);
             }
             catch (FileNotFoundException) {
-                MessageBox.Show(
-                    "Failed to locate encrypted key file. Are you sure, this KeePass database has been setup for use with the " +
-                    ProviderName  + "?", ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextEkfNotFound, ProviderName),
+                    ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return null;
             }
             

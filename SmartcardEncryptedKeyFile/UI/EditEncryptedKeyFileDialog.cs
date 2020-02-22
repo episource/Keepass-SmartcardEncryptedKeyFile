@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using Episource.KeePass.Ekf.KeyProvider;
 using Episource.KeePass.EKF.Crypto;
 using Episource.KeePass.EKF.Keys;
+using Episource.KeePass.EKF.Resources;
 
 using KeePass.App;
 using KeePass.Forms;
@@ -38,7 +39,7 @@ namespace Episource.KeePass.EKF.UI {
             foreach (var keyPair in authCandidates.GetAvailableKeyPairs()) {
                 if (!this.AddKeyIfNew(keyPair)) {
                     throw new ArgumentException(
-                        "Duplicated key pair: " + keyPair.KeyPair.Certificate.Thumbprint,
+                        @"Duplicated key pair: " + keyPair.KeyPair.Certificate.Thumbprint,
                         "authCandidates");
                 }
             }
@@ -66,7 +67,7 @@ namespace Episource.KeePass.EKF.UI {
             if (!(keyFile is KcpKeyFile)) {
                 var customKey = keyFile as KcpCustomKey;
                 if (customKey == null || customKey.Name != SmartcardEncryptedKeyProvider.ProviderName) {
-                    throw new ArgumentException("Unsupported existing key type", "keyFile"); 
+                    throw new ArgumentException(@"Unsupported existing key type", "keyFile"); 
                 }
             }
             
@@ -88,8 +89,9 @@ namespace Episource.KeePass.EKF.UI {
                 this.nextKey.WriteToXmlKeyFile(saveFileDialog.FileName);
             }
             catch (IOException e) {
-                MessageBox.Show("Failed to write key file: " + e, "IO Failure", MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFailureExportingKey, e, e.Message, saveFileDialog.FileName),
+                    Strings.EditEncryptedKeyFileDialog_DialogTitleFailureExportingKey, 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             
@@ -104,8 +106,9 @@ namespace Episource.KeePass.EKF.UI {
             }
 
             if (!File.Exists(openFileDialog.FileName)) {
-                MessageBox.Show("File not found: " + openFileDialog.FileName, "File  not found", MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
+                MessageBox.Show(string.Format(Strings.Culture, Strings.EdidEncryptedKeyFileDialog_DialogTextFileNotFound, openFileDialog.FileName),
+                    Strings.EditEncryptedKeyFileDialog_DialogTitleFileNotFound,
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -163,52 +166,41 @@ namespace Episource.KeePass.EKF.UI {
 
         private bool ValidateInput() {
             if (this.keyList.Count == 0) {
-                this.ShowValidationError("No smartcard found.");
+                this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageNoSmartcard);
                 return false;
             }
 
             var requiresExport = this.nextKey is RandomKeyDataStore && !this.keyWasExported;
             if (requiresExport) {
-                this.ShowValidationError("Key must be exported before use. Please store safely.");
+                this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageKeyNeedsExport);
                 return false;
             }
 
             var anyKeySelected =
                 this.keyList.Any(x => x.Value.NextAuthorization == KeyPairModel.Authorization.Authorized);
             if (!anyKeySelected) {
-                this.ShowValidationError("Please select at least one smart card.");
+                this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageSelectSmartcard);
                 return false;
             }
 
             return true;
         }
 
-        private string DescribeKeyProvider(KeyPairModel.KeyProvider keySource) {
-            switch (keySource) {
-                case KeyPairModel.KeyProvider.Piv:
-                    return "PIV / Windows";
-                case KeyPairModel.KeyProvider.OpenPGP:
-                    return "OpenPGP Card";
-                case KeyPairModel.KeyProvider.HbciRdhCard:
-                    return "HBCI / RDH Card";
-                case KeyPairModel.KeyProvider.EkfAuthorizationList:
-                    return "unknown / EKF";
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-        
         private string DescribeKeySource() {
             if (this.nextKey == this.activeDbKey) {
-                return "(Key file of active database)";
+                return Strings.EditEncryptedKeyFileDialog_KeySourceActiveDb;
             } 
             if (this.nextKey is RandomKeyDataStore) {
-                return "(Randomly generated key)";
-            } 
-            if (this.nextKey is ImportedKeyDataStore) {
-                return ((ImportedKeyDataStore)this.nextKey).FileName;
-            } 
-            return "(Unknown key data)";
+                return Strings.EditEncryptedKeyFileDialog_KeySourceRandom;
+            }
+
+            var importedKey = this.nextKey as ImportedKeyDataStore;
+            if (importedKey != null) {
+                return string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_KeySourceImported,
+                    importedKey.FileName);
+            }
+            
+            return Strings.EditEncryptedKeyFileDialog_KeySourceUnknown;
         }
     }
 }

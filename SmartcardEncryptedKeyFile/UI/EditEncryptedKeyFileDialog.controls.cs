@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Forms;
 
 using Episource.KeePass.Ekf.KeyProvider;
+using Episource.KeePass.EKF.Resources;
 
 using KeePass.UI;
 
@@ -12,7 +13,7 @@ using ContentAlignment = System.Drawing.ContentAlignment;
 
 namespace Episource.KeePass.EKF.UI {
     public partial class EditEncryptedKeyFileDialog : Form {
-        private const string noChangeCaption = "(none)";
+        private static readonly string noChangeCaption = Strings.EditEncryptedKeyFileDialog_KeyActionNoChange;
         private readonly TableLayoutPanel layout = new TableLayoutPanel();
         private readonly CustomListViewEx keyListView = new CustomListViewEx();
 
@@ -65,7 +66,7 @@ namespace Episource.KeePass.EKF.UI {
 
         private void InitializeTopBar() {
             var lblDb = new Label {
-                Text = "Database:",
+                Text = Strings.EditEncryptedKeyFileDialog_LabelDatabase,
                 AutoSize = true,
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Bottom,
                 TextAlign = ContentAlignment.MiddleLeft
@@ -83,7 +84,7 @@ namespace Episource.KeePass.EKF.UI {
             this.layout.SetColumnSpan(txtDb, value: 3);
 
             var lblKeySource = new Label {
-                Text = "Key Source:",
+                Text = Strings.EditEncryptedKeyFileDialog_LabelKeySource,
                 AutoSize = true,
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Bottom,
                 TextAlign = ContentAlignment.MiddleLeft
@@ -102,7 +103,7 @@ namespace Episource.KeePass.EKF.UI {
 
             // TODO: SplitButtonEx currently supports windows only! DropDown not shown on other platforms.
             var btnExport = new SplitButtonEx {
-                Text = "Export",
+                Text = Strings.EditEncryptedKeyFileDialog_ButtonExport,
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowOnly,
                 Height = UIConstants.DefaultButtonHeight,
@@ -112,17 +113,17 @@ namespace Episource.KeePass.EKF.UI {
             };
             btnExport.Click += (sender, args) => this.ExportKey();
             
-            var btnActiveKey = new ToolStripMenuItem("Select active key file");
+            var btnActiveKey = new ToolStripMenuItem(Strings.EditEncryptedKeyFileDialog_ButtonSelectActiveDbKeyFile);
             btnActiveKey.Enabled = this.permitNewKey && this.activeDbKey != null;
             btnActiveKey.Click += (sender, args) => this.RevertToActiveKey();
             btnExport.SplitDropDownMenu.Items.Add(btnActiveKey);
             
-            var btnRandomKey = new ToolStripMenuItem("Generate random key");
+            var btnRandomKey = new ToolStripMenuItem(Strings.EditEncryptedKeyFileDialog_ButtonGenerateRandomKey);
             btnRandomKey.Enabled = this.permitNewKey;
             btnRandomKey.Click += (sender, args) => this.GenerateRandomKey();
             btnExport.SplitDropDownMenu.Items.Add(btnRandomKey);
             
-            var btnImportKey = new ToolStripMenuItem("Import key file");
+            var btnImportKey = new ToolStripMenuItem(Strings.EditEncryptedKeyFileDialog_ButtonImportKey);
             btnImportKey.Enabled = this.permitNewKey;
             btnImportKey.Click += (sender, args) => this.ImportKey();
             btnExport.SplitDropDownMenu.Items.Add(btnImportKey);
@@ -152,7 +153,7 @@ namespace Episource.KeePass.EKF.UI {
             this.layout.SetColumnSpan(this.lblValidationError, value: 2);
             
             this.btnOk = new Button {
-                Text = "OK",
+                Text = Strings.AnyUI_ButtonOK,
                 DialogResult = DialogResult.OK,
                 Height = UIConstants.DefaultButtonHeight,
                 Width = UIConstants.DefaultButtonWidth,
@@ -162,7 +163,7 @@ namespace Episource.KeePass.EKF.UI {
             this.AcceptButton = this.btnOk;
             
             var btnCancel = new Button {
-                Text = "Cancel",
+                Text = Strings.AnyUI_ButtonCancel,
                 DialogResult = DialogResult.Cancel,
                 Height = UIConstants.DefaultButtonHeight,
                 Width = UIConstants.DefaultButtonWidth,
@@ -174,8 +175,8 @@ namespace Episource.KeePass.EKF.UI {
 
         private void InitializeKeyList() {
             const FontStyle actionFont = FontStyle.Bold; 
-            const string newKeyAction = "add";
-            const string delKeyAction = "remove";
+            var newKeyAction = Strings.EditEncryptedKeyFileDialog_KeyActionAuthorize;
+            var delKeyAction = Strings.EditEncryptedKeyFileDialog_KeyActionUnauthorize;
 
             this.keyListView.Dock = DockStyle.Fill;
             this.keyListView.AutoSize = true;
@@ -187,10 +188,11 @@ namespace Episource.KeePass.EKF.UI {
             this.keyListView.TabIndex = 4;
             
             // width "-2" -> auto size respecting header width
-            this.keyListView.Columns.Add("☑ Change", -2);
-            this.keyListView.Columns.Add("Subject", -2);
-            this.keyListView.Columns.Add("Serial#", -2);
-            this.keyListView.Columns.Add("Provider", -2);
+            const int autoSizeHeader = -2;
+            this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnChange, autoSizeHeader);
+            this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnSubject, autoSizeHeader);
+            this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnSerial, autoSizeHeader);
+            this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnProvider, autoSizeHeader);
 
             UIUtil.SetExplorerTheme(this.keyListView, false);
             this.layout.Controls.Add(this.keyListView, 0, 4);
@@ -314,8 +316,8 @@ namespace Episource.KeePass.EKF.UI {
             item.Checked = keyModel.NextAuthorization == KeyPairModel.Authorization.Authorized;
             item.SubItems.Add(cert.Subject);
             item.SubItems.Add(cert.SerialNumber);
-            item.SubItems.Add(this.DescribeKeyProvider(keyModel.Provider));
-            item.ToolTipText = "Thumbprint: " + cert.Thumbprint;
+            item.SubItems.Add(keyModel.ProviderName);
+            item.ToolTipText = string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_LabelThumbprint, cert.Thumbprint);
             
             this.keyList.Add(cert.Thumbprint, keyModel);
             this.keyListView.Items.Add(item);

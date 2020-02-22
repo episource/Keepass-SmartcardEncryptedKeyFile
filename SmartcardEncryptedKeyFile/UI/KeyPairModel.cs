@@ -1,6 +1,8 @@
 using System;
+using System.Resources;
 
 using Episource.KeePass.EKF.Crypto;
+using Episource.KeePass.EKF.Resources;
 
 namespace Episource.KeePass.EKF.UI {
     public class KeyPairModel {
@@ -49,6 +51,13 @@ namespace Episource.KeePass.EKF.UI {
         
         public KeyProvider Provider {
             get { return this.provider; }
+        }
+
+        public string ProviderName {
+            get {
+                return Strings.ResourceManager.GetString("KeyPairModel.KeyProvider." + this.Provider, Strings.Culture) ??
+                       Strings.KeyPairModel_UnknownKeyProvider;
+            }
         }
         
         public Authorization NextAuthorization { get;  set; }

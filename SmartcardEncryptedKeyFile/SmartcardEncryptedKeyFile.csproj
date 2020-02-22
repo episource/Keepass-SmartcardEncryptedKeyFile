@@ -70,6 +70,11 @@
     <Compile Include="Keys\RandomKeyDataStore.cs" />
     <Compile Include="Plugin\SmartcardEncryptedKeyFileExt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Resources\Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
     <Compile Include="UI\CertificateListViewItem.cs" />
     <Compile Include="UI\SmartcardRequiredDialog.cs" />
     <Compile Include="UI\DefaultKeyPairProvider.cs" />
@@ -103,6 +108,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="UI\Controls" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
