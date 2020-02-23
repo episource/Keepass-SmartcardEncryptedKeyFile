@@ -121,6 +121,15 @@ Below are example commands to replace the certificate in slot 9a with a newly cr
 # Build
 This project is best built using JetBrains Rider, but plain msbuild or Visual Studio should work as well. For debug builds, only the plugin dll is built. When using release configuration, a [plgx plugin file][9] with improved compatibility is built as well. Pre-built `plgx` builds are available as github releases.
 
+## Build plgx without devtools
+Building the plgx plugin file is possible using powershell only. No development tools needed:
+```posh
+$ cd <project dir containing .csproj>
+$ .\build-plgx-project.ps1 -csproj .\SmartcardEncryptedKeyFile.csproj -outdir .\bin\Release\Plugins -objdir .\obj\Release\plgx -plgxArgs "--plgx-prereq-kp:2.44,--plgx-prereq-net:4.7,--plgx-prereq-os:Windows"
+```
+
+Important warning: This script cleans `outdir` and `objdir` without asking for confirmation! Carefully choose the paths you enter here!
+
 # Known Issues & Limitations
 1. The PIN prompt for unlocking a PIV smartcard is always shown in the center of the main screen, not on top of KeePass.
 2. Currently only RSA smartcards are supported.

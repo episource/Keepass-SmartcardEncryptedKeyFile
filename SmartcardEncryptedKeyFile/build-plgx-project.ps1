@@ -41,10 +41,23 @@ try {
     # Unload previous projects
     [Microsoft.Build.Evaluation.ProjectCollection]::GlobalProjectCollection.UnloadAllProjects() 
     $projectModel = [Microsoft.Build.Evaluation.Project]::new($csproj)
+    
+    $rootNamespace = $projectName
+    $assemblyName = $projectName
+    $projectModel.AllEvaluatedProperties | %{
+        if ($_.Name -eq "RootNamespace") {
+            $rootNamespace = $_.EvaluatedValue
+        } elseif ($_.Name -eq "AssemblyName") {
+            $assemblyName = $_.EvaluatedValue
+        }
+    }
+    if ($rootNamespace -cne $assemblyName) {
+        write-warning "Root namespace and assembly name don't match: $rootNamespace != $assemblyName`nKeePass plgx loader use the assembly name in places where it should use the root namespace. Therefore, if not equal, plugins using e.g. embedded resources will be broken if this warning is not taken care of."
+    }
 
     # Parse csproj and expand wildcard references in compile nodes
     # (keepass can't handle them)
-    $originalCompileItems = $projectModel.Items | ?{ $_.ItemType -eq "Compile" }
+    $originalCompileItems = $projectModel.Items | ?{ $_.ItemType -match "Compile|EmbeddedResource" }
     $originalCompileItems | %{
         $projectModel.RemoveItem($_)
         
@@ -90,7 +103,7 @@ try {
     # Delete all ignored references and files
     $allItems = @() + $projectModel.ItemsIgnoringCondition
     $activeItems = @() + $projectModel.Items
-    $allItems | ?{ -not $activeItems.Contains($_) -and $_.ItemType -match "Compile|Reference" } | %{ 
+    $allItems | ?{ -not $activeItems.Contains($_) -and $_.ItemType -match "Compile|Reference|EmbeddedResource" } | %{ 
         $projectModel.RemoveItem($_) 
     }
 
