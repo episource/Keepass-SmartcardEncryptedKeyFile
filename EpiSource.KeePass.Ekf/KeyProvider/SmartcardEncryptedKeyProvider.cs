@@ -136,6 +136,9 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             }
 
             var recipient = SmartcardRequiredDialog.ChooseKeyPairForDecryption(ekfFile, this.pluginHost.MainWindow);
+            if (recipient == null) {
+                return null;
+            }
 
             try {
                 return SmartcardOperationDialog

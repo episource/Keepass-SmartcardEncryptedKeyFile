@@ -3,6 +3,5 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/EpiSource.KeePass.Ekf/Unblocker" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/SmartcardEncryptedKeyFile/Unblocker" vcs="Git" />
   </component>
 </project>
