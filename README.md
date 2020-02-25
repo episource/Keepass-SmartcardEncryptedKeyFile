@@ -50,6 +50,8 @@ Nothing special here, doesn't require the plugin to be installed at all:
 5. [Confirm](#unlock-database-using-backup-key-file) that the exported backup key file can be used to unlock the database.
 
 ## Add encrypted key file to existing database
+Note: If the current database already uses a plaintext key file in addition to the master password, it is also possible to proceed as described in section [change authorization](#change-authorization). Using the `Change Master Key` dialog as described below will always work.
+
 1. Open `Change Master Key...` dialog from `File` menu
 <br/>![Add encrypted key file to existing database: Create Composite Master Key](./doc/new-database_create-master-key.png)
 2. Activate `Show expert options` and select at least `Key file / provider` and choose `Smartcard Encrypted Key File Provider`
@@ -64,7 +66,7 @@ Nothing special here, doesn't require the plugin to be installed at all:
  5. [Confirm](#unlock-database-using-backup-key-file) that the exported backup key file or the previously used key file can be used to unlock the database.
 
 ## Change authorization
-1. Open and unlock a database with accompanying encrypted key file
+1. Open and unlock a database using an encrypted or plaintext key file
 2. Within `Tools` menu select `Edit Encrypted Key File`. A dialog like below shows up:
 <br/>![Change authorization: EKF editor](./doc/change-authorization_edit-ekf.png)
    1. All currently authorized smartcards are preselected.

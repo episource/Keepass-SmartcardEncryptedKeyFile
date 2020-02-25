@@ -65,15 +65,16 @@ namespace EpiSource.KeePass.Ekf.UI {
             if (keyFile == null) {
                 throw new ArgumentNullException("keyFile");
             }
-            if (!(keyFile is KcpKeyFile)) {
-                var customKey = keyFile as KcpCustomKey;
-                if (customKey == null || customKey.Name != SmartcardEncryptedKeyProvider.ProviderName) {
-                    throw new ArgumentException(@"Unsupported existing key type", "keyFile"); 
-                }
+            if (!CanAskForSettings(keyFile)) { 
+                throw new ArgumentException(@"Unsupported key type.", "keyFile"); 
             }
             
             var dialog = new EditEncryptedKeyFileDialog(dbPath, keyFile, new DefaultKeyPairProvider(dbPath), false);
             return dialog.ShowDialogAndGenerateEncryptionRequest();
+        }
+
+        public static bool CanAskForSettings(IUserKey keyFile) {
+            return keyFile is KcpKeyFile || keyFile is KcpCustomKey && ((KcpCustomKey) keyFile).Name == SmartcardEncryptedKeyProvider.ProviderName;
         }
 
         private void ExportKey() {

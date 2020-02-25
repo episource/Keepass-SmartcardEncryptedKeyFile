@@ -13,6 +13,7 @@ using EpiSource.KeePass.Ekf.UI;
 
 using EpiSource.Unblocker.Hosting;
 
+using KeePass.Forms;
 using KeePass.Plugins;
 
 using KeePassLib.Keys;
@@ -39,8 +40,10 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             editMenu.Click += (sender, args) => this.EditEkf();
             this.pluginHost.MainWindow.ToolsMenu.DropDownItems.Add(editMenu);
 
-            this.pluginHost.MainWindow.FileOpened += (sender, args) => editMenu.Enabled = this.CanEditEkf();
-            this.pluginHost.MainWindow.FileClosed += (sender, args) => editMenu.Enabled = this.CanEditEkf();
+            Action updateEditEkfMenuItem = 
+                () => editMenu.Enabled = EditEncryptedKeyFileDialog.CanAskForSettings(this.GetActiveEkfKey());
+            this.pluginHost.MainWindow.FileOpened += (sender, args) => updateEditEkfMenuItem();
+            this.pluginHost.MainWindow.FileClosed += (sender, args) => updateEditEkfMenuItem();
         }
 
         public override byte[] GetKey(KeyProviderQueryContext ctx) {
@@ -85,7 +88,11 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
         }
 
         private void EditEkf() {
-            if (this.CanEditEkf()) {
+            var activeKey = this.GetActiveEkfKey();
+            
+            // treat missing EKF as empty EKF
+            // permit edit as long as key (file) data is available
+            if (EditEncryptedKeyFileDialog.CanAskForSettings(activeKey)) {
                 var encryptionRequest = EditEncryptedKeyFileDialog.AskForSettings(
                     this.pluginHost.Database.IOConnectionInfo, this.GetActiveEkfKey());
                 if (encryptionRequest != null) {
@@ -94,14 +101,9 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             }
         }
 
-        
-        private bool CanEditEkf() {
-            return this.pluginHost.Database.HasEncryptedKeyFile() && this.GetActiveEkfKey() != null;
-        }
-        
         private IUserKey GetActiveEkfKey() {
             var db = this.pluginHost.Database;
-            if (db == null) {
+            if (db == null || db.MasterKey == null) {
                 return null;
             }
             
