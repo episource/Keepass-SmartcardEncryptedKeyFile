@@ -122,6 +122,6 @@
     </Target>-->
   <Target Name="AfterBuild" Condition="$(DefineConstants.Contains(PLGX))">
     <!-- Keepass fails if there's more than one csproj in the project directory. -->
-    <Exec Command="powershell.exe -executionpolicy bypass -File &quot;$(ProjectDir)/build-plgx-project.ps1&quot; -csproj &quot;$(ProjectPath)&quot; -outdir &quot;$(OutDir)\Plugins&quot; -objdir &quot;obj\$(Configuration)&quot; -plgxArgs &quot;--plgx-prereq-kp:2.40,--plgx-prereq-net:4.7,--plgx-prereq-os:Windows&quot;" ConsoleToMSBuild="true" LogStandardErrorAsError="true" ContinueOnError="true" />
+    <Exec Command="powershell.exe -executionpolicy bypass -File &quot;$(ProjectDir)/build-plgx-project.ps1&quot; -csproj &quot;$(ProjectPath)&quot; -outdir &quot;$(OutDir)\Plugins&quot; -objdir &quot;obj\$(Configuration)&quot; -plgxArgs &quot;--plgx-prereq-kp:2.44,--plgx-prereq-net:4.8,--plgx-prereq-os:Windows&quot;" ConsoleToMSBuild="true" LogStandardErrorAsError="true" ContinueOnError="true" />
   </Target>
 </Project>
