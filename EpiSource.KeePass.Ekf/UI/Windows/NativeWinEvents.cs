@@ -25,7 +25,18 @@ namespace EpiSource.KeePass.Ekf.UI.Windows {
         public sealed class WinEventArgs : EventArgs {
             public WinEventArgs(IntPtr eventSource, uint dwmsEventTime) {
                 this.EventSource = eventSource;
-                this.EventTime = DateTimeOffset.UtcNow.AddMilliseconds((int) dwmsEventTime - Environment.TickCount);
+                var utcNow = DateTimeOffset.UtcNow;
+                var ticksNow = (long)unchecked((uint)Environment.TickCount);
+                
+                var eventTimeLong = (long) dwmsEventTime;
+                var eventOffsetMs = eventTimeLong - ticksNow;
+
+                // ticksNow overflowed before eventTime
+                if (eventTimeLong < int.MaxValue && ticksNow < int.MaxValue) {
+                    eventOffsetMs -= uint.MaxValue - 1;
+                }
+                
+                this.EventTime = DateTimeOffset.UtcNow.AddMilliseconds(eventOffsetMs);
             }
 
             /// <summary>
