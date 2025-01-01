@@ -149,16 +149,16 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
                 } else {
                     return Task.Run(() => ekfFile.Decrypt(recipient)).AwaitWithMessagePump().PlaintextKey;
                 }
-            } catch (CryptographicException e) {
+            } catch (CryptographicException) {
                 // operation was canceled using windows dialog or failed otherwise
                 return null;
-            } catch (DeniedByVirusScannerFalsePositive e) {
+            } catch (DeniedByVirusScannerFalsePositive) {
                 var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName),
                     ProviderName, MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning);
                 return result == DialogResult.Retry ? this.DecryptEncryptedKeyFile(ctx, enableCancellation: false) : null;
             } catch (TaskCanceledException) {
                 return null;
-            } catch (TaskCrashedException e) {
+            } catch (TaskCrashedException) {
                 if (retryOnCrash) {
                     // there's a known bug in win 10 credentials ui, that causes a crash when opening the dialog
                     // -> https://github.com/mRemoteNG/mRemoteNG/issues/853
