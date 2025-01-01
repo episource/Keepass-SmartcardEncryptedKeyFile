@@ -10,7 +10,7 @@ using EpiSource.KeePass.Ekf.Crypto;
 using Episource.KeePass.EKF.Resources;
 
 using EpiSource.KeePass.Ekf.UI;
-
+using EpiSource.KeePass.Ekf.Util;
 using EpiSource.Unblocker.Hosting;
 
 using KeePass.Forms;
@@ -129,7 +129,7 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             return encryptionRequest.PlaintextKey;
         }
 
-        private byte[] DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true) {
+        private byte[] DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true, bool enableCancellation = true) {
             var ekfPath = ctx.DatabaseIOInfo.ResolveEncryptedKeyFile();
 
             EncryptedKeyFile ekfFile;
@@ -143,25 +143,29 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             }
 
             try {
-                return SmartcardOperationDialog
-                       .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient)).PlaintextKey;
+                if (enableCancellation) {
+                    return SmartcardOperationDialog
+                           .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient)).PlaintextKey;
+                } else {
+                    return Task.Run(() => ekfFile.Decrypt(recipient)).AwaitWithMessagePump().PlaintextKey;
+                }
+            } catch (CryptographicException e) {
+                // operation was canceled using windows dialog or failed otherwise
+                return null;
+            } catch (DeniedByVirusScannerFalsePositive e) {
+                var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName),
+                    ProviderName, MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning);
+                return result == DialogResult.Retry ? this.DecryptEncryptedKeyFile(ctx, enableCancellation: false) : null;
             } catch (TaskCanceledException) {
                 return null;
-            } catch (AggregateException e) {
-                if (e.InnerExceptions.Count == 1) {
-                    if (e.InnerException is CryptographicException) {
-                        // operation was canceled using windows dialog or failed otherwise
-                        return null;
-                    } 
-                    if (e.InnerException is TaskCrashedException && retryOnCrash) {
-                        // there's a known bug in win 10 credentials ui, that causes a crash when opening the dialog
-                        // -> https://github.com/mRemoteNG/mRemoteNG/issues/853
-                        // -> https://developercommunity.visualstudio.com/content/problem/352484/buffer-overflow-within-windowsuixamlhostdll-when-p.html
-                        // retry once before failing!
-                        return this.DecryptEncryptedKeyFile(ctx, false);
-                    }
-                } 
-
+            } catch (TaskCrashedException e) {
+                if (retryOnCrash) {
+                    // there's a known bug in win 10 credentials ui, that causes a crash when opening the dialog
+                    // -> https://github.com/mRemoteNG/mRemoteNG/issues/853
+                    // -> https://developercommunity.visualstudio.com/content/problem/352484/buffer-overflow-within-windowsuixamlhostdll-when-p.html
+                    // retry once before failing!
+                    return this.DecryptEncryptedKeyFile(ctx, false, enableCancellation);
+                }
                 throw;
             }
         }

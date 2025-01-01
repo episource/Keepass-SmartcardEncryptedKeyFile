@@ -164,4 +164,8 @@
     <value>Failed to locate encrypted key file. Are you sure, this KeePass database has been setup for use with the {0}?</value>
     <comment>{0} is the provider name</comment>
   </data>
+  <data name="SmartcardEncryptedKeyProvider.DialogTextUnblockerDeniedByVirusScanner" xml:space="preserve">
+    <value>The {0} operation was denied by the system's virus scanner (false positive). The operation can be repeated with cancellation support disabled. This is likely to succeed. Retry?</value>
+    <comment>{0} is the provider name</comment>
+  </data>
 </root>

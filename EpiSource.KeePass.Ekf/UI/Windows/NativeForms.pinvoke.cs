@@ -10,6 +10,9 @@ using System.Runtime.InteropServices;
 namespace EpiSource.KeePass.Ekf.UI.Windows {
     public static partial class NativeForms {
         
+        // https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/18d8fbe8-a967-4f1c-ae50-99ca8e491d2d
+        private const int ERROR_INVALID_WINDOW_HANDLE = 0x578;
+        
         /// <summary>
         /// Subset of: https://docs.microsoft.com/de-de/windows/desktop/winstation/desktop-security-and-access-rights
         /// </summary>
@@ -118,7 +121,11 @@ namespace EpiSource.KeePass.Ekf.UI.Windows {
                 : NativeFormsPinvoke.GetWindowLongPtr(hWnd, (int) nIndex);
 
             if (result == IntPtr.Zero) {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
+                var nativeErrorCode = Marshal.GetLastWin32Error();
+                if (nativeErrorCode == ERROR_INVALID_WINDOW_HANDLE) {
+                    throw new InvalidWindowHandleException();
+                }
+                throw new Win32Exception(nativeErrorCode);
             }
 
             return result;
@@ -130,7 +137,11 @@ namespace EpiSource.KeePass.Ekf.UI.Windows {
                 : NativeFormsPinvoke.SetWindowLongPtr(hWnd, (int) nIndex, dwNewLong);
 
             if (result == IntPtr.Zero && Marshal.GetLastWin32Error() != 0) {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
+                var nativeErrorCode = Marshal.GetLastWin32Error();
+                if (nativeErrorCode == ERROR_INVALID_WINDOW_HANDLE) {
+                    throw new InvalidWindowHandleException();
+                }
+                throw new Win32Exception(nativeErrorCode);
             }
 
             return result;

@@ -158,7 +158,13 @@ namespace EpiSource.KeePass.Ekf.UI {
                     cryptoProcessWinEvents.ObjectShown +=
                         (sender, args) => {
                             if (knownWindows.Add(args.EventSource)) {
-                                NativeForms.SetOwner(args.EventSource, activeForm);
+                                try {
+                                    NativeForms.SetOwner(args.EventSource, activeForm);
+                                } catch (InvalidWindowHandleException) {
+                                    // window already gone!
+                                    knownWindows.Remove(args.EventSource);
+                                    return;
+                                }
                             }
 
                             if (!uiCentered) {
