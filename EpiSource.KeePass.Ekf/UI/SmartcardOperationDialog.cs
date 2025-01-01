@@ -164,6 +164,9 @@ namespace EpiSource.KeePass.Ekf.UI {
                                     // window already gone!
                                     knownWindows.Remove(args.EventSource);
                                     return;
+                                } catch {
+                                    knownWindows.Remove(args.EventSource);
+                                    throw;
                                 }
                             }
 

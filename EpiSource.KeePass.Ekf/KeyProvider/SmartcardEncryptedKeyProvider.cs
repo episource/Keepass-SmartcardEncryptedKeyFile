@@ -152,10 +152,10 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             } catch (CryptographicException) {
                 // operation was canceled using windows dialog or failed otherwise
                 return null;
-            } catch (DeniedByVirusScannerFalsePositive) {
-                var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName),
-                    ProviderName, MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning);
-                return result == DialogResult.Retry ? this.DecryptEncryptedKeyFile(ctx, enableCancellation: false) : null;
+            } catch (DeniedByVirusScannerFalsePositive e) {
+                var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
+                    ProviderName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                return result == DialogResult.Yes ? this.DecryptEncryptedKeyFile(ctx, enableCancellation: false) : null;
             } catch (TaskCanceledException) {
                 return null;
             } catch (TaskCrashedException) {

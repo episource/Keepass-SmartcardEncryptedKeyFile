@@ -375,7 +375,11 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The {0} operation was denied by the system&apos;s virus scanner (false positive). The operation can be repeated with cancellation support disabled. This is likely to succeed. Retry?.
+        ///   Looks up a localized string similar to The {0} operation was denied by the system&apos;s virus scanner (false positive). Consider whitelisting `{1}`.
+        ///
+        ///The operation can also be repeated with cancellation support disabled. This is likely to succeed, but application might freeze temporarily.
+        ///
+        ///Perform operation without cancellation support?.
         /// </summary>
         internal static string SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner {
             get {
