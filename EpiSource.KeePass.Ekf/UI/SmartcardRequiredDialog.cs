@@ -201,7 +201,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 var itemTextBounds = checkboxRect;
                 itemTextBounds.Y += 1;
                 itemTextBounds.X += checkboxRect.Width + 1;
-                itemTextBounds.Width = args.Item.SubItems.Count > 0 ? args.Item.SubItems[1].Bounds.X : args.Bounds.Width;
+                itemTextBounds.Width = args.Item.SubItems.Count > 0 ? args.Item.SubItems[args.Item.SubItems.Count - 1].Bounds.X : args.Bounds.Width;
                 itemTextBounds.Height = checkboxRect.Height + 1;
                 TextRenderer.DrawText(args.Graphics, args.Item.Text, args.Item.Font, itemTextBounds, enabled ? args.Item.ForeColor : SystemColors.GrayText, TextFormatFlags.NoClipping);
                 
