@@ -49,9 +49,12 @@ namespace EpiSource.KeePass.Ekf.UI.Windows {
 
         private readonly Process processToObserve;
 
-        public NativeWinEvents() : this(null) { }
+        public NativeWinEvents()  { }
 
         public NativeWinEvents(Process processToObserve) {
+            if (processToObserve == null) {
+                throw new ArgumentNullException("processToObserve");
+            }
             this.processToObserve = processToObserve;
         }
 

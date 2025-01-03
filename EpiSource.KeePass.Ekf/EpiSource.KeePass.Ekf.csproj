@@ -86,6 +86,7 @@
     <Compile Include="UI\KeyPairModel.cs" />
     <Compile Include="UI\SmartcardOperationDialog.cs" />
     <Compile Include="UI\UIConstants.cs" />
+    <Compile Include="UI\Windows\InvalidWindowHandleException.cs" />
     <Compile Include="UI\Windows\NativeForms.pinvoke.cs">
       <DependentUpon>NativeForms.cs</DependentUpon>
     </Compile>
