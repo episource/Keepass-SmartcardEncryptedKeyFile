@@ -88,7 +88,7 @@ namespace EpiSource.KeePass.Ekf.UI {
         // explicit lazy initialization
         // ReSharper disable once RedundantArgumentDefaultValue
         private static readonly UnblockerHost smartcardWorker = new UnblockerHost(
-            standbyDelay: TimeSpan.FromSeconds(500000), maxWorkers: 1, debug: DebugMode.Console);
+            standbyDelay: TimeSpan.FromSeconds(500000), maxWorkers: 1, debug: DebugMode.None);
 
         // set via ReplaceRemainingHandles only
         private static volatile ISet<IntPtr> remainingDesktopHandles = new HashSet<IntPtr>();
