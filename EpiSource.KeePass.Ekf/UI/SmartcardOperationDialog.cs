@@ -88,7 +88,7 @@ namespace EpiSource.KeePass.Ekf.UI {
         // explicit lazy initialization
         // ReSharper disable once RedundantArgumentDefaultValue
         private static readonly UnblockerHost smartcardWorker = new UnblockerHost(
-            standbyDelay: TimeSpan.FromSeconds(500000), maxWorkers: 1, debug: DebugMode.None);
+            standbyDelay: TimeSpan.FromSeconds(500000), maxWorkers: 1, debug: DebugMode.Console);
 
         // set via ReplaceRemainingHandles only
         private static volatile ISet<IntPtr> remainingDesktopHandles = new HashSet<IntPtr>();
@@ -137,8 +137,9 @@ namespace EpiSource.KeePass.Ekf.UI {
             InvocationRequest cryptoOperationRequest, CancellationToken ct
         ) {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            var pRef = new WorkerProcessRef();
-
+            
+            // Important: Retrieve active form before creating the SmartcardOperationDialog!
+            // => Retrieve reference to Keepass window.
             var activeForm = NativeForms.GetActiveWindow();
             
             var scOperationDialog = new SmartcardOperationDialog(activeForm, cts);
@@ -149,16 +150,18 @@ namespace EpiSource.KeePass.Ekf.UI {
                     cct, cryptoOperationRequest.ToPortableInvocationRequest(), NativeForms.GetCurrentThreadDesktopName(),
                     GetAndResetRemainingHandles());
                 
-                var cryptoTask = smartcardWorker.InvokeAsync(
+                var cryptoTaskHandle = await smartcardWorker.InvokeDetailedAsync(
                     desktopBoundInvocation, cts.Token, TimeSpan.FromMilliseconds(gracefulAbortTimeoutMs),
-                    ForcedCancellationMode.CleanupBeforeCancellation, workerProcessRef: pRef);
-                using (var cryptoProcessWinEvents = new NativeWinEvents(pRef.WorkerProcess)) {
+                    ForcedCancellationMode.CleanupBeforeCancellation);
+                using (var cryptoProcessWinEvents = new NativeWinEvents(cryptoTaskHandle.WorkerProcess)) {
                     var uiCentered = false;
                     var knownWindows = new HashSet<IntPtr>();
                     cryptoProcessWinEvents.ObjectShown +=
                         (sender, args) => {
                             if (knownWindows.Add(args.EventSource)) {
                                 try {
+                                    // set keepass as owner for smartcard dialogs
+                                    // => to be shown as dialog, always on top of keepass window
                                     NativeForms.SetOwner(args.EventSource, activeForm);
                                 } catch (InvalidWindowHandleException) {
                                     // window already gone!
@@ -184,8 +187,8 @@ namespace EpiSource.KeePass.Ekf.UI {
                             }
                         };
                     
-                    // continueOnCapturedContext: true => finally must run within UI thread!
-                    var retVal = await cryptoTask.ConfigureAwait(true);
+                    // continueOnCapturedContext: true => finally must run within UI thread! This is default, but be explicit here!
+                    var retVal = await cryptoTaskHandle.GetInvocationResultAsync().ConfigureAwait(true);
                     AddRemainingHandles(retVal.RemainingDesktopHandles);
                     return retVal.GetResultOrThrow();
                 }
