@@ -79,7 +79,13 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         }
 
         public bool? IsSmartcard {
-            get { return this.PrivateKeyInfo == null ? (bool?)null : this.PrivateKeyInfo.HardwareDevice; }
+            get {
+                try {
+                    return this.PrivateKeyInfo == null ? (bool?) null : this.PrivateKeyInfo.HardwareDevice;
+                } catch (CryptographicException) {
+                    return null;
+                } 
+            }
         }
         
         public bool IsAccessible {
@@ -92,12 +98,22 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                 if (info == null) {
                     return null;
                 }
-                
-                return this.cert.HasPrivateKey && info.Exportable;
+
+                try {
+                    return this.cert.HasPrivateKey && info.Exportable;
+                } catch (CryptographicException) {
+                    return null;
+                }
             }
         }
         public bool? IsRemovable {
-            get { return this.privKeyInfo == null ? (bool?)null : this.PrivateKeyInfo.Removable; }
+            get {
+                try {
+                    return this.privKeyInfo == null ? (bool?) null : this.PrivateKeyInfo.Removable;
+                } catch (CryptographicException) {
+                    return null;
+                }
+            }
         }
         
         public bool CanDecrypt {
