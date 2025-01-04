@@ -9,6 +9,10 @@ namespace EpiSource.KeePass.Ekf.Crypto {
     /// <summary>
     /// Gives access to RSA smart cards that are compatible with the windows crypto service provider framework.
     /// </summary>
+    /// <remarks>
+    /// Operations on the private key may block for noticable time, when the private key is backed by a hardware device
+    /// (e.g. smartcard). A good example is querying a yubikey, that is still in use by an other operation.
+    /// </remarks>
     [Serializable]
     // ReSharper disable once InconsistentNaming
     public class RSACryptoServiceProviderKeyPair : IKeyPair {

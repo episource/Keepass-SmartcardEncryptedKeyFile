@@ -32,7 +32,7 @@ namespace EpiSource.KeePass.Ekf.UI {
         private readonly IKeyPairProvider keyPairProvider;
 
         public static IKeyPair ChooseKeyPairForDecryption(EncryptedKeyFile ekf, Form owner = null) {
-            var keyPairProvider = new DefaultKeyPairProvider(ekf);
+            var keyPairProvider = new DefaultKeyPairProvider(ekf); // TODO: blocks if busy hw involved - unblock!
             return ChooseKeyPairForDecryption(keyPairProvider, owner);
         }
         
@@ -324,7 +324,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 if (this.loaded) {
                     // note: result == false does not imply, that IsReadyForDecrypt to be unchanged!
                     // => replace list independent of result
-                    this.keyPairProvider.Refresh();
+                    this.keyPairProvider.Refresh(); // TODO: blocks if busy HW involved - unblock!
 
                     prevCheckedItems = this.keyListView.CheckedItems.Cast<ListViewItem>()
                                            .Select(i => i.Tag as KeyPairModel)

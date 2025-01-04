@@ -10,6 +10,9 @@ using System.Security.Cryptography.Xml;
 using KeePassLib.Utility;
 
 namespace EpiSource.KeePass.Ekf.Crypto {
+    /// <remarks>
+    /// Methods block if a busy hardware device is involved.
+    /// </remarks>
     [Serializable]
     public sealed class EncryptedKeyFile : LimitedAccessKeyFile {
         private static readonly Oid oidContentData =
@@ -51,6 +54,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             this.encryptedKeyStore = encryptedKeyStore;
         }
 
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
         public static EncryptedKeyFile Decode(byte[] encryptedKeyStore) {
             if (encryptedKeyStore == null) {
                 throw new ArgumentNullException("encryptedKeyStore");
@@ -59,6 +65,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             var store = new EnvelopedCms();
             store.Decode(encryptedKeyStore);
 
+            // note: GetAllKeyPairs blocks if busy HW is involved.
             var localKeyPairs = RSASmartcardKeyPairs.GetAllKeyPairs().ToDictionary(c => c.Certificate.Thumbprint);
             var authorization = store.Certificates
                                      .Cast<X509Certificate2>()
@@ -71,10 +78,14 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             return new EncryptedKeyFile(authorization, encryptedKeyStore);
         }
 
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
         public static EncryptedKeyFile Read(Stream source) {
             var buffer = new MemoryStream();
             MemUtil.CopyStream(source, buffer);
             
+            // note: Decode blocks if busy HW is involved.
             return Decode(buffer.ToArray());
         }
 
@@ -85,6 +96,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// a software prompt or at the reader. Some smartcards require a button to be pressed, as well.
         /// The operation blocks until the user has successfully unlocked the smartcard or the operation times out. 
         /// </summary>
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
         /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
         /// out or no authorized smartcard was found.</exception>

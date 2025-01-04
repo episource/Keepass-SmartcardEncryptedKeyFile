@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -9,6 +10,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// Gets all encryption key pairs backed by smartcards implementing the PIV (personal identity verification)
         /// standard. Basic support for these smartcards is provided by windows without additional drivers.
         /// </summary>
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
         /// <returns>
         /// A list of piv smartcard backed rsa key pairs suitable for key exchange / encryption.
         /// </returns>
@@ -27,10 +31,15 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                                   .Select(cGroup =>
                                       (IKeyPair) RSACryptoServiceProviderKeyPair.FromX509CertificateOrNull(
                                           cGroup.First()));
+                
+                // blocks if busy hardware devices are involved
                 return ListEncryptionCardsAsList(certs);
             }
         }
 
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
         public static IList<IKeyPair> GetAllKeyPairs() {
             return GetAllPivKeyPairs();
         }

@@ -5,6 +5,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <summary>
         /// Retrieves whether the key pair is provided by a smart card.
         /// </summary>
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
         /// <returns>
         /// <code>true</code> when backed by smartcard or other other secure hardware security module,
         /// <code>false</code> if not backed by hardware and <code>null</code> if unknown.
@@ -17,6 +20,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// container accessible. Encryption operation might be available even if the key container is not accessible.
         /// This will be reported by <see cref="IsReadyForEncrypt"/>. 
         /// </summary>
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
         /// <returns>
         /// <code>true</code> when the key container is accessible, otherwise <code>false</code>.
         /// </returns>
@@ -63,6 +69,12 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// Retrieves whether the smartcard is hot-pluggable can can be attached/removed while the system is up. In case
         /// of removable smart cards, any operation may fail at any time because the card has been detached.
         /// </summary>
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
         /// <returns>
         /// <code>true</code> if the smart card can be attached/removed while the system is up, <code>false</code> if
         /// not. <code>null</code> if unknown.

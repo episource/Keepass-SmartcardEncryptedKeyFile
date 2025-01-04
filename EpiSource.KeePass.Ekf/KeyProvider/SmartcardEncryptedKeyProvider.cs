@@ -134,6 +134,7 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
 
             EncryptedKeyFile ekfFile;
             using (var stream = IOConnection.OpenRead(ekfPath)) {
+                // TODO: blocks if busy HW is involved - unblock!
                 ekfFile = EncryptedKeyFile.Read(stream);
             }
 

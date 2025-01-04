@@ -54,6 +54,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             }
             // activeDbKey is optional - might be new db
 
+            // TODO: DefaultKeyPairProvider constructor blocks if busy HW is involved - unblock
             var dialog = new EditEncryptedKeyFileDialog(dbPath, activeDbKey, new DefaultKeyPairProvider(dbPath), true);
             return dialog.ShowDialogAndGenerateEncryptionRequest();
         }
@@ -69,6 +70,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 throw new ArgumentException(@"Unsupported key type.", "keyFile"); 
             }
             
+            // TODO: DefaultKeyPairProvider constructor blocks if busy HW is involved - unblock
             var dialog = new EditEncryptedKeyFileDialog(dbPath, keyFile, new DefaultKeyPairProvider(dbPath), false);
             return dialog.ShowDialogAndGenerateEncryptionRequest();
         }

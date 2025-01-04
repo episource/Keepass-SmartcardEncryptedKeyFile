@@ -11,6 +11,11 @@ namespace EpiSource.KeePass.Ekf.UI {
         private readonly IDictionary<string, IKeyPair> authorizedKeys;
         private readonly IDictionary<string, KeyPairModel> knownKeys = new Dictionary<string, KeyPairModel>();
         
+        
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
+        // TODO: provice static factory method instead of constructor
         public DefaultKeyPairProvider(IOConnectionInfo dbPath) {
             var ekfPath = dbPath.ResolveEncryptedKeyFile();
 
@@ -28,6 +33,11 @@ namespace EpiSource.KeePass.Ekf.UI {
             this.Refresh();
         }
 
+        
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
+        // TODO: provice static factory method instead of constructor
         public DefaultKeyPairProvider(EncryptedKeyFile ekf) {
             this.authorizedKeys = ekf.Authorization
                                      .Where(kp => kp.Certificate.Thumbprint != null)
@@ -46,14 +56,20 @@ namespace EpiSource.KeePass.Ekf.UI {
                        .Where(m => m.CurrentAuthorization == KeyPairModel.Authorization.Authorized)
                        .Select(m => new KeyPairModel(m)).ToList();
         }
-
+        
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
         public bool Refresh() {
             var prevKnownKeys = this.knownKeys.ToDictionary(
                 x => x.Key, x => x.Value);
             this.knownKeys.Clear();
             
-            // add piv cards last: replace existing keys from other sources (piv is primary provider)
+            
             this.AddKeys(this.authorizedKeys.Values, KeyPairModel.KeyProvider.EkfAuthorizationList);
+            
+            // add piv cards last: replace existing keys from other sources (piv is primary provider)
+            // NOTE: blocks if busy HW involved
             this.AddKeys(RSASmartcardKeyPairs.GetAllPivKeyPairs(), KeyPairModel.KeyProvider.Piv);
 
             var changed = false;
