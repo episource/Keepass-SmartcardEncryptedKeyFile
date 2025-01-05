@@ -10,12 +10,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using EpiSource.KeePass.Ekf.KeyProvider;
+
 using Episource.KeePass.EKF.Resources;
 
 using EpiSource.KeePass.Ekf.UI.Windows;
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.Unblocker;
 using EpiSource.Unblocker.Hosting;
+using EpiSource.Unblocker.Tasks;
+using EpiSource.Unblocker.Util;
 
 namespace EpiSource.KeePass.Ekf.UI {
     public sealed class SmartcardOperationDialog : Form {
@@ -23,12 +27,12 @@ namespace EpiSource.KeePass.Ekf.UI {
         #region WorkerResult
         
         [Serializable]
-        private class WorkerResult {
+        private class WorkerResult<TTarget, TReturn> {
 
             private readonly LinkedList<Exception> exceptions = new LinkedList<Exception>();
             
-            private object result;
-            
+            private InvocationResult<TTarget, TReturn> result;
+
             // ReSharper disable once MemberHidesStaticFromOuterClass
             private IEnumerable<IntPtr> remainingDesktopHandles;
             
@@ -41,7 +45,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 }
             }
 
-            public object GetResultOrThrow() {
+            public InvocationResult<TTarget, TReturn> GetResultOrThrow() {
                 if (this.exceptions.Count > 1) {
                     throw new AggregateException("Smartcard operation failed.", this.exceptions);
                 } 
@@ -58,7 +62,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             }
 
             // ReSharper disable once ParameterHidesMember
-            public void SetResult(object result) {
+            public void SetResult(InvocationResult<TTarget, TReturn> result) {
                 this.result = result;
             }
 
@@ -74,6 +78,8 @@ namespace EpiSource.KeePass.Ekf.UI {
         }
         
         #endregion
+        
+        public static readonly TimeSpan UsuallyShortTaskRecommendedDialogDelay = TimeSpan.FromSeconds(1);
 
         private const int gracefulAbortTimeoutMs = 100;
         private const string defaultDesktopName = "Default";
@@ -105,36 +111,97 @@ namespace EpiSource.KeePass.Ekf.UI {
             }
         }
         
-        #region DoCrypto factory methods
+        #region DoCryptoWithMessagePump factory methods
 
         public static void DoCryptoWithMessagePump(
-            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken)
+            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken),
+            TimeSpan? showDialogDelay = null
         ) {
-            DoCryptoAsync(cryptoOperation, ct).AwaitWithMessagePump();
+            DoCryptoAsync(cryptoOperation, ct, showDialogDelay).AwaitWithMessagePump();
         }
         
-        public static T DoCryptoWithMessagePump<T>(
-            Expression<Func<CancellationToken, T>> cryptoOperation, CancellationToken ct = default(CancellationToken)
-        ) {
-            return DoCryptoAsync(cryptoOperation, ct).AwaitWithMessagePump();
+        public static IMethodInvocationResult<TTarget> DoCryptoWithMessagePump<TTarget>(TTarget target,
+            Expression<Action<CancellationToken, TTarget>> cryptoOperation,
+            CancellationToken ct = default(CancellationToken), TimeSpan? showDialogDelay = null) {
+            return DoCryptoAsync(target, cryptoOperation, ct, showDialogDelay).AwaitWithMessagePump();
         }
+        
+        public static TReturn DoCryptoWithMessagePump<TReturn>(
+            Expression<Func<CancellationToken, TReturn>> cryptoOperation, CancellationToken ct = default(CancellationToken),
+            TimeSpan? showDialogDelay = null
+        ) {
+            return DoCryptoAsync(cryptoOperation, ct, showDialogDelay).AwaitWithMessagePump();
+        }
+        
+        public static IFunctionInvocationResult<TTarget, TReturn> DoCryptoWithMessagePump<TTarget, TReturn>(TTarget target,
+            Expression<Func<CancellationToken, TTarget, TReturn>> cryptoOperation,
+            CancellationToken ct = default(CancellationToken), TimeSpan? showDialogDelay = null) {
+            return DoCryptoAsync(target, cryptoOperation, ct, showDialogDelay).AwaitWithMessagePump();
+        }
+        
+        public static void DoCryptoWithMessagePumpShort(
+            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken)
+        ) {
+            DoCryptoAsync(cryptoOperation, ct, UsuallyShortTaskRecommendedDialogDelay).AwaitWithMessagePump();
+        }
+        
+        public static IMethodInvocationResult<TTarget> DoCryptoWithMessagePumpShort<TTarget>(TTarget target,
+            Expression<Action<CancellationToken, TTarget>> cryptoOperation,
+            CancellationToken ct = default(CancellationToken)) {
+            return DoCryptoAsync(target, cryptoOperation, ct, UsuallyShortTaskRecommendedDialogDelay).AwaitWithMessagePump();
+        }
+        
+        public static TReturn DoCryptoWithMessagePumpShort<TReturn>(
+            Expression<Func<CancellationToken, TReturn>> cryptoOperation, CancellationToken ct = default(CancellationToken)
+        ) {
+            return DoCryptoAsync(cryptoOperation, ct, UsuallyShortTaskRecommendedDialogDelay).AwaitWithMessagePump();
+        }
+        
+        public static IFunctionInvocationResult<TTarget, TReturn> DoCryptoWithMessagePumpShort<TTarget, TReturn>(TTarget target,
+            Expression<Func<CancellationToken, TTarget, TReturn>> cryptoOperation,
+            CancellationToken ct = default(CancellationToken)) {
+            return DoCryptoAsync(target, cryptoOperation, ct, UsuallyShortTaskRecommendedDialogDelay).AwaitWithMessagePump();
+        }
+        
+        #endregion
+        
+        #region DoCryptoAsync
 
         public static async Task DoCryptoAsync(
-            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken)
+            Expression<Action<CancellationToken>> cryptoOperation, CancellationToken ct = default(CancellationToken),
+            TimeSpan? showDialogDelay = null
         ) {
-            await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation), ct)
+            await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation), ct, showDialogDelay)
                 .ConfigureAwait(false);
         }
         
-        public static async Task<T> DoCryptoAsync<T>(
-            Expression<Func<CancellationToken, T>> cryptoOperation, CancellationToken ct = default(CancellationToken)
+        public static async Task<IMethodInvocationResult<TTarget>> DoCryptoAsync<TTarget>(TTarget target,
+            Expression<Action<CancellationToken, TTarget>> cryptoOperation, CancellationToken ct = default(CancellationToken),
+            TimeSpan? showDialogDelay = null) 
+        {
+            return await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation, target), ct, showDialogDelay);
+        }
+        
+        public static async Task<TReturn> DoCryptoAsync<TReturn>(
+            Expression<Func<CancellationToken, TReturn>> cryptoOperation, CancellationToken ct = default(CancellationToken),
+            TimeSpan? showDialogDelay = null
         ) {
-            return (T) await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation), ct)
+            return (await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation), ct, showDialogDelay)
+                .ConfigureAwait(false)).Result;
+        }
+        
+        public static async Task<IFunctionInvocationResult<TTarget, TReturn>> DoCryptoAsync<TTarget, TReturn>(TTarget target, Expression<Func<CancellationToken, TTarget, TReturn>> cryptoOperation, CancellationToken ct = default(CancellationToken),
+            TimeSpan? showDialogDelay = null) {
+            return await DoCryptoImpl(InvocationRequest.FromExpression(cryptoOperation, target), ct, showDialogDelay)
                 .ConfigureAwait(false);
         }
+        
+        #endregion DoCryptoAsync
+        
+        #region DoCrypto Implementation
 
-        private static async Task<object> DoCryptoImpl(
-            InvocationRequest cryptoOperationRequest, CancellationToken ct
+        private static async Task<InvocationResult<TTarget, TReturn>> DoCryptoImpl<TTarget, TReturn>(
+            InvocationRequest<TTarget, TReturn> cryptoOperationRequest, CancellationToken ct, TimeSpan? showDialogDelay
         ) {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             
@@ -143,16 +210,25 @@ namespace EpiSource.KeePass.Ekf.UI {
             var activeForm = NativeForms.GetActiveWindow();
             
             var scOperationDialog = new SmartcardOperationDialog(activeForm, cts);
-            scOperationDialog.Show(activeForm);
+
+            if (showDialogDelay.HasValue) {
+                // Prevent flicker for very short running tasks: Show dialog only for longer running tasks
+                Task.Delay(showDialogDelay.Value, cts.Token)
+                    .ContinueWith(t => scOperationDialog.Show(activeForm), cts.Token,
+                        TaskContinuationOptions.RunContinuationsAsynchronously, TaskScheduler.FromCurrentSynchronizationContext());
+            } else {
+                scOperationDialog.Show(activeForm);
+            }
 
             try {
-                Expression<Func<CancellationToken, WorkerResult>> desktopBoundInvocation = cct => SetDesktopAndExecute(
+                Expression<Func<CancellationToken, WorkerResult<TTarget, TReturn>>> desktopBoundInvocation = cct => SetDesktopAndExecute<TTarget, TReturn>(
                     cct, cryptoOperationRequest.ToPortableInvocationRequest(), NativeForms.GetCurrentThreadDesktopName(),
                     GetAndResetRemainingHandles());
-                
+
                 var cryptoTaskHandle = await smartcardWorker.InvokeDetailedAsync(
                     desktopBoundInvocation, cts.Token, TimeSpan.FromMilliseconds(gracefulAbortTimeoutMs),
                     ForcedCancellationMode.CleanupBeforeCancellation);
+                    
                 using (var cryptoProcessWinEvents = new NativeWinEvents(cryptoTaskHandle.WorkerProcess)) {
                     var uiCentered = false;
                     var knownWindows = new HashSet<IntPtr>();
@@ -186,13 +262,15 @@ namespace EpiSource.KeePass.Ekf.UI {
                                 }
                             }
                         };
-                    
-                    // continueOnCapturedContext: true => finally must run within UI thread! This is default, but be explicit here!
-                    var retVal = await cryptoTaskHandle.GetInvocationResultAsync().ConfigureAwait(true);
+
+                    // continueOnCapturedContext: true => finally must run within UI thread!
+                    // This is default, but be explicit here!
+                    var retVal = await cryptoTaskHandle.PlainResult.AsAwaitable().ConfigureAwait(true);
                     AddRemainingHandles(retVal.RemainingDesktopHandles);
                     return retVal.GetResultOrThrow();
                 }
             } finally {
+                cts.Cancel();
                 scOperationDialog.Close();
             }
         }
@@ -242,14 +320,15 @@ namespace EpiSource.KeePass.Ekf.UI {
         // consumption.
         // At latest, all desktop handles are released when the worker process shuts down, that is after the chosen
         // standby timeout has passed without user operation.
-        private static WorkerResult SetDesktopAndExecute(
-            CancellationToken ct, InvocationRequest.PortableInvocationRequest request, string desktop,
+        // TODO: Investigate: Currently broken (at least Win11 24H2) - desktop is set correctly, but smartcard dialog ignores current thread desktop
+        private static WorkerResult<TTarget, TReturn> SetDesktopAndExecute<TTarget, TReturn>(
+            CancellationToken ct, IPortableInvocationRequest portableRequest, string desktop,
             IEnumerable<IntPtr> desktopHandlesToClose) {
 
             var remainingHandles = new List<IntPtr>(desktopHandlesToClose);
             var currentDesktopHandle = IntPtr.Zero;
 
-            var result = new WorkerResult();
+            var result = new WorkerResult<TTarget, TReturn>();
 
             try {
                 if (desktop != null && desktop != defaultDesktopName ) {
@@ -266,8 +345,9 @@ namespace EpiSource.KeePass.Ekf.UI {
 
                 try {
                     ct.Register(() => Process.GetCurrentProcess().CloseMainWindow());
-                    var invocationResult = request.ToInvocationRequest().Invoke(ct);
-                    result.SetResult(invocationResult);
+                    var request = portableRequest.ToInvocationRequest();
+                    var invocationResult = request.Invoke(ct);
+                    result.SetResult(new InvocationResult<TTarget, TReturn>((TTarget)request.Target, (TReturn)invocationResult, request.HasReturnParameter));
                 } catch (Exception e) {
                     result.AddException(e);
                 }
