@@ -86,7 +86,13 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                 throw new ArgumentNullException("cert");
             }
 
-            var isRsa = cert.PublicKey.Key is RSA;
+            bool isRsa;
+            try {
+                isRsa = cert.PublicKey.Key is RSA;
+            } catch (NotSupportedException) {
+                isRsa = false;
+            }
+            
             if (!isRsa) {
                 if (nullOnError) {
                     return null;
