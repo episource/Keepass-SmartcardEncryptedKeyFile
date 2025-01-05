@@ -5,6 +5,7 @@ using EpiSource.KeePass.Ekf.Crypto;
 using Episource.KeePass.EKF.Resources;
 
 namespace EpiSource.KeePass.Ekf.UI {
+    [Serializable]
     public class KeyPairModel {
         public enum KeyProvider {
             Piv,

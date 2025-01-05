@@ -94,6 +94,7 @@
     <Compile Include="UI\Windows\NativeForms.cs" />
     <Compile Include="Unblocker\EpiSource.Unblocker\**\*.cs" Exclude="Unblocker\EpiSource.Unblocker\Properties\*" />
     <Compile Include="Util\PinvokeUtil.cs" />
+    <Compile Include="Util\StreamExtensions.cs" />
     <Compile Include="Util\TaskExtensions.cs" />
     <Compile Include="Util\Windows\NativeDevice.cs" />
     <Compile Include="Util\Windows\NativeDevice.pinvoke.cs">

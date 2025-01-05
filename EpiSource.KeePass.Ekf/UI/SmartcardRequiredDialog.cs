@@ -9,6 +9,7 @@ using EpiSource.KeePass.Ekf.Crypto;
 using Episource.KeePass.EKF.Resources;
 
 using EpiSource.KeePass.Ekf.Util.Windows;
+using EpiSource.Unblocker.Util;
 
 using KeePass.UI;
 
@@ -29,10 +30,11 @@ namespace EpiSource.KeePass.Ekf.UI {
         private readonly Timer refreshDelayTimer = new Timer() { Interval = 250 };
         private readonly Timer redrawAfterScrollDelayTimer = new Timer() { Interval = 150 };
 
-        private readonly IKeyPairProvider keyPairProvider;
+        private IKeyPairProvider keyPairProvider;
 
         public static IKeyPair ChooseKeyPairForDecryption(EncryptedKeyFile ekf, Form owner = null) {
-            var keyPairProvider = new DefaultKeyPairProvider(ekf); // TODO: blocks if busy hw involved - unblock!
+            var keyPairProvider = SmartcardOperationDialog
+                .DoCryptoWithMessagePumpShort(ct => DefaultKeyPairProvider.FromEncryptedKeyFile(ekf));
             return ChooseKeyPairForDecryption(keyPairProvider, owner);
         }
         
@@ -322,10 +324,13 @@ namespace EpiSource.KeePass.Ekf.UI {
             var prevCheckedItems = new HashSet<string>();
             try {
                 if (this.loaded) {
-                    // note: result == false does not imply, that IsReadyForDecrypt to be unchanged!
+                    // note: result == false does not imply IsReadyForDecrypt to be unchanged!
                     // => replace list independent of result
-                    this.keyPairProvider.Refresh(); // TODO: blocks if busy HW involved - unblock!
-
+                    // NOTE: Refresh blocks if busy HW is involved -> unblocker
+                    var refreshResult = SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
+                        this.keyPairProvider, (ct, _) => _.Refresh());
+                    this.keyPairProvider.Refresh(refreshResult.PostInvocationTarget);
+                    
                     prevCheckedItems = this.keyListView.CheckedItems.Cast<ListViewItem>()
                                            .Select(i => i.Tag as KeyPairModel)
                                            .Select(m => m.KeyPair.Certificate.Thumbprint)

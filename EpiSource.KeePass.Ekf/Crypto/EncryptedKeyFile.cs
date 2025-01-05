@@ -82,11 +82,12 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// Blocks if a busy hardware device is involved.
         /// </remarks>
         public static EncryptedKeyFile Read(Stream source) {
-            var buffer = new MemoryStream();
-            MemUtil.CopyStream(source, buffer);
-            
-            // note: Decode blocks if busy HW is involved.
-            return Decode(buffer.ToArray());
+            using (var buffer = new MemoryStream()) {
+                MemUtil.CopyStream(source, buffer);
+
+                // note: Decode blocks if busy HW is involved.
+                return Decode(buffer.ToArray());
+            }
         }
 
         /// <summary>

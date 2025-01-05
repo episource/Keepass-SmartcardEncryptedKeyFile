@@ -103,7 +103,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 if (!success) {
                     return onFailure();
                 }
-
+                
                 var nativeKeyInfo = Marshal.PtrToStructure<CRYPT_KEY_PROV_INFO>(pvData);
                 
                 // Let's ignore ParentWindowHandle & KeyPassword for now

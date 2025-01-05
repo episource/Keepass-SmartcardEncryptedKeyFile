@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -15,7 +16,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
     /// </remarks>
     [Serializable]
     // ReSharper disable once InconsistentNaming
-    public class RSACryptoServiceProviderKeyPair : IKeyPair {
+    public sealed class RSACryptoServiceProviderKeyPair : IKeyPair, ISerializable {
 
         private readonly X509Certificate2 cert;
         
@@ -33,11 +34,35 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             get { return this.pubKeyInfo ?? (this.pubKeyInfo = GetPublicKeyContainerInfoFromCert(this.cert)); }
         }
         
+        public void GetObjectData(SerializationInfo info, StreamingContext context) {
+            info.AddValue("cert", this.cert);
+        }
+
+        private RSACryptoServiceProviderKeyPair(SerializationInfo info, StreamingContext context) {
+            var preliminaryCert = (X509Certificate2)info.GetValue("cert", typeof(X509Certificate2));
+            
+            using (var userStore = new X509Store(StoreName.My, StoreLocation.CurrentUser))
+            using (var machineStore = new X509Store(StoreName.My, StoreLocation.LocalMachine)) {
+                userStore.Open(OpenFlags.ReadOnly);
+                machineStore.Open(OpenFlags.ReadOnly);
+
+                var userStoreCerts = userStore.Certificates.Cast<X509Certificate2>();
+                var machineStoreCerts = machineStore.Certificates.Cast<X509Certificate2>();
+
+                var matchingCert = Enumerable.Concat(userStoreCerts, machineStoreCerts)
+                          .FirstOrDefault(c => c.Thumbprint == preliminaryCert.Thumbprint);
+                
+                this.cert = matchingCert ?? preliminaryCert;
+            }
+        }
+        
         private RSACryptoServiceProviderKeyPair(X509Certificate2 cert, CspKeyContainerInfo privKeyInfo, CspKeyContainerInfo pubKeyInfo) {
             this.cert = cert;
             this.privKeyInfo = privKeyInfo;
             this.pubKeyInfo = pubKeyInfo;
         }
+        
+        
 
         public static RSACryptoServiceProviderKeyPair FromX509Certificate(X509Certificate2 cert) {
             return FromX509CertificateInternal(cert, false, false);  
@@ -188,6 +213,5 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                 return null;
             }
         }
-        
     }
 }

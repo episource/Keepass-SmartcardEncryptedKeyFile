@@ -5,5 +5,6 @@ namespace EpiSource.KeePass.Ekf.UI {
         IList<KeyPairModel> GetAvailableKeyPairs();
         IList<KeyPairModel> GetAuthorizedKeyPairs();
         bool Refresh();
+        bool Refresh(IKeyPairProvider other);
     }
 }

@@ -12,6 +12,7 @@ using Episource.KeePass.EKF.Resources;
 using EpiSource.KeePass.Ekf.UI;
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.Unblocker.Hosting;
+using EpiSource.Unblocker.Util;
 
 using KeePass.Forms;
 using KeePass.Plugins;
@@ -130,13 +131,13 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
         }
 
         private byte[] DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true, bool enableCancellation = true) {
+            // IOConnection not serializable - need to read file outside unlocker task
             var ekfPath = ctx.DatabaseIOInfo.ResolveEncryptedKeyFile();
-
-            EncryptedKeyFile ekfFile;
-            using (var stream = IOConnection.OpenRead(ekfPath)) {
-                // TODO: blocks if busy HW is involved - unblock!
-                ekfFile = EncryptedKeyFile.Read(stream);
-            }
+            var encryptedKeyFileData = IOConnection.OpenRead(ekfPath).ReadAllBinaryAndClose();
+            
+            // EncryptedKeyFile.Read/Decode blocks if busy HW is involved
+            var ekfFile = SmartcardOperationDialog
+                .DoCryptoWithMessagePumpShort(ct => EncryptedKeyFile.Decode(encryptedKeyFileData));
 
             var recipient = SmartcardRequiredDialog.ChooseKeyPairForDecryption(ekfFile, this.pluginHost.MainWindow);
             if (recipient == null) {

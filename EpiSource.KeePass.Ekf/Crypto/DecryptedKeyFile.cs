@@ -23,7 +23,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         }
 
         private DecryptedKeyFile(SerializationInfo info, StreamingContext context)
-            : base((IEnumerable<IKeyPair>) info.GetValue("authorization", typeof(IEnumerable<IKeyPair>))) {
+            : base((IList<IKeyPair>) info.GetValue("authorization", typeof(IList<IKeyPair>)), true) {
 
             var keyLength = info.GetInt32("keyLength");
             var protectedKey = (byte[])info.GetValue("protectedKey", typeof(byte[]));
@@ -33,6 +33,21 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             var plaintext = new byte[keyLength];
             Array.Copy(protectedKey, plaintext, keyLength);
             this.plaintextKey = plaintext.Protect();
+        }
+        
+        public void GetObjectData(SerializationInfo info, StreamingContext context) {
+            var plaintext = this.PlaintextKey;
+            
+            const int chunkSize = 16;
+            var protectedKeySize = (plaintext.Length + chunkSize - 1) / chunkSize * chunkSize;
+            var protectedKey = new byte[protectedKeySize];
+            
+            Array.Copy(plaintext, protectedKey, plaintext.Length);
+            ProtectedMemory.Protect(protectedKey, MemoryProtectionScope.SameLogon);
+            
+            info.AddValue("authorization", this.Authorization, typeof(IList<IKeyPair>));
+            info.AddValue("keyLength", plaintext.Length);
+            info.AddValue("protectedKey", protectedKey);
         }
         
         /// <summary>
@@ -48,21 +63,6 @@ namespace EpiSource.KeePass.Ekf.Crypto {
 
         public EncryptedKeyFile Encrypt() {
             return new EncryptedKeyFile(this);
-        }
-        
-        public void GetObjectData(SerializationInfo info, StreamingContext context) {
-            var plaintext = this.PlaintextKey;
-            
-            const int chunkSize = 16;
-            var protectedKeySize = (plaintext.Length + chunkSize - 1) / chunkSize * chunkSize;
-            var protectedKey = new byte[protectedKeySize];
-            
-            Array.Copy(plaintext, protectedKey, plaintext.Length);
-            ProtectedMemory.Protect(protectedKey, MemoryProtectionScope.SameLogon);
-            
-            info.AddValue("authorization", this.Authorization, typeof(IEnumerable<IKeyPair>));
-            info.AddValue("keyLength", plaintext.Length);
-            info.AddValue("protectedKey", protectedKey);
         }
     }
 }

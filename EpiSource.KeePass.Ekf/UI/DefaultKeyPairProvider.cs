@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,42 +8,56 @@ using EpiSource.KeePass.Ekf.KeyProvider;
 using KeePassLib.Serialization;
 
 namespace EpiSource.KeePass.Ekf.UI {
+    [Serializable]
     public class DefaultKeyPairProvider : IKeyPairProvider {
         private readonly IDictionary<string, IKeyPair> authorizedKeys;
         private readonly IDictionary<string, KeyPairModel> knownKeys = new Dictionary<string, KeyPairModel>();
-        
-        
-        /// <remarks>
-        /// Blocks if a busy hardware device is involved.
-        /// </remarks>
-        // TODO: provice static factory method instead of constructor
-        public DefaultKeyPairProvider(IOConnectionInfo dbPath) {
-            var ekfPath = dbPath.ResolveEncryptedKeyFile();
 
-            if (IOConnection.FileExists(ekfPath)) {
-                using (var stream = IOConnection.OpenRead(ekfPath)) {
-                    this.authorizedKeys = EncryptedKeyFile
-                                          .Read(stream).Authorization
-                                          .Where(kp => kp.Certificate.Thumbprint != null)
-                                          .ToDictionary(kp => kp.Certificate.Thumbprint, kp => kp);
-                }
-            } else {
-                this.authorizedKeys = new Dictionary<string, IKeyPair>();
-            }
-
-            this.Refresh();
+        private struct KeyPairWithProvider {
+            public IKeyPair KeyPair;
+            public KeyPairModel.KeyProvider Provider;
         }
 
+
+        private DefaultKeyPairProvider() {
+            this.authorizedKeys = new Dictionary<string, IKeyPair>();
+            this.Refresh();
+        }
         
         /// <remarks>
         /// Blocks if a busy hardware device is involved.
         /// </remarks>
-        // TODO: provice static factory method instead of constructor
-        public DefaultKeyPairProvider(EncryptedKeyFile ekf) {
+        private DefaultKeyPairProvider(EncryptedKeyFile ekf) {
             this.authorizedKeys = ekf.Authorization
                                      .Where(kp => kp.Certificate.Thumbprint != null)
                                      .ToDictionary(kp => kp.Certificate.Thumbprint, kp => kp);
             this.Refresh();
+        }
+        
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
+        public static DefaultKeyPairProvider FromDbPath(IOConnectionInfo dbPath) {
+            var ekfPath = dbPath.ResolveEncryptedKeyFile();
+
+            if (!IOConnection.FileExists(ekfPath)) return new DefaultKeyPairProvider();
+            using (var stream = IOConnection.OpenRead(ekfPath)) {
+                return new DefaultKeyPairProvider(EncryptedKeyFile.Read(stream));
+            }
+        }
+
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
+        public static DefaultKeyPairProvider FromEncryptedKeyFile(EncryptedKeyFile ekf) {
+            return new DefaultKeyPairProvider(ekf);
+        }
+        
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
+        public static DefaultKeyPairProvider FromEncryptedKeyFileBinary(byte[] ekf) {
+            return new DefaultKeyPairProvider(EncryptedKeyFile.Decode(ekf));
         }
         
         public IList<KeyPairModel> GetAvailableKeyPairs() {
@@ -61,17 +76,31 @@ namespace EpiSource.KeePass.Ekf.UI {
         /// Blocks if a busy hardware device is involved.
         /// </remarks>
         public bool Refresh() {
+            return this.RefreshImpl(
+                RSASmartcardKeyPairs.GetAllPivKeyPairs() // NOTE: blocks if busy HW involved
+                     .Select(k => new KeyPairWithProvider {KeyPair = k, Provider = KeyPairModel.KeyProvider.Piv}));
+        }
+
+        public bool Refresh(IKeyPairProvider other) {
+            return this.RefreshImpl(
+                other.GetAvailableKeyPairs()
+                     .Select(m => new KeyPairWithProvider {KeyPair = m.KeyPair, Provider = m.Provider}));
+        }
+
+        private bool RefreshImpl(IEnumerable<KeyPairWithProvider> keys) {
             var prevKnownKeys = this.knownKeys.ToDictionary(
                 x => x.Key, x => x.Value);
             this.knownKeys.Clear();
             
+            foreach (var keyPair in this.authorizedKeys.Values) {
+                this.AddKey(keyPair, KeyPairModel.KeyProvider.EkfAuthorizationList);
+            }
             
-            this.AddKeys(this.authorizedKeys.Values, KeyPairModel.KeyProvider.EkfAuthorizationList);
+            // add discovered key pairs last: replace existing entries based on authorization list
+            foreach (var k in keys) {
+                this.AddKey(k.KeyPair, k.Provider);
+            }
             
-            // add piv cards last: replace existing keys from other sources (piv is primary provider)
-            // NOTE: blocks if busy HW involved
-            this.AddKeys(RSASmartcardKeyPairs.GetAllPivKeyPairs(), KeyPairModel.KeyProvider.Piv);
-
             var changed = false;
             foreach (var k in this.knownKeys) {
                 KeyPairModel prevKeyModel;
@@ -87,21 +116,19 @@ namespace EpiSource.KeePass.Ekf.UI {
             return changed;
         }
 
-        private void AddKeys(IEnumerable<IKeyPair> keyPairs, KeyPairModel.KeyProvider provider) {
-            foreach (var keyPair in keyPairs) {
-                var thumbprint = keyPair.Certificate.Thumbprint;
-                KeyPairModel model;
+        private void AddKey(IKeyPair keyPair, KeyPairModel.KeyProvider provider) {
+            var thumbprint = keyPair.Certificate.Thumbprint;
+            KeyPairModel model;
                 
-                if (thumbprint != null && this.authorizedKeys.ContainsKey(thumbprint)) {
-                    model = new KeyPairModel(keyPair, KeyPairModel.Authorization.Authorized, provider);
-                } else {
-                    model = new KeyPairModel(keyPair, KeyPairModel.Authorization.Rejected, provider);
-                }
-
-                // replace existing keys with same thumbprint but different provider
-                // ReSharper disable once AssignNullToNotNullAttribute
-                this.knownKeys[thumbprint] = model;
+            if (thumbprint != null && this.authorizedKeys.ContainsKey(thumbprint)) {
+                model = new KeyPairModel(keyPair, KeyPairModel.Authorization.Authorized, provider);
+            } else {
+                model = new KeyPairModel(keyPair, KeyPairModel.Authorization.Rejected, provider);
             }
+
+            // replace existing keys with same thumbprint but different provider
+            // ReSharper disable once AssignNullToNotNullAttribute
+            this.knownKeys[thumbprint] = model;
         }
 
         private static bool IsSignificantlyDifferent(KeyPairModel l, KeyPairModel r) {
