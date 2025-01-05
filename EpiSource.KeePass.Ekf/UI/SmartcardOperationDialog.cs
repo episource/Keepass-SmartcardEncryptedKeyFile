@@ -232,6 +232,8 @@ namespace EpiSource.KeePass.Ekf.UI {
                 using (var cryptoProcessWinEvents = new NativeWinEvents(cryptoTaskHandle.WorkerProcess)) {
                     var uiCentered = false;
                     var knownWindows = new HashSet<IntPtr>();
+                    
+                    // TODO: Currently broken (at least Win11 24H2) - smart card ui is shown by different process (CredentialUIBroker.exe) and not the worker process => no window events received
                     cryptoProcessWinEvents.ObjectShown +=
                         (sender, args) => {
                             if (knownWindows.Add(args.EventSource)) {
@@ -320,7 +322,7 @@ namespace EpiSource.KeePass.Ekf.UI {
         // consumption.
         // At latest, all desktop handles are released when the worker process shuts down, that is after the chosen
         // standby timeout has passed without user operation.
-        // TODO: Investigate: Currently broken (at least Win11 24H2) - desktop is set correctly, but smartcard dialog ignores current thread desktop
+        // TODO: Currently broken (at least Win11 24H2) - smart card ui is shown by different process (CredentialUIBroker.exe) and not the current process
         private static WorkerResult<TTarget, TReturn> SetDesktopAndExecute<TTarget, TReturn>(
             CancellationToken ct, IPortableInvocationRequest portableRequest, string desktop,
             IEnumerable<IntPtr> desktopHandlesToClose) {
