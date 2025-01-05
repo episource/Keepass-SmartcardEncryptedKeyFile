@@ -51,13 +51,15 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             byte[] plainKey = null;
             try {
                 plainKey = ctx.CreatingNewKey ? this.CreateNewKey(ctx) : this.DecryptEncryptedKeyFile(ctx);
-            }
-            catch (FileNotFoundException) {
+            } catch (FileNotFoundException) {
                 MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextEkfNotFound, ProviderName),
                     ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return null;
+            } catch (DeniedByVirusScannerFalsePositive e) {
+                var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
+                    ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-            
+
             if (plainKey == null) {
                 return null;
             }
@@ -94,10 +96,15 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             // treat missing EKF as empty EKF
             // permit edit as long as key (file) data is available
             if (EditEncryptedKeyFileDialog.CanAskForSettings(activeKey)) {
-                var encryptionRequest = EditEncryptedKeyFileDialog.AskForSettings(
-                    this.pluginHost.Database.IOConnectionInfo, this.GetActiveEkfKey());
-                if (encryptionRequest != null) {
-                    encryptionRequest.WriteEncryptedKeyFile();
+                try {
+                    var encryptionRequest = EditEncryptedKeyFileDialog.AskForSettings(
+                        this.pluginHost.Database.IOConnectionInfo, this.GetActiveEkfKey());
+                    if (encryptionRequest != null) {
+                        encryptionRequest.WriteEncryptedKeyFile();
+                    }
+                } catch (DeniedByVirusScannerFalsePositive e) {
+                    var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
+                        ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
         }
@@ -156,8 +163,8 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
                 return null;
             } catch (DeniedByVirusScannerFalsePositive e) {
                 var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
-                    ProviderName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                return result == DialogResult.Yes ? this.DecryptEncryptedKeyFile(ctx, enableCancellation: false) : null;
+                    ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return null;
             } catch (TaskCanceledException) {
                 return null;
             } catch (TaskCrashedException) {

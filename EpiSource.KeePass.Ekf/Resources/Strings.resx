@@ -165,7 +165,7 @@
     <comment>{0} is the provider name</comment>
   </data>
   <data name="SmartcardEncryptedKeyProvider.DialogTextUnblockerDeniedByVirusScanner" xml:space="preserve">
-    <value>The {0} operation was denied by the system's virus scanner (false positive). Consider whitelisting `{1}`.&#x000a;&#x000a;The operation can also be repeated with cancellation support disabled. This is likely to succeed, but application might freeze temporarily.&#x000a;&#x000a;Perform operation without cancellation support?</value>
-    <comment>YesNo-Dialog, {0} is the provider name, {1] is the affected file's name</comment>
+    <value>The {0} operation was denied by the system's virus scanner (false positive). Consider whitelisting `{1}`.</value>
+    <comment>OK-Dialog, {0} is the provider name, {1] is the affected file's name</comment>
   </data>
 </root>
