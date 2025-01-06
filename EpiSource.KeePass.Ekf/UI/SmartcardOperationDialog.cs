@@ -213,9 +213,12 @@ namespace EpiSource.KeePass.Ekf.UI {
 
             if (showDialogDelay.HasValue) {
                 // Prevent flicker for very short running tasks: Show dialog only for longer running tasks
+                // note: not waiting for this task, but finally blocks ensures the task is cancelled reliably
+#pragma warning disable CS4014
                 Task.Delay(showDialogDelay.Value, cts.Token)
                     .ContinueWith(t => scOperationDialog.Show(activeForm), cts.Token,
                         TaskContinuationOptions.RunContinuationsAsynchronously, TaskScheduler.FromCurrentSynchronizationContext());
+#pragma warning restore CS4014
             } else {
                 scOperationDialog.Show(activeForm);
             }
