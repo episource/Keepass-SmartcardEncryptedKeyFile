@@ -33,6 +33,13 @@ namespace EpiSource.KeePass.Ekf.UI {
                                      .ToDictionary(kp => kp.Certificate.Thumbprint, kp => kp);
             this.Refresh();
         }
+
+        /// <remarks>
+        /// Blocks if a busy hardware device is involved.
+        /// </remarks>
+        public static DefaultKeyPairProvider FromSystemKeyStore() {
+            return new DefaultKeyPairProvider();
+        }
         
         /// <remarks>
         /// Blocks if a busy hardware device is involved.

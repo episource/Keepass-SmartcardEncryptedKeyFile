@@ -56,7 +56,10 @@ namespace EpiSource.KeePass.Ekf.UI {
             }
             // activeDbKey is optional - might be new db
 
-            var keyPairProvider = RetrieveKeyPairProvider(dbPath);
+            // Note: DefaultKeyPairProvider#FromDbPath constructor blocks if busy HW is involved - unblock
+            var keyPairProvider = SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
+                ct => DefaultKeyPairProvider.FromSystemKeyStore());
+            
             var dialog = new EditEncryptedKeyFileDialog(dbPath, activeDbKey, keyPairProvider, true);
             return dialog.ShowDialogAndGenerateEncryptionRequest();
         }
@@ -72,7 +75,14 @@ namespace EpiSource.KeePass.Ekf.UI {
                 throw new ArgumentException(@"Unsupported key type.", "keyFile"); 
             }
             
-            var keyPairProvider = RetrieveKeyPairProvider(dbPath);
+            // IOConnection not serializable - need to read file outside unblocker task
+            var ekfPath = dbPath.ResolveEncryptedKeyFile();
+            var encryptedKeyFileData = IOConnection.OpenRead(ekfPath).ReadAllBinaryAndClose();
+            
+            // Note: DefaultKeyPairProvider#FromDbPath constructor blocks if busy HW is involved - unblock
+            var keyPairProvider = SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
+                ct => DefaultKeyPairProvider.FromEncryptedKeyFileBinary(encryptedKeyFileData));
+            
             var dialog = new EditEncryptedKeyFileDialog(dbPath, keyFile, keyPairProvider, false);
             return dialog.ShowDialogAndGenerateEncryptionRequest();
         }
@@ -207,20 +217,6 @@ namespace EpiSource.KeePass.Ekf.UI {
             }
             
             return Strings.EditEncryptedKeyFileDialog_KeySourceUnknown;
-        }
-
-        private static DefaultKeyPairProvider RetrieveKeyPairProvider(IOConnectionInfo dbPath) {
-            if (dbPath == null) {
-                throw new ArgumentNullException("dbPath");
-            }
-            
-            // IOConnection not serializable - need to read file outside unblocker task
-            var ekfPath = dbPath.ResolveEncryptedKeyFile();
-            var encryptedKeyFileData = IOConnection.OpenRead(ekfPath).ReadAllBinaryAndClose();
-            
-            // Note: DefaultKeyPairProvider#FromDbPath constructor blocks if busy HW is involved - unblock
-            return SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
-                ct => DefaultKeyPairProvider.FromEncryptedKeyFileBinary(encryptedKeyFileData));
         }
     }
 }
