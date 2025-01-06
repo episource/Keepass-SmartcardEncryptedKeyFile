@@ -96,13 +96,16 @@ namespace EpiSource.KeePass.Ekf.UI {
                 return;
             }
             
-            var saveFileDialog =  UIUtil.CreateSaveFileDialog(KPRes.KeyFileCreate, string.Empty, UIUtil.CreateFileTypeFilter("key", KPRes.KeyFiles, true), 1, "key", AppDefs.FileDialogContext.KeyFile);
+            var saveFileDialog =  UIUtil.CreateSaveFileDialog(KPRes.KeyFileCreate, string.Empty, UIUtil.CreateFileTypeFilter("keyx", KPRes.KeyFiles, true), 1, "key", AppDefs.FileDialogContext.KeyFile);
             if (saveFileDialog.ShowDialog() != DialogResult.OK) {
                 return;
             }
 
             try {
-                this.nextKey.WriteToXmlKeyFile(saveFileDialog.FileName);
+                using (var s = File.Open(saveFileDialog.FileName, FileMode.Create, FileAccess.Write)) {
+                    const ulong v2 = 0x0002000000000000;
+                    KfxFile.Create(v2, this.nextKey.KeyData.ReadData(), null).Save(s);
+                }
             }
             catch (IOException e) {
                 MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFailureExportingKey, e, e.Message, saveFileDialog.FileName),
@@ -116,19 +119,36 @@ namespace EpiSource.KeePass.Ekf.UI {
         }
 
         private void ImportKey() {
-            var openFileDialog = UIUtil.CreateOpenFileDialog(KPRes.KeyFileSelect, UIUtil.CreateFileTypeFilter("key", KPRes.KeyFiles, true), 2, null, false, AppDefs.FileDialogContext.KeyFile);
+            var openFileDialog = UIUtil.CreateOpenFileDialog(KPRes.KeyFileSelect, UIUtil.CreateFileTypeFilter("key|keyx", KPRes.KeyFiles, true), 2, null, false, AppDefs.FileDialogContext.KeyFile);
             if (openFileDialog.ShowDialog() != DialogResult.OK) {
                 return;
             }
 
             if (!File.Exists(openFileDialog.FileName)) {
-                MessageBox.Show(string.Format(Strings.Culture, Strings.EdidEncryptedKeyFileDialog_DialogTextFileNotFound, openFileDialog.FileName),
+                MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFileNotFound, openFileDialog.FileName),
                     Strings.EditEncryptedKeyFileDialog_DialogTitleFileNotFound,
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            this.nextKey = new ImportedKeyDataStore(openFileDialog.FileName);
+            var importedKey = ImportedKeyDataStore.FromKfxFile(openFileDialog.FileName);
+            if (importedKey == null) {
+                var result = MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextNoXmlKeyFile, openFileDialog.FileName),
+                    Strings.EditEncryptedKeyFileDialog_DialogTitleNoXmlKeyFile,
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+
+                if (result == DialogResult.No) return;
+                
+                importedKey = ImportedKeyDataStore.FromPlainKeyFile(openFileDialog.FileName);
+            }
+            if (importedKey == null) {
+                MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextInvalidPlainKeyFile, openFileDialog.FileName),
+                    Strings.EditEncryptedKeyFileDialog_DialogTitleInvalidPlainKeyFile,
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            this.nextKey = importedKey;
             this.keyWasExported = false;
             
             this.OnContentChanged();

@@ -58,16 +58,32 @@
   </data>
   <data name="EditEncryptedKeyFileDialog.DialogTitleFailureExportingKey" xml:space="preserve">
     <value>IO Failure</value>
-    
   </data>
-  <data name="EdidEncryptedKeyFileDialog.DialogTextFileNotFound" xml:space="preserve">
+  
+  <data name="EditEncryptedKeyFileDialog.DialogTextFileNotFound" xml:space="preserve">
     <value>File not found: {0}</value>
     <comment>{0} is path or file name</comment>
   </data>
   <data name="EditEncryptedKeyFileDialog.DialogTitleFileNotFound" xml:space="preserve">
     <value>File  not found</value>
-    
   </data>
+  
+  <data name="EditEncryptedKeyFileDialog.DialogTextNoXmlKeyFile" xml:space="preserve">
+    <value>The selected key file is not a valid Keypass XML Key File. Do you want to use the file as (plain) key file anyway?</value>
+    <comment>yes-no dialog</comment>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.DialogTitleNoXmlKeyFile" xml:space="preserve">
+    <value>Import key file</value>
+  </data>
+
+  <data name="EditEncryptedKeyFileDialog.DialogTextInvalidPlainKeyFile" xml:space="preserve">
+    <value>The selected (plain) key file is invalid.</value>
+    <comment>ok dialog</comment>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.DialogTitleInvalidPlainKeyFile" xml:space="preserve">
+    <value>Invalid key file</value>
+  </data>
+  
   <data name="EditEncryptedKeyFileDialog.LabelDatabase" xml:space="preserve">
     <value>Database:</value>
   </data>

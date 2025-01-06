@@ -87,15 +87,6 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to File not found: {0}.
-        /// </summary>
-        internal static string EdidEncryptedKeyFileDialog_DialogTextFileNotFound {
-            get {
-                return ResourceManager.GetString("EdidEncryptedKeyFileDialog.DialogTextFileNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Export.
         /// </summary>
         internal static string EditEncryptedKeyFileDialog_ButtonExport {
@@ -177,6 +168,33 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File not found: {0}.
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_DialogTextFileNotFound {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.DialogTextFileNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The selected (plain) key file is invalid..
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_DialogTextInvalidPlainKeyFile {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.DialogTextInvalidPlainKeyFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The selected key file is not a valid Keypass XML Key File. Do you want to use the file as (plain) key file anyway?.
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_DialogTextNoXmlKeyFile {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.DialogTextNoXmlKeyFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IO Failure.
         /// </summary>
         internal static string EditEncryptedKeyFileDialog_DialogTitleFailureExportingKey {
@@ -191,6 +209,24 @@ namespace Episource.KeePass.EKF.Resources {
         internal static string EditEncryptedKeyFileDialog_DialogTitleFileNotFound {
             get {
                 return ResourceManager.GetString("EditEncryptedKeyFileDialog.DialogTitleFileNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid key file.
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_DialogTitleInvalidPlainKeyFile {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.DialogTitleInvalidPlainKeyFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import key file.
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_DialogTitleNoXmlKeyFile {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.DialogTitleNoXmlKeyFile", resourceCulture);
             }
         }
         

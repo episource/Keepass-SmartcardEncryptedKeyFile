@@ -15,6 +15,16 @@ namespace EpiSource.Unblocker.Util {
                 stream.Close();
             }
         }
+        
+        public static string ReadAllTextAndClose(this Stream stream) {
+            try {
+                using (var sr = new StreamReader(stream)) {
+                    return sr.ReadToEnd();
+                }
+            } finally {
+                stream.Close();
+            }
+        }
     }
     
 }
