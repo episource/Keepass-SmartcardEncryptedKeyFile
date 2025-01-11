@@ -49,8 +49,8 @@ namespace EpiSource.KeePass.Ekf.UI {
                 return readyKeyPair.KeyPair;
             }
 
-            var dialog = new SmartcardRequiredDialog(null, keyProvider);
-            var result = dialog.ShowDialog();
+            var dialog = new SmartcardRequiredDialog(owner, keyProvider);
+            var result = dialog.ShowDialog(owner);
             if (result != DialogResult.OK || dialog.keyListView.CheckedItems.Count == 0) {
                 return null;
             }

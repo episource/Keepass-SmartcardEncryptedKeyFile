@@ -16,6 +16,7 @@ using EpiSource.Unblocker.Util;
 
 using KeePass.Forms;
 using KeePass.Plugins;
+using KeePass.UI;
 
 using KeePassLib.Keys;
 using KeePassLib.Serialization;
@@ -146,7 +147,7 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             var ekfFile = SmartcardOperationDialog
                 .DoCryptoWithMessagePumpShort(ct => EncryptedKeyFile.Decode(encryptedKeyFileData));
 
-            var recipient = SmartcardRequiredDialog.ChooseKeyPairForDecryption(ekfFile, this.pluginHost.MainWindow);
+            var recipient = SmartcardRequiredDialog.ChooseKeyPairForDecryption(ekfFile, GlobalWindowManager.TopWindow);
             if (recipient == null) {
                 return null;
             }
