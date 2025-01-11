@@ -16,7 +16,7 @@ using KeePass.UI;
 using Timer = System.Windows.Forms.Timer;
 
 namespace EpiSource.KeePass.Ekf.UI {
-    public sealed class SmartcardRequiredDialog : Form {
+    public sealed class SmartcardRequiredDialog : Form, IGwmWindow {
         private static readonly string stateConnected = Strings.SmartcardRequiredDialog_KeyStateConnected;
         private static readonly string stateNotConnected = Strings.SmartcardRequiredDialog_KeyStateNotConnected;
 
@@ -405,6 +405,8 @@ namespace EpiSource.KeePass.Ekf.UI {
 
         protected override void OnShown(EventArgs e) {
             base.OnShown(e);
+            
+            GlobalWindowManager.AddWindow(this, this);
 
             if (this.Owner != null) {
                 this.Owner.Enabled = false;
@@ -432,6 +434,8 @@ namespace EpiSource.KeePass.Ekf.UI {
 
         protected override void OnClosed(EventArgs e) {
             base.OnClosed(e);
+            
+            GlobalWindowManager.RemoveWindow(this);
 
             if (this.Owner != null) {
                 this.Owner.Enabled = true;
@@ -451,6 +455,12 @@ namespace EpiSource.KeePass.Ekf.UI {
             t.Interval += modulo == 0 ? 1 : -1 * modulo;
             
             t.Start();
+        }
+
+        bool IGwmWindow.CanCloseWithoutDataLoss {
+            get {
+                return true;
+            }
         }
 
     }

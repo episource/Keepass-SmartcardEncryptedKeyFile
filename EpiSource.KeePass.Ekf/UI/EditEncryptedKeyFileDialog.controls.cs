@@ -13,7 +13,7 @@ using KeePass.UI;
 using ContentAlignment = System.Drawing.ContentAlignment;
 
 namespace EpiSource.KeePass.Ekf.UI {
-    public partial class EditEncryptedKeyFileDialog : Form {
+    public partial class EditEncryptedKeyFileDialog : Form, IGwmWindow {
         private static readonly string noChangeCaption = Strings.EditEncryptedKeyFileDialog_KeyActionNoChange;
         private readonly TableLayoutPanel layout = new TableLayoutPanel();
         private readonly CustomListViewEx keyListView = new CustomListViewEx();
@@ -329,6 +329,20 @@ namespace EpiSource.KeePass.Ekf.UI {
             
             return true;
         }
+
+        protected override void OnShown(EventArgs e) {
+            base.OnShown(e);
+            
+            GlobalWindowManager.AddWindow(this, this);
+        }
+
+        protected override void OnClosed(EventArgs e) {
+            base.OnClosed(e);
+            
+            GlobalWindowManager.RemoveWindow(this);
+        }
+
+        bool IGwmWindow.CanCloseWithoutDataLoss { get { return false; } }
 
     }
 }

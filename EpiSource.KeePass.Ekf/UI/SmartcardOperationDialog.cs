@@ -21,8 +21,10 @@ using EpiSource.Unblocker.Hosting;
 using EpiSource.Unblocker.Tasks;
 using EpiSource.Unblocker.Util;
 
+using KeePass.UI;
+
 namespace EpiSource.KeePass.Ekf.UI {
-    public sealed class SmartcardOperationDialog : Form {
+    public sealed class SmartcardOperationDialog : Form, IGwmWindow {
         
         #region WorkerResult
         
@@ -484,14 +486,26 @@ namespace EpiSource.KeePass.Ekf.UI {
 
         protected override void OnShown(EventArgs e) {
             base.OnShown(e);
+            
+            GlobalWindowManager.AddWindow(this, this);
 
             if (this.Owner != null) {
                 this.Owner.Enabled = false;
             }
         }
 
+        protected override void OnFormClosing(FormClosingEventArgs e) {
+            base.OnFormClosing(e);
+            
+            if (this.cts != null) {
+                this.cts.Cancel();
+            }
+        }
+
         protected override void OnClosed(EventArgs e) {
             base.OnClosed(e);
+            
+            GlobalWindowManager.RemoveWindow(this);
 
             if (this.Owner != null) {
                 this.Owner.Enabled = true;
@@ -499,6 +513,8 @@ namespace EpiSource.KeePass.Ekf.UI {
         }
         
         #endregion
+        
+        bool IGwmWindow.CanCloseWithoutDataLoss { get { return true; } }
 
     }
 }
