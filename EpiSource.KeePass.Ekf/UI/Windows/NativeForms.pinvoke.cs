@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Text;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable UnusedMember.Local
@@ -113,6 +114,12 @@ namespace EpiSource.KeePass.Ekf.UI.Windows {
             [DllImport("User32.dll")]
             [return: MarshalAs(UnmanagedType.Bool)]
             public static extern bool IsZoomed(IntPtr hwnd);
+            
+            [DllImport("user32", SetLastError = true)]
+            public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int processId);
+            
+            [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+            public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
         }
         
         private static IntPtr GetWindowLongImpl(IntPtr hWnd, WindowParamIndex nIndex) {

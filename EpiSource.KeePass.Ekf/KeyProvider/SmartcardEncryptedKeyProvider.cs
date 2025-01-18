@@ -156,9 +156,8 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
                 if (enableCancellation) {
                     return SmartcardOperationDialog
                            .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient)).PlaintextKey;
-                } else {
-                    return Task.Run(() => ekfFile.Decrypt(recipient)).AwaitWithMessagePump().PlaintextKey;
                 }
+                return Task.Run(() => ekfFile.Decrypt(recipient)).AwaitWithMessagePump().PlaintextKey;
             } catch (CryptographicException) {
                 // operation was canceled using windows dialog or failed otherwise
                 return null;

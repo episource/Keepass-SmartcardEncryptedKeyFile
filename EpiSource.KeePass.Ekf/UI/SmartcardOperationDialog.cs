@@ -209,7 +209,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             
             // Important: Retrieve active form before creating the SmartcardOperationDialog!
             // => Retrieve reference to Keepass window.
-            var activeForm = NativeForms.GetActiveWindow();
+            var activeForm = GlobalWindowManager.TopWindow;
             
             var scOperationDialog = new SmartcardOperationDialog(activeForm, cts);
 
@@ -233,47 +233,63 @@ namespace EpiSource.KeePass.Ekf.UI {
                 var cryptoTaskHandle = await smartcardWorker.InvokeDetailedAsync(
                     desktopBoundInvocation, cts.Token, TimeSpan.FromMilliseconds(gracefulAbortTimeoutMs),
                     ForcedCancellationMode.CleanupBeforeCancellation);
-                    
-                using (var cryptoProcessWinEvents = new NativeWinEvents(cryptoTaskHandle.WorkerProcess)) {
-                    var uiCentered = false;
-                    var knownWindows = new HashSet<IntPtr>();
-                    
-                    // TODO: Currently broken (at least Win11 24H2) - smart card ui is shown by different process (CredentialUIBroker.exe) and not the worker process => no window events received
-                    cryptoProcessWinEvents.ObjectShown +=
-                        (sender, args) => {
-                            if (knownWindows.Add(args.EventSource)) {
-                                try {
-                                    // set keepass as owner for smartcard dialogs
-                                    // => to be shown as dialog, always on top of keepass window
-                                    NativeForms.SetOwner(args.EventSource, activeForm);
-                                } catch (InvalidWindowHandleException) {
-                                    // window already gone!
-                                    knownWindows.Remove(args.EventSource);
-                                    return;
-                                } catch {
-                                    knownWindows.Remove(args.EventSource);
-                                    throw;
-                                }
-                            }
+                
+                // Win11: native Pin dialog is shown by separate process "CredentialUIBroker"
+                // Win10: native Pin dialog is shown by worker/current process
+                using (var cryptoProcessWinEvents = new NativeWinEvents()) {
+                    var centerTaskCancellationToken = cts.Token;
+                    cryptoProcessWinEvents.ObjectShown += (sender, args) => {
+                        Process p;
+                        try {
+                            p = NativeForms.GetProcessOfWindow(args.EventSource);
+                        } catch (Win32Exception e) {
+                            return;
+                        }
 
-                            if (!uiCentered) {
-                                var windowRect = NativeForms.GetWindowRectangle(args.EventSource);
-                                var maximized = NativeForms.IsWindowMaximized(args.EventSource);
-                                
-                                // Win 10 security dialog starts "pseudo"-maximized, that is as empty window filling the
-                                // whole screen. A little bit later it resizes to its actual bounds and centers at
-                                // the primary screen. Moving the window is not effective when done earlier.
-                                if (!maximized && windowRect.Size != Screen.PrimaryScreen.WorkingArea.Size) {
-                                    NativeForms.CenterWindow(args.EventSource, activeForm);
-                                    uiCentered = true;
-                                }
+                        if (p.ProcessName != "CredentialUIBroker" && p.Id != cryptoTaskHandle.WorkerProcess.Id) {
+                            return;
+                        }
+
+                        while (!centerTaskCancellationToken.IsCancellationRequested) {
+                            try {
+                                // set keepass as owner for smartcard dialogs
+                                // => to be shown as dialog, always on top of keepass window
+                                NativeForms.SetOwner(args.EventSource, activeForm);
+                                break;
+                            } catch (InvalidWindowHandleException) {
+                                // window already gone!
+                                return;
+                            } catch (Win32Exception e) {
+                                // window likely not ready - try again little later
+                                // note: this handler is executed by the UI thread!
+                                Application.DoEvents();
                             }
-                        };
+                        }
+
+                        while (!centerTaskCancellationToken.IsCancellationRequested) {
+                            var windowRect = NativeForms.GetWindowRectangle(args.EventSource);
+                            var maximized = NativeForms.IsWindowMaximized(args.EventSource);
+                            
+                            // Win 10 security dialog starts "pseudo"-maximized, that is as empty window filling the
+                            // whole screen. A little bit later it resizes to its actual bounds and centers at
+                            // the primary screen. Moving the window is not effective when done earlier.
+                            if (!maximized && windowRect.Size != Screen.PrimaryScreen.WorkingArea.Size) {
+                                NativeForms.CenterWindow(args.EventSource, activeForm);
+                                break;
+                            }
+                            
+                            // this handler is executed by the UI thread!
+                            Application.DoEvents();
+                        }
+                    };
+
 
                     // continueOnCapturedContext: true => finally must run within UI thread!
                     // This is default, but be explicit here!
                     var retVal = await cryptoTaskHandle.PlainResult.AsAwaitable().ConfigureAwait(true);
+                    
                     AddRemainingHandles(retVal.RemainingDesktopHandles);
+                    
                     return retVal.GetResultOrThrow();
                 }
             } finally {
@@ -327,7 +343,10 @@ namespace EpiSource.KeePass.Ekf.UI {
         // consumption.
         // At latest, all desktop handles are released when the worker process shuts down, that is after the chosen
         // standby timeout has passed without user operation.
-        // TODO: Currently broken (at least Win11 24H2) - smart card ui is shown by different process (CredentialUIBroker.exe) and not the current process
+        // TODO: Only effective for Win10 smartcard dialogs - Win11 shows smartcard UI using separate process
+        //       (CredentialUIBroker.exe), therefore setting the active desktop for the current process has no
+        //       effect on the smartcard UIs shown by the OS. In contrast Win10 uses the current process to show
+        //       the UI. 
         private static WorkerResult<TTarget, TReturn> SetDesktopAndExecute<TTarget, TReturn>(
             CancellationToken ct, IPortableInvocationRequest portableRequest, string desktop,
             IEnumerable<IntPtr> desktopHandlesToClose) {
@@ -399,7 +418,7 @@ namespace EpiSource.KeePass.Ekf.UI {
 
             return result;
         }
-                
+
         #endregion
 
         #region UI

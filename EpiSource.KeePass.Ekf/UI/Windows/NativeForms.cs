@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 
 namespace EpiSource.KeePass.Ekf.UI.Windows {
@@ -215,6 +216,38 @@ namespace EpiSource.KeePass.Ekf.UI.Windows {
 
         public static bool IsWindowMaximized(IntPtr hwnd) {
             return NativeFormsPinvoke.IsZoomed(hwnd);
+        }
+        
+        #endregion
+        
+        #region Misc
+
+        public static int GetProcessIdOfWindow(IntPtr hwnd) {
+            int processId;
+            int threadIdAndSuccess = NativeFormsPinvoke.GetWindowThreadProcessId(hwnd, out processId);
+            if (threadIdAndSuccess == 0) {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+            return processId;
+        }
+
+        public static Process GetProcessOfWindow(IntPtr hwnd) {
+            int processId = GetProcessIdOfWindow(hwnd);
+            return Process.GetProcessById(processId);
+        }
+
+        public static string GetWindowText(IntPtr hwnd) {
+            StringBuilder sb = new StringBuilder(256);
+            int length = NativeFormsPinvoke.GetWindowText(hwnd, sb, sb.Capacity);
+
+            if (length == 0) {
+                int lastError = Marshal.GetLastWin32Error();
+                if (lastError != 0) {
+                    throw new Win32Exception(lastError);
+                }
+            }
+            
+            return sb.ToString();
         }
         
         #endregion
