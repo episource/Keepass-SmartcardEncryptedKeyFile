@@ -79,12 +79,17 @@
     <Compile Include="Keys\RandomKeyDataStore.cs" />
     <Compile Include="Plugin\SmartcardEncryptedKeyFileExt.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Resources\KepassBuiltinImage.cs" />
     <Compile Include="Resources\Strings.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
     <Compile Include="UI\CertificateListViewItem.cs" />
+    <Compile Include="UI\PinPromptDialog.cs" />
+    <Compile Include="UI\PinPromptDialog.types.cs">
+      <DependentUpon>PinPromptDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\SmartcardRequiredDialog.cs" />
     <Compile Include="UI\DefaultKeyPairProvider.cs" />
     <Compile Include="UI\EditEncryptedKeyFileDialog.controls.cs">

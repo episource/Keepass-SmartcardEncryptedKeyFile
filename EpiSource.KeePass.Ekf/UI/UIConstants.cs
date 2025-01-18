@@ -6,6 +6,7 @@ namespace EpiSource.KeePass.Ekf.UI {
         // height chosen to match a single line text box
         public const int DefaultButtonHeight = 22;
         public const int DefaultButtonWidth = 75;
+        public static readonly Size DefaultButtonSize = new Size(DefaultButtonWidth, DefaultButtonHeight);
 
         public const int MaxAutoWidth = 800;
         

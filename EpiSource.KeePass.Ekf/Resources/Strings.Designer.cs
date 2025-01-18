@@ -393,6 +393,17 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to KeePass requests access to private key:
+        ///
+        ///{0}.
+        /// </summary>
+        internal static string NativeSmartcardUI_ContextTest {
+            get {
+                return ResourceManager.GetString("NativeSmartcardUI.ContextTest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to PIN blocked permanently. Use PUK to recover..
         /// </summary>
         internal static string PinBlockedDialog_DialogText {
@@ -411,13 +422,38 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to KeePass requests access to private key:
-        ///
-        ///{0}.
+        ///   Looks up a localized string similar to PIN:.
         /// </summary>
-        internal static string NativeSmartcardUI_ContextTest {
+        internal static string PinPromptDialog_PinInput {
             get {
-                return ResourceManager.GetString("NativeSmartcardUI.ContextTest", resourceCulture);
+                return ResourceManager.GetString("PinPromptDialog.PinInput", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remember PIN.
+        /// </summary>
+        internal static string PinPromptDialog_RememberPin {
+            get {
+                return ResourceManager.GetString("PinPromptDialog.RememberPin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PIN required.
+        /// </summary>
+        internal static string PinPromptDialog_Title {
+            get {
+                return ResourceManager.GetString("PinPromptDialog.Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wrong PIN. Please try again..
+        /// </summary>
+        internal static string PinPromptDialog_WrongPin {
+            get {
+                return ResourceManager.GetString("PinPromptDialog.WrongPin", resourceCulture);
             }
         }
         
