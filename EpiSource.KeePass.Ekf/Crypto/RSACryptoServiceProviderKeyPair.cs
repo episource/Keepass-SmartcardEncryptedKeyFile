@@ -3,6 +3,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Windows.Forms.VisualStyles;
 
 using EpiSource.KeePass.Ekf.Crypto.Windows;
 
@@ -18,7 +19,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
     // ReSharper disable once InconsistentNaming
     public sealed class RSACryptoServiceProviderKeyPair : IKeyPair, ISerializable {
 
-        private readonly X509Certificate2 cert;
+        private X509Certificate2 cert;
         
         [NonSerialized]
         private CspKeyContainerInfo privKeyInfo;
@@ -192,11 +193,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             get { return this.cert;  }
         }
         
-        [OnDeserialized]
-        private void OnDeserializedSetKeyInfo(StreamingContext context) {
-            this.privKeyInfo = GetPrivateKeyContainerInfoFromCert(this.Certificate);
-        }
-        
+        // TODO: https://www.pkisolutions.com/blog/accessing-and-using-certificate-private-keys-in-net-framework-net-core/
         private static CspKeyContainerInfo GetPrivateKeyContainerInfoFromCert(X509Certificate2 cert) {
             // Important: Try to avoid accessing cert.PrivateKey to retrieve cspInfo if possible!
             // Accessing cert.PrivateKey requests access to the private key itself, asking the user for its pin!
@@ -210,6 +207,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             }
         }
 
+        // TODO: https://www.pkisolutions.com/blog/accessing-and-using-certificate-private-keys-in-net-framework-net-core/
         private static CspKeyContainerInfo GetPublicKeyContainerInfoFromCert(X509Certificate2 cert) {
             try {
                 var pubKeyAlgorithm = cert.PublicKey.Key as ICspAsymmetricAlgorithm;

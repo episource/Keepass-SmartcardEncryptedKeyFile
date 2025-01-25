@@ -23,11 +23,11 @@ namespace EpiSource.KeePass.Ekf.Util {
         /// <param name="task">Task to wait for.</param>
         /// <typeparam name="T">Result of task.</typeparam>
         /// <returns>Result of task.</returns>
-        /// <exception cref="CryptographicException">Crypto operation failed, i.e. smart card dialog cancelled.</exception>
-        /// <exception cref="DeniedByVirusScannerFalsPositive">Unblocker operation was denied by virus scanner.</exception>
+        /// 
         /// <exception cref="TaskCanceledException">The task was canceled.</exception>
         /// <exception cref="TaskCrashedException">The task crashed, i.e. the corresponding process exited unexpectedly.</exception>
-        /// <exception cref="AggregateException">The task failed.</exception>
+        /// <exception cref="Exception">Task specific exceptions.</exception>
+        /// <exception cref="AggregateException">If multiple exceptions occured.</exception>
         public static T AwaitWithMessagePump<T>(this Task<T> task) {
             var dispatcherFrame = new System.Windows.Threading.DispatcherFrame();
 
@@ -38,11 +38,7 @@ namespace EpiSource.KeePass.Ekf.Util {
             try {
                 return task.Result;
             } catch (AggregateException e) {
-                if (e.InnerExceptions.Count == 1 && (
-                        e.InnerException is CryptographicException 
-                        || e.InnerException is DeniedByVirusScannerFalsePositive
-                        || e.InnerException is TaskCanceledException
-                        || e.InnerException is TaskCrashedException)) {
+                if (e.InnerExceptions.Count == 1 && e.InnerException != null) {
                     throw e.InnerException;
                 }
 
@@ -55,11 +51,10 @@ namespace EpiSource.KeePass.Ekf.Util {
         /// responsive.
         /// </summary>
         /// <param name="task">Task to wait for.</param>
-        /// <exception cref="CryptographicException">Crypto operation failed, i.e. smart card dialog cancelled.</exception>
-        /// <exception cref="DeniedByVirusScannerFalsPositive">Unblocker operation was denied by virus scanner.</exception>
         /// <exception cref="TaskCanceledException">The task was canceled.</exception>
         /// <exception cref="TaskCrashedException">The task crashed, i.e. the corresponding process exited unexpectedly.</exception>
-        /// <exception cref="AggregateException">The task failed.</exception>
+        /// <exception cref="Exception">Task specific exceptions.</exception>
+        /// <exception cref="AggregateException">If multiple exceptions occured.</exception>
         public static void AwaitWithMessagePump(this Task task) {
             task.AddDefaultResult<object>().AwaitWithMessagePump();
         }

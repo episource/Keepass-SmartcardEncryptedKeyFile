@@ -6,7 +6,11 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
+using System.Windows.Forms;
 
+using EpiSource.KeePass.Ekf.Crypto.Windows;
+
+using KeePassLib.Security;
 using KeePassLib.Utility;
 
 namespace EpiSource.KeePass.Ekf.Crypto {
@@ -108,6 +112,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             store.Decode(this.encryptedKeyStore);
             store.Decrypt();
             
+            // TODO: use native capi
             return new DecryptedKeyFile(this.Authorization, store.ContentInfo.Content);
         }
 
@@ -118,39 +123,55 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// a software prompt or at the reader. Some smartcards require a button to be pressed, as well.
         /// The operation blocks until the user has successfully unlocked the smartcard or the operation times out. 
         /// </summary>
+        /// <param name="recipientKeyPair">This key pair is used for decryption.</param>
+        /// <param name="pinUsage">Description of the application or operation that is accessing the private key.</param>
+        /// <param name="uiOwner">Window that should become owner of any dialog that needs to be shown.</param>
+        /// <param name="pin">Pin for unlocking the private key. When given, silent operation is requested.</param>
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
         /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
         /// out or no authorized smartcard was found.</exception>
         /// <exception cref="ArgumentNullException">The provided key pair is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The provided key pair is not suitable to decrypt the key
         /// file.</exception>
-        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair) {
+        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair, string pinUsage = null, IntPtr uiOwner = new IntPtr(), ProtectedString pin = null) {
             if (recipientKeyPair == null) {
                 throw new ArgumentNullException("recipientKeyPair");
             }
             if (recipientKeyPair.Certificate == null) {
                 throw new ArgumentOutOfRangeException("recipientKeyPair", "recipientKeyPair not ready for decrypt.");
             }
-            
-            var store = new EnvelopedCms();
-            store.Decode(this.encryptedKeyStore);
 
-            var recipient = store.RecipientInfos.OfType<RecipientInfo>()
-                                 .Where(r => r.RecipientIdentifier.Value is X509IssuerSerial)
-                                 .Select(r => new Tuple<X509IssuerSerial, RecipientInfo>(
-                                     (X509IssuerSerial) r.RecipientIdentifier.Value, r))
-                                 .Where(r =>
-                                     r.Item1.IssuerName   == recipientKeyPair.Certificate.IssuerName.Name &&
-                                     r.Item1.SerialNumber == recipientKeyPair.Certificate.SerialNumber)
-                                 .Select(r => r.Item2).FirstOrDefault();
-                
-            if (recipient == null) {
-                throw new ArgumentOutOfRangeException(
-                    "recipientKeyPair", "recipientKeyPair not authorized");
+            var decrypted = NativeCapi.DecryptEnvelopedCms(this.encryptedKeyStore, recipientKeyPair, pinUsage, uiOwner, pin);
+            return new DecryptedKeyFile(this.Authorization, decrypted);
+        }
+
+        /// <summary>
+        /// Decrypt the key file using the given recipient key information.
+        /// This operation requires the user to provide an authorized smartcard and unlock it. How the user needs to
+        /// unlock the smartcard depends on the smartcard and reader that are used. Usually a pin must be enter in
+        /// a software prompt or at the reader. Some smartcards require a button to be pressed, as well.
+        /// The operation blocks until the user has successfully unlocked the smartcard or the operation times out. 
+        /// </summary>
+        /// <param name="recipientKeyPair">This key pair is used for decryption.</param>
+        /// <param name="pinUsage">Description of the application or operation that is accessing the private key.</param>
+        /// <param name="uiOwner">Window that should become owner of any dialog that needs to be shown.</param>
+        /// <param name="pin">Pin for unlocking the private key. When given, silent operation is requested.</param>
+        /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
+        /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
+        /// out or no authorized smartcard was found.</exception>
+        /// <exception cref="ArgumentNullException">The provided key pair is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The provided key pair is not suitable to decrypt the key
+        /// file.</exception>
+        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair, string pinUsage = null, Form uiOwner = null,  ProtectedString pin = null) {
+            if (recipientKeyPair == null) {
+                throw new ArgumentNullException("recipientKeyPair");
             }
-            store.Decrypt(recipient);
-            
-            return new DecryptedKeyFile(this.Authorization, store.ContentInfo.Content);
+            if (recipientKeyPair.Certificate == null) {
+                throw new ArgumentOutOfRangeException("recipientKeyPair", "recipientKeyPair not ready for decrypt.");
+            }
+
+            var decrypted = NativeCapi.DecryptEnvelopedCms(this.encryptedKeyStore, recipientKeyPair, pinUsage, uiOwner != null ? uiOwner.Handle : IntPtr.Zero, pin);
+            return new DecryptedKeyFile(this.Authorization, decrypted);
         }
 
         public byte[] Encode() {

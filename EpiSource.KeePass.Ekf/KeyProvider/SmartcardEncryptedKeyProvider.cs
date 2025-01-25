@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using EpiSource.KeePass.Ekf.Crypto;
+using EpiSource.KeePass.Ekf.Crypto.Windows;
 
 using Episource.KeePass.EKF.Resources;
 
@@ -157,19 +158,25 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             }
 
             try {
+                var decryptUiOwnerHandle = GlobalWindowManager.TopWindow.Handle;
+                var contextDescription = "KeePass — Accessing private key:\r\n\r\n" + recipient.Certificate.SubjectName.Format(true);
+                
                 if (enableCancellation) {
                     return SmartcardOperationDialog
-                           .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient)).PlaintextKey;
+                           .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, null)).PlaintextKey;
                 }
-                return Task.Run(() => ekfFile.Decrypt(recipient)).AwaitWithMessagePump().PlaintextKey;
-            } catch (CryptographicException) {
+                return Task.Run(() => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, null)).AwaitWithMessagePump().PlaintextKey;
+            } catch (CryptographicException ex) {
                 // operation was canceled using windows dialog or failed otherwise
-                return null;
+                if (NativeCapi.IsCancelledByUserException(ex)) {
+                    return null;
+                }
+                throw;
+            } catch (OperationCanceledException e) {
+                 return null;
             } catch (DeniedByVirusScannerFalsePositive e) {
                 var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
                     ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return null;
-            } catch (TaskCanceledException) {
                 return null;
             } catch (TaskCrashedException) {
                 if (retryOnCrash) {
