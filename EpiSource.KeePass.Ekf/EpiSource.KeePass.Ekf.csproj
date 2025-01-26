@@ -56,8 +56,6 @@
     <Compile Include="Crypto\KeyEncryptionRequest.cs" />
     <Compile Include="Crypto\IKeyPair.cs" />
     <Compile Include="Crypto\LimitedAccessKeyFile.cs" />
-    <Compile Include="Crypto\ProtectedBinaryExtensions.cs" />
-    <Compile Include="Crypto\ProtectedStringExtensions.cs" />
     <Compile Include="Crypto\RandomKeyGenerator.cs" />
     <Compile Include="Crypto\RSASmartcardKeyPairs.cs" />
     <Compile Include="Crypto\RSACryptoServiceProviderKeyPair.cs" />
@@ -100,6 +98,8 @@
     <Compile Include="UI\Windows\NativeForms.cs" />
     <Compile Include="Unblocker\EpiSource.Unblocker\**\*.cs" Exclude="Unblocker\EpiSource.Unblocker\Properties\*" />
     <Compile Include="Util\PinvokeUtil.cs" />
+    <Compile Include="Util\ProtectedBinaryExtensions.cs" />
+    <Compile Include="Util\ProtectedStringExtensions.cs" />
     <Compile Include="Util\StreamExtensions.cs" />
     <Compile Include="Util\TaskExtensions.cs" />
     <Compile Include="Util\Windows\NativeDevice.cs" />
