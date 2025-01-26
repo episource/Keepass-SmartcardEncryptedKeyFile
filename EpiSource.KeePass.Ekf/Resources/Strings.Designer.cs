@@ -393,6 +393,17 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to KeePass requests access to private key:
+        ///
+        ///{0}.
+        /// </summary>
+        internal static string NativeSmartcardUI_ContextTest {
+            get {
+                return ResourceManager.GetString("NativeSmartcardUI.ContextTest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Edit Encrypted Key File.
         /// </summary>
         internal static string SmartcardEncryptedKeyProvider_ButtonEditKeyFile {

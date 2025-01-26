@@ -159,7 +159,7 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
 
             try {
                 var decryptUiOwnerHandle = GlobalWindowManager.TopWindow.Handle;
-                var contextDescription = "KeePass — Accessing private key:\r\n\r\n" + recipient.Certificate.SubjectName.Format(true);
+                var contextDescription = string.Format(Strings.Culture, Strings.NativeSmartcardUI_ContextTest, recipient.Certificate.SubjectName.Format(true));
                 
                 if (enableCancellation) {
                     return SmartcardOperationDialog

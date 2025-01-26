@@ -184,4 +184,8 @@
     <value>The {0} operation was denied by the system's virus scanner (false positive). Consider whitelisting `{1}`.</value>
     <comment>OK-Dialog, {0} is the provider name, {1] is the affected file's name</comment>
   </data>
+  <data name="NativeSmartcardUI.ContextTest" xml:space="preserve">
+    <comment>{0} is the certificate's subject name in multiline format</comment>
+    <value>KeePass requests access to private key:&#xD;&#xA;&#xD;&#xA;{0}</value>
+  </data>
 </root>
