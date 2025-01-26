@@ -94,7 +94,6 @@
     <Compile Include="UI\Windows\NativeForms.pinvoke.cs">
       <DependentUpon>NativeForms.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\Windows\NativeWinEvents.cs" />
     <Compile Include="UI\Windows\NativeForms.cs" />
     <Compile Include="Unblocker\EpiSource.Unblocker\**\*.cs" Exclude="Unblocker\EpiSource.Unblocker\Properties\*" />
     <Compile Include="Util\PinvokeUtil.cs" />
