@@ -11,6 +11,7 @@ using Episource.KeePass.EKF.Resources;
 
 using EpiSource.KeePass.Ekf.UI;
 using EpiSource.KeePass.Ekf.Util;
+using EpiSource.KeePass.Ekf.Util.Windows;
 using EpiSource.Unblocker.Hosting;
 using EpiSource.Unblocker.Util;
 
@@ -78,8 +79,11 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             get { return ProviderName; }
         }
 
+        // This plugin only provides secure desktop support for Win10.
+        // See also: SmartCardOperationDialog#SetDesktopAndExecute
         public override bool SecureDesktopCompatible {
-            get { return true; }
+            
+            get { return WinVersion.IsWin10; }
         }
 
         public override bool DirectKey {

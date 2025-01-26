@@ -106,6 +106,13 @@
     <Compile Include="Util\Windows\NativeDeviceEvents.types.cs">
       <DependentUpon>NativeDeviceEvents.cs</DependentUpon>
     </Compile>
+    <Compile Include="Util\Windows\WinVersion.cs" />
+    <Compile Include="Util\Windows\WinVersion.pinvoke.cs">
+      <DependentUpon>WinVersion.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Util\Windows\WinVersion.types.cs">
+      <DependentUpon>WinVersion.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="UI\Controls" />
