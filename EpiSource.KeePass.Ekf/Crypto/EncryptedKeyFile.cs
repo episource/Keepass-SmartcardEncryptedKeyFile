@@ -35,22 +35,26 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             if (plaintext == null) {
                 throw new ArgumentNullException("plaintext");
             }
-            
-            var content = new ContentInfo(oidContentData, plaintext.PlaintextKey);
-            var store = new EnvelopedCms(content, algorithmAes256Cbc);
-            var recipients = new CmsRecipientCollection();
 
-            foreach (var keyPair in plaintext.Authorization) {
-                // embed  list of authorized certificates as originator info
-                // doing so permits re-encryption without having all certificates installed locally
-                store.Certificates.Add(keyPair.Certificate);
-                
-                // recipient list controls which certificates can decrypt the ekf
-                recipients.Add(new CmsRecipient(keyPair.Certificate));
+            var content = new ContentInfo(oidContentData, plaintext.PlaintextKey.ReadUnprotected());
+            try {
+                var store = new EnvelopedCms(content, algorithmAes256Cbc);
+                var recipients = new CmsRecipientCollection();
+
+                foreach (var keyPair in plaintext.Authorization) {
+                    // embed  list of authorized certificates as originator info
+                    // doing so permits re-encryption without having all certificates installed locally
+                    store.Certificates.Add(keyPair.Certificate);
+
+                    // recipient list controls which certificates can decrypt the ekf
+                    recipients.Add(new CmsRecipient(keyPair.Certificate));
+                }
+
+                store.Encrypt(recipients);
+                this.encryptedKeyStore = store.Encode();
+            } finally {
+                Array.Clear(content.Content, 0, content.Content.Length);
             }
-
-            store.Encrypt(recipients);
-            this.encryptedKeyStore = store.Encode();
         }
 
         private EncryptedKeyFile(IEnumerable<IKeyPair> authorization, byte[] encryptedKeyStore) 
@@ -113,7 +117,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             store.Decrypt();
             
             // TODO: use native capi
-            return new DecryptedKeyFile(this.Authorization, store.ContentInfo.Content);
+            return new DecryptedKeyFile(this.Authorization, PortableProtectedBinary.Move(store.ContentInfo.Content));
         }
 
         /// <summary>
@@ -133,7 +137,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <exception cref="ArgumentNullException">The provided key pair is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The provided key pair is not suitable to decrypt the key
         /// file.</exception>
-        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair, string pinUsage = null, IntPtr uiOwner = new IntPtr(), ProtectedString pin = null) {
+        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair, string pinUsage = null, IntPtr uiOwner = new IntPtr(), PortableProtectedString pin = null) {
             if (recipientKeyPair == null) {
                 throw new ArgumentNullException("recipientKeyPair");
             }
@@ -162,7 +166,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <exception cref="ArgumentNullException">The provided key pair is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The provided key pair is not suitable to decrypt the key
         /// file.</exception>
-        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair, string pinUsage = null, Form uiOwner = null,  ProtectedString pin = null) {
+        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair, string pinUsage = null, Form uiOwner = null, PortableProtectedString pin = null) {
             if (recipientKeyPair == null) {
                 throw new ArgumentNullException("recipientKeyPair");
             }

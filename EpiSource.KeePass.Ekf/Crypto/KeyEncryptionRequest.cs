@@ -8,17 +8,17 @@ using KeePassLib.Serialization;
 namespace EpiSource.KeePass.Ekf.Crypto {
     public class KeyEncryptionRequest {
         private readonly IOConnectionInfo dbPath;
-        private readonly ProtectedBinary plaintextKey;
+        private readonly PortableProtectedBinary plaintextKey;
         private readonly IList<IKeyPair> authorizedKeyPairs;
         
-        public KeyEncryptionRequest(IOConnectionInfo dbPath, byte[] plaintextKey, IEnumerable<IKeyPair> authorizedKeyPairs) {
+        public KeyEncryptionRequest(IOConnectionInfo dbPath, PortableProtectedBinary plaintextKey, IEnumerable<IKeyPair> authorizedKeyPairs) {
             this.dbPath = dbPath.CloneDeep();
-            this.plaintextKey = plaintextKey.Protect();
+            this.plaintextKey = plaintextKey.Clone();
             this.authorizedKeyPairs = new List<IKeyPair>(authorizedKeyPairs).AsReadOnly();
         }
 
         public KeyEncryptionRequest(IOConnectionInfo dbPath, ProtectedBinary plaintextKey, IEnumerable<IKeyPair> authorizedKeyPairs)
-            : this(dbPath, plaintextKey.ReadData(), authorizedKeyPairs) { }
+            : this(dbPath, plaintextKey.ToPortable(), authorizedKeyPairs) { }
 
         public IOConnectionInfo DbPath {
             get { return this.dbPath.CloneDeep(); }
@@ -30,13 +30,12 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         
         /// <summary>
         /// The raw key to be stored in an encrypted key file.
-        /// Important: The returned key is stored in process memory without encryption!
         /// </summary>
         /// <returns>
         /// A copy of the raw key array.
         /// </returns>
-        public byte[] PlaintextKey {
-            get { return this.plaintextKey.ReadData(); }
+        public PortableProtectedBinary PlaintextKey {
+            get { return this.plaintextKey.Clone(); }
         }
 
         public IList<IKeyPair> AuthorizedKeyPairs {

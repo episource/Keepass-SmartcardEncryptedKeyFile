@@ -51,7 +51,7 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
         }
 
         public override byte[] GetKey(KeyProviderQueryContext ctx) {
-            byte[] plainKey = null;
+            PortableProtectedBinary plainKey = null;
             try {
                 plainKey = ctx.CreatingNewKey ? this.CreateNewKey(ctx) : this.DecryptEncryptedKeyFile(ctx);
             } catch (FileNotFoundException) {
@@ -69,7 +69,9 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
 
             // treat plaintext key as if it was read from a key file:
             // ensure ekf is 100% compatible with built-in key file support
-            var keyAsDataUri = StrUtil.DataToDataUri(plainKey, null);
+            var plainKeyData = plainKey.ReadUnprotected();
+            var keyAsDataUri = StrUtil.DataToDataUri(plainKeyData, null);
+            Array.Clear(plainKeyData, 0, plainKeyData.Length);
             var keyAsConnInfo = IOConnectionInfo.FromPath(keyAsDataUri);
             var virtualKeyFile = new KcpKeyFile(keyAsConnInfo);
 
@@ -126,7 +128,7 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
                 k is KcpCustomKey && ((KcpCustomKey) k).Name == ProviderName);
         }
 
-        private byte[] CreateNewKey(KeyProviderQueryContext ctx) {
+        private PortableProtectedBinary CreateNewKey(KeyProviderQueryContext ctx) {
             var activeDb = this.pluginHost.Database;
             IUserKey activeKey = null;
             if (string.Equals(ctx.DatabaseIOInfo.Path, activeDb.IOConnectionInfo.Path,
@@ -143,7 +145,7 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
             return encryptionRequest.PlaintextKey;
         }
 
-        private byte[] DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true, bool enableCancellation = true) {
+        private PortableProtectedBinary DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true, bool enableCancellation = true) {
             // IOConnection not serializable - need to read file outside unlocker task
             var ekfPath = ctx.DatabaseIOInfo.ResolveEncryptedKeyFile();
             var encryptedKeyFileData = IOConnection.OpenRead(ekfPath).ReadAllBinaryAndClose();

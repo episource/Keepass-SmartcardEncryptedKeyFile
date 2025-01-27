@@ -13,52 +13,23 @@ namespace EpiSource.KeePass.Ekf.Crypto {
     /// persist key data.
     /// </remarks>
     [Serializable]
-    public sealed class DecryptedKeyFile : LimitedAccessKeyFile, ISerializable {
+    public sealed class DecryptedKeyFile : LimitedAccessKeyFile {
         
-        private readonly ProtectedBinary plaintextKey;
+        private readonly PortableProtectedBinary protectedPlaintextKey;
         
-        internal DecryptedKeyFile(IEnumerable<IKeyPair> authorization, byte[] plaintextKey) 
+        internal DecryptedKeyFile(IEnumerable<IKeyPair> authorization, PortableProtectedBinary protectedPlaintextKey)
             : base(authorization) {
-            this.plaintextKey = plaintextKey.Protect();
-        }
-
-        private DecryptedKeyFile(SerializationInfo info, StreamingContext context)
-            : base((IList<IKeyPair>) info.GetValue("authorization", typeof(IList<IKeyPair>)), true) {
-
-            var keyLength = info.GetInt32("keyLength");
-            var protectedKey = (byte[])info.GetValue("protectedKey", typeof(byte[]));
-            
-            ProtectedMemory.Unprotect(protectedKey, MemoryProtectionScope.SameLogon);
-            
-            var plaintext = new byte[keyLength];
-            Array.Copy(protectedKey, plaintext, keyLength);
-            this.plaintextKey = plaintext.Protect();
-        }
-        
-        public void GetObjectData(SerializationInfo info, StreamingContext context) {
-            var plaintext = this.PlaintextKey;
-            
-            const int chunkSize = 16;
-            var protectedKeySize = (plaintext.Length + chunkSize - 1) / chunkSize * chunkSize;
-            var protectedKey = new byte[protectedKeySize];
-            
-            Array.Copy(plaintext, protectedKey, plaintext.Length);
-            ProtectedMemory.Protect(protectedKey, MemoryProtectionScope.SameLogon);
-            
-            info.AddValue("authorization", this.Authorization, typeof(IList<IKeyPair>));
-            info.AddValue("keyLength", plaintext.Length);
-            info.AddValue("protectedKey", protectedKey);
+            this.protectedPlaintextKey = protectedPlaintextKey;
         }
         
         /// <summary>
         /// The raw key as stored in the encrypted key file.
-        /// Important: The returned key is stored in process memory without encryption!
         /// </summary>
         /// <returns>
         /// A copy of the raw key array.
         /// </returns>
-        public byte[] PlaintextKey {
-            get { return this.plaintextKey.ReadData(); }
+        public PortableProtectedBinary PlaintextKey {
+            get { return this.protectedPlaintextKey; }
         }
 
         public EncryptedKeyFile Encrypt() {

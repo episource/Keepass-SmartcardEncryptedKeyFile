@@ -96,7 +96,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
 
-        public static byte[] DecryptEnvelopedCms(byte[] encodedEnvelopedCms, IKeyPair recipient, string optPinUsage, IntPtr optOwner,  ProtectedString optPin) {
+        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, IKeyPair recipient, string optPinUsage, IntPtr optOwner, PortableProtectedString optPin) {
             if (encodedEnvelopedCms == null) {
                 throw new ArgumentNullException("encodedEnvelopedCms");
             }
@@ -164,8 +164,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             setNcryptOrCspProperty(handle, ncryptProperty, cspParam, silent, Encoding.Unicode.GetBytes(value + "\0"));
         }
         
-        private static void setNcryptOrCspPropertyUA(NcryptOrContextHandle handle, string ncryptProperty, CryptSetProvParamType cspParam,  bool silent, ProtectedString value) {
-            var valueBytes = handle is NCryptContextHandle ? value.ReadUnicodeNullTerminated() : value.ReadAsciiNullTerminated();
+        private static void setNcryptOrCspPropertyUA(NcryptOrContextHandle handle, string ncryptProperty, CryptSetProvParamType cspParam,  bool silent, PortableProtectedString value) {
+            var valueBytes = handle is NCryptContextHandle ? value.ReadUnprotectedUtf16NullTerminated() : value.ReadUnprotectedAsciiNullTerminated();
             
             try {
                 setNcryptOrCspProperty(handle, ncryptProperty, cspParam, silent, valueBytes);
@@ -243,7 +243,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             return msgHandle;
         }
 
-        private static byte[] GetCryptMsgContent(CryptMsgHandle msgHandle) {
+        private static PortableProtectedBinary GetCryptMsgContent(CryptMsgHandle msgHandle) {
             byte[] content = null;
             int contentSize = 0;
             PinvokeUtil.DoPinvokeWithException(() =>
@@ -256,13 +256,14 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                     content, ref contentSize));
 
             if (content.Length != contentSize) {
+                Array.Clear(content, 0, content.Length);
                 throw new Exception("failed to decrypt message.");
             }
             
-            return content;
+            return PortableProtectedBinary.Move(content);
         }
 
-        private static byte[] DecryptCryptMsg(CryptMsgHandle msgHandle, NcryptOrContextHandle nCryptKey, int recipientIndex) {
+        private static PortableProtectedBinary DecryptCryptMsg(CryptMsgHandle msgHandle, NcryptOrContextHandle nCryptKey, int recipientIndex) {
             var para = new CmsgCtrlDecryptPara(nCryptKey, recipientIndex);
             PinvokeUtil.DoPinvokeWithException(() =>
                 NativeCryptMsgPinvoke.CryptMsgControl(

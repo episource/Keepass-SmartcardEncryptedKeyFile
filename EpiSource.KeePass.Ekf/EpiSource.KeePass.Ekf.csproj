@@ -99,6 +99,8 @@
     <Compile Include="UI\Windows\NativeForms.cs" />
     <Compile Include="Unblocker\EpiSource.Unblocker\**\*.cs" Exclude="Unblocker\EpiSource.Unblocker\Properties\*" />
     <Compile Include="Util\PinvokeUtil.cs" />
+    <Compile Include="Util\PortableProtectedBinary.cs" />
+    <Compile Include="Util\PortableProtectedString.cs" />
     <Compile Include="Util\ProtectedBinaryExtensions.cs" />
     <Compile Include="Util\ProtectedStringExtensions.cs" />
     <Compile Include="Util\StreamExtensions.cs" />
