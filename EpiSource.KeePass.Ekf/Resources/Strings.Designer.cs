@@ -393,6 +393,24 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to PIN blocked permanently. Use PUK to recover..
+        /// </summary>
+        internal static string PinBlockedDialog_DialogText {
+            get {
+                return ResourceManager.GetString("PinBlockedDialog.DialogText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PIN blocked.
+        /// </summary>
+        internal static string PinBlockedDialog_DialogTitle {
+            get {
+                return ResourceManager.GetString("PinBlockedDialog.DialogTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to KeePass requests access to private key:
         ///
         ///{0}.
@@ -535,6 +553,24 @@ namespace Episource.KeePass.EKF.Resources {
         internal static string SmartcardRequiredDialog_LabelThumbprint {
             get {
                 return ResourceManager.GetString("SmartcardRequiredDialog.LabelThumbprint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &quot;Wrong PIN entered..
+        /// </summary>
+        internal static string WrongPinDialog_DialogText {
+            get {
+                return ResourceManager.GetString("WrongPinDialog.DialogText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wrong PIN.
+        /// </summary>
+        internal static string WrongPinDialog_DialogTitle {
+            get {
+                return ResourceManager.GetString("WrongPinDialog.DialogTitle", resourceCulture);
             }
         }
     }

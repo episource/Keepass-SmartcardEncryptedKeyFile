@@ -166,14 +166,23 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
                            .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, null)).PlaintextKey;
                 }
                 return Task.Run(() => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, null)).AwaitWithMessagePump().PlaintextKey;
-            } catch (CryptographicException ex) {
+            } catch (OperationCanceledException e) {
+                return null;
+            } catch (CryptographicException ex) { 
                 // operation was canceled using windows dialog or failed otherwise
                 if (NativeCapi.IsCancelledByUserException(ex)) {
                     return null;
                 }
+                if (NativeCapi.IsWrongPinException(ex)) {
+                    MessageBox.Show(Strings.WrongPinDialog_DialogText, Strings.WrongPinDialog_DialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    return null;
+                }
+                if (NativeCapi.IsPinBlockedException(ex)) {
+                    MessageBox.Show(Strings.PinBlockedDialog_DialogText, Strings.PinBlockedDialog_DialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+
                 throw;
-            } catch (OperationCanceledException e) {
-                 return null;
             } catch (DeniedByVirusScannerFalsePositive e) {
                 var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
                     ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);

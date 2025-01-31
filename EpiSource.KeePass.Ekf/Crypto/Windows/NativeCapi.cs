@@ -22,7 +22,15 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
 
         public static bool IsCancelledByUserException(CryptographicException ex) {
-            return ex.HResult == (int)CapiErrorCodes.SCARD_W_CANCELLED_BY_USER;
+            return unchecked((CryptoResult)ex.HResult) == CryptoResult.SCARD_W_CANCELLED_BY_USER;
+        }
+
+        public static bool IsWrongPinException(CryptographicException ex) {
+            return ex is WrongPinException || unchecked((CryptoResult) ex.HResult) == CryptoResult.SCARD_W_WRONG_CHV;
+        }
+
+        public static bool IsPinBlockedException(CryptographicException ex) {
+            return ex is PinBlockedException || unchecked((CryptoResult) ex.HResult) == CryptoResult.SCARD_W_CHV_BLOCKED;
         }
         
         /// <summary>
@@ -34,7 +42,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         public static CspParameters GetParameters(X509Certificate cert) {
             Func<CspParameters> onFailure = () => {
                 var errorCode = Marshal.GetLastWin32Error();
-                if (errorCode == (int) CapiErrorCodes.CRYPT_E_NOT_FOUND) {
+                if (unchecked((CryptoResult)errorCode) == CryptoResult.CRYPT_E_NOT_FOUND) {
                     return null;
                 }
 
@@ -107,14 +115,14 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
 
            
-            var silent = optPin != null;
+            var silent = optPin != null && false;
             var keyHandleRaw = IntPtr.Zero;
             var keySpec = CryptPrivateKeySpec.UNDEFINED;
             var mustFreeHandle = false;
             PinvokeUtil.DoPinvokeWithException(() => NativeCapiPinvoke.CryptAcquireCertificatePrivateKey(recipient.Certificate.Handle,
                 CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
                 | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
-                | (optOwner != IntPtr.Zero ? CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_WINDOW_HANDLE_FLAG : 0) 
+                | (optOwner != IntPtr.Zero && ! silent ? CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_WINDOW_HANDLE_FLAG : 0) 
                 | (silent ? CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG : 0), 
                 ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle));
  
@@ -178,7 +186,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             var valueSize = 0;
             // https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers
             PinvokeUtil.DoPinvokeWithException(() => NativeLegacyCapiPinvoke.CryptGetProvParam(cspHandle, dwParam, null, ref valueSize, 0),
-                res => res || Marshal.GetLastWin32Error() == (int) CapiErrorCodes.ERROR_MORE_DATA);
+                res => res || Marshal.GetLastWin32Error() == (int) CryptoResult.ERROR_MORE_DATA);
                 
             var value = new byte[valueSize];
             PinvokeUtil.DoPinvokeWithException(() => NativeLegacyCapiPinvoke.CryptGetProvParam(cspHandle, dwParam, value, ref valueSize, 0));
@@ -205,10 +213,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         }
         
         private static void SetNcryptProperty(NCryptContextHandle keyHandle, string propertyName, byte[] value, NCryptSetPropertyFlags flags) {
-            var result = NativeNCryptPinvoke.NCryptSetProperty(keyHandle, propertyName, value, value.Length , flags);
-            if (result != NcryptResultCode.ERROR_SUCCESS) {
-                throw new CryptographicException((int)result);
-            }
+            DoNcryptWithException(() => NativeNCryptPinvoke.NCryptSetProperty(keyHandle, propertyName, value, value.Length , flags));
         }
 
         private static CryptMsgHandle DecodeEnvelopedCmsImpl(byte[] encodedEnvelopedCms) {
@@ -262,20 +267,35 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             PinvokeUtil.DoPinvokeWithException(() =>
                 NativeCryptMsgPinvoke.CryptMsgControl(
                     msgHandle, CryptMsgControlFlags.None, CryptMsgControlType.CMSG_CTRL_DECRYPT, ref para),
-                (int errCode) => {
-                    var winEx = new Win32Exception(errCode);
-                    return (errCode == (int)CapiErrorCodes.SCARD_W_CANCELLED_BY_USER) ? new OperationCanceledException(winEx.Message, winEx) : (Exception)winEx;
-                });
+                CreateCryptoExceptionForErrorCode);
 
             return GetCryptMsgContent(msgHandle);
         }
 
-        private static NcryptResultCode DoNcryptWithException(Func<NcryptResultCode> ncryptFunction, params NcryptResultCode[] validResults) {
+        private static CryptoResult DoNcryptWithException(Func<CryptoResult> ncryptFunction, params CryptoResult[] validResults) {
             var internalResult = ncryptFunction();
-            if (ncryptFunction() != NcryptResultCode.ERROR_SUCCESS && (validResults == null || !validResults.Contains(internalResult))) {
-                throw new CryptographicException((int)internalResult);
+            if (ncryptFunction() != CryptoResult.ERROR_SUCCESS && (validResults == null || !validResults.Contains(internalResult))) {
+                throw CreateCryptoExceptionForErrorCode(internalResult);
             }
             return internalResult;
+        }
+
+        private static Exception CreateCryptoExceptionForErrorCode(int errorCode) {
+            return CreateCryptoExceptionForErrorCode(unchecked((CryptoResult)errorCode));
+        }
+        private static Exception CreateCryptoExceptionForErrorCode(CryptoResult errorCode) {
+            var w32Exception = new Win32Exception(unchecked((int)errorCode));
+            
+            switch (errorCode) {
+                case CryptoResult.SCARD_W_WRONG_CHV:
+                    return new WrongPinException(w32Exception.Message, w32Exception);
+                case CryptoResult.SCARD_W_CHV_BLOCKED:
+                    return new PinBlockedException(w32Exception.Message, w32Exception);
+                case CryptoResult.SCARD_W_CANCELLED_BY_USER:
+                    return new OperationCanceledException(w32Exception.Message, w32Exception);
+                default:
+                    return new CryptographicException(w32Exception.Message, w32Exception);
+            }
         }
     }
 }

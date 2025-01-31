@@ -194,13 +194,13 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             
             /// https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptgetproperty
             [DllImport("Ncrypt.dll", CharSet = CharSet.Unicode, SetLastError = false)]
-            public static extern NcryptResultCode NCryptGetProperty(
+            public static extern CryptoResult NCryptGetProperty(
                 NCryptContextHandle hObject, string pszProperty,  byte[] pbOutput, int cbOutput,
                 out int pcbResult, NCryptGetPropertyFlags dwFlags);
             
             /// https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptsetproperty
             [DllImport("Ncrypt.dll", CharSet = CharSet.Unicode, SetLastError = false)]
-            public static extern NcryptResultCode NCryptSetProperty(
+            public static extern CryptoResult NCryptSetProperty(
                 NCryptContextHandle hObject, string pszProperty,  byte[] pbInput, int cbInput,
                 NCryptSetPropertyFlags dwFlags);
         }
