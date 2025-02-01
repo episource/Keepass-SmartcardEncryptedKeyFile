@@ -109,15 +109,15 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// Blocks if a busy hardware device is involved.
         /// </remarks>
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
+        /// <param name="pinUsage">Description of the application or operation that is accessing the private key.</param>
+        /// <param name="uiOwner">Window that should become owner of any dialog that needs to be shown.</param>
+        /// <param name="pin">Pin for unlocking the private key. When given, silent operation is requested.</param>
+        /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
         /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
         /// out or no authorized smartcard was found.</exception>
-        public DecryptedKeyFile Decrypt() {
-            var store = new EnvelopedCms();
-            store.Decode(this.encryptedKeyStore);
-            store.Decrypt();
-            
-            // TODO: use native capi
-            return new DecryptedKeyFile(this.Authorization, PortableProtectedBinary.Move(store.ContentInfo.Content));
+        public DecryptedKeyFile Decrypt(string pinUsage = null, IntPtr uiOwner = new IntPtr(), PortableProtectedString pin = null) {
+            var decrypted = NativeCapi.DecryptEnvelopedCms(this.encryptedKeyStore, pinUsage, uiOwner, pin);
+            return new DecryptedKeyFile(this.Authorization, decrypted);
         }
 
         /// <summary>

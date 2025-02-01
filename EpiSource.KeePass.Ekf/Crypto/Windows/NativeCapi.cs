@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -96,30 +98,97 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
 
-        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, IKeyPair recipient, string optPinUsage, IntPtr optOwner, PortableProtectedString optPin) {
+        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, string optPinUsage, IntPtr optOwner, PortableProtectedString optPin) {
             if (encodedEnvelopedCms == null) {
                 throw new ArgumentNullException("encodedEnvelopedCms");
             }
 
             var envelopedCms = new EnvelopedCms();
             envelopedCms.Decode(encodedEnvelopedCms);
+
+            var certMap = GetAvailableCertificates(envelopedCms.Certificates);
+
+            var recipientIndex = -1;
+            var exceptions = new List<Exception>();
+            foreach (var recipient in envelopedCms.RecipientInfos) {
+                recipientIndex++;
+
+                if (!(recipient.RecipientIdentifier.Value is X509IssuerSerial) || recipient.Type != RecipientInfoType.KeyTransport) {
+                    continue;
+                }
+
+                List<X509Certificate2> matchingCerts;
+                var identifier = (X509IssuerSerial) recipient.RecipientIdentifier.Value;
+                if (!certMap.TryGetValue(new ComparableIssuerSerial(identifier), out matchingCerts)) {
+                    continue;
+                }
+
+                foreach (var recipientCert in matchingCerts.Where(recipientCert => recipientCert.HasPrivateKey)) {
+                    try {
+                        var cspParams = NativeCapi.GetParameters(recipientCert);
+                        var cspInfo = new CspKeyContainerInfo(cspParams);
+                        if (cspInfo.KeyNumber != KeyNumber.Exchange || !cspInfo.Accessible) {
+                            continue;
+                        }
+
+                        return DecryptEnvelopedCms(envelopedCms, encodedEnvelopedCms, recipientCert, recipientIndex, optPinUsage, optOwner, optPin);
+                    } catch (Exception ex) {
+                        exceptions.Add(ex);
+                        // continue trying next one
+                    }
+                }
+            }
+
+            if (exceptions.Count == 0) {
+                throw new CryptographicException("No available key found for any recipient of enveloped-data message.");
+            }
+            throw new CryptographicException("No available key found for any recipient of enveloped-data message.", new AggregateException("Decryption failed.", exceptions));
+        }
+
+        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, IKeyPair recipient, string optPinUsage, IntPtr optOwner, PortableProtectedString optPin) {
+            if (recipient == null) {
+                throw new ArgumentNullException("recipient");
+            }
+            return DecryptEnvelopedCms(encodedEnvelopedCms, recipient.Certificate, optPinUsage, optOwner, optPin);
+        }
+
+        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, X509Certificate2 recipientCert, string optPinUsage, IntPtr optOwner, PortableProtectedString optPin) {
+            if (encodedEnvelopedCms == null) {
+                throw new ArgumentNullException("encodedEnvelopedCms");
+            }
+            if (recipientCert == null) {
+                throw new ArgumentNullException("recipientCert");
+            }
+            
+            var envelopedCms = new EnvelopedCms();
+            envelopedCms.Decode(encodedEnvelopedCms);
             
             int recipientIndex;
             RecipientInfo recipientInfo;
             
-            if (!FindRecipient(envelopedCms, recipient, out recipientIndex, out recipientInfo)) {
+            if (!FindRecipient(envelopedCms, recipientCert, out recipientIndex, out recipientInfo)) {
                 throw new ArgumentException("Recipient not authorized or invalid.", "recipient");
             }
             if (recipientInfo.Type != RecipientInfoType.KeyTransport) {
                 throw new ArgumentException("Recipient type is not KeyTransport.", "recipient");
             }
+            
+            return DecryptEnvelopedCms(envelopedCms, encodedEnvelopedCms, recipientCert, recipientIndex, optPinUsage, optOwner, optPin);
+        }
 
-           
+        private static PortableProtectedBinary DecryptEnvelopedCms(EnvelopedCms envelopedCms, byte[] encodedEnvelopedCms, X509Certificate2 recipientCert, int recipientIndex, string optPinUsage, IntPtr optOwner, PortableProtectedString optPin) {
+            if (envelopedCms == null) {
+                throw new ArgumentNullException("envelopedCms");
+            }
+            if (recipientCert == null) {
+                throw new ArgumentNullException("recipientCert");
+            }
+        
             var silent = optPin != null && false;
             var keyHandleRaw = IntPtr.Zero;
             var keySpec = CryptPrivateKeySpec.UNDEFINED;
             var mustFreeHandle = false;
-            PinvokeUtil.DoPinvokeWithException(() => NativeCapiPinvoke.CryptAcquireCertificatePrivateKey(recipient.Certificate.Handle,
+            PinvokeUtil.DoPinvokeWithException(() => NativeCapiPinvoke.CryptAcquireCertificatePrivateKey(recipientCert.Handle,
                 CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
                 | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                 | (optOwner != IntPtr.Zero && ! silent ? CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_WINDOW_HANDLE_FLAG : 0) 
@@ -140,7 +209,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
         
-        internal static bool FindRecipient(EnvelopedCms envelopedCms, IKeyPair recipientKeyPair, out int recipientIndex,
+        private static bool FindRecipient(EnvelopedCms envelopedCms, X509Certificate2 recipientCert, out int recipientIndex,
             out RecipientInfo recipientInfo) {
             var recipient = envelopedCms.RecipientInfos
                                         .OfType<RecipientInfo>()
@@ -153,11 +222,26 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                                             new Tuple<int, RecipientInfo, X509IssuerSerial>(-1, null,
                                                 default(X509IssuerSerial)))
                                         .First(r =>
-                                            r.Item3.IssuerName   == recipientKeyPair.Certificate.IssuerName.Name &&
-                                            r.Item3.SerialNumber == recipientKeyPair.Certificate.SerialNumber);
+                                            r.Item3.IssuerName   == recipientCert.IssuerName.Name &&
+                                            r.Item3.SerialNumber == recipientCert.SerialNumber);
             recipientIndex = recipient.Item1;
             recipientInfo = recipient.Item2;
             return recipientIndex >= 0;
+        }
+        
+        private static Dictionary<ComparableIssuerSerial, List<X509Certificate2>> GetAvailableCertificates(X509Certificate2Collection additionalCerts) {
+            using (var userStore = new X509Store(StoreName.My, StoreLocation.CurrentUser))
+            using (var machineStore = new X509Store(StoreName.My, StoreLocation.LocalMachine)) {
+                userStore.Open(OpenFlags.ReadOnly);
+                machineStore.Open(OpenFlags.ReadOnly);
+                
+                var userStoreCerts = userStore.Certificates.Cast<X509Certificate2>();
+                var machineStoreCerts = machineStore.Certificates.Cast<X509Certificate2>();
+
+                return additionalCerts.Cast<X509Certificate2>().Concat(userStoreCerts).Concat(machineStoreCerts)
+                                      .GroupBy(c => new ComparableIssuerSerial(c))
+                                      .ToDictionary(g => g.Key, g => g.ToList());
+            }
         }
 
         private static void SetNcryptOrCspPropertyU(NcryptOrContextHandle handle, string ncryptProperty, CryptSetProvParamType cspParam,  bool silent, string value) {

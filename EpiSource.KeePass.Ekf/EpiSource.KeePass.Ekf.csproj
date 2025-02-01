@@ -67,6 +67,9 @@
     <Compile Include="Crypto\Windows\NativeCapi.pinvoke.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.types.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
     <Compile Include="Crypto\WrongPinException.cs" />
     <Compile Include="KeyProvider\KeyFileLocation.cs" />
     <Compile Include="KeyProvider\SmartcardEncryptedKeyProvider.cs" />
