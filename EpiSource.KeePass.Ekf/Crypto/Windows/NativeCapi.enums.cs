@@ -8,7 +8,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         /// Set of relevant error codes.
         /// Reference: https://github.com/Alexpux/mingw-w64/blob/d0d7f784833bbb0b2d279310ddc6afb52fe47a46/mingw-w64-headers/include/winerror.h
         /// </summary>
-        private enum CryptoResult : uint {
+        internal enum CryptoResult : uint {
             ERROR_SUCCESS = 0,
             ERROR_MORE_DATA           = 0xEA,
             NTE_BAD_UID = 0x80090001,

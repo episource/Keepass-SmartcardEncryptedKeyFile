@@ -53,10 +53,15 @@
   <ItemGroup>
     <Compile Include="Crypto\DecryptedKeyFile.cs" />
     <Compile Include="Crypto\EncryptedKeyFile.cs" />
+    <Compile Include="Crypto\Exceptions\CryptoExceptionFactory.cs" />
+    <Compile Include="Crypto\Exceptions\CryptoOperationCancelledException.cs" />
+    <Compile Include="Crypto\Exceptions\GenericCryptoException.cs" />
+    <Compile Include="Crypto\Exceptions\PinBlockedException.cs" />
+    <Compile Include="Crypto\Exceptions\InputRequiredException.cs" />
+    <Compile Include="Crypto\Exceptions\WrongPinException.cs" />
     <Compile Include="Crypto\KeyEncryptionRequest.cs" />
     <Compile Include="Crypto\IKeyPair.cs" />
     <Compile Include="Crypto\LimitedAccessKeyFile.cs" />
-    <Compile Include="Crypto\PinBlockedException.cs" />
     <Compile Include="Crypto\RandomKeyGenerator.cs" />
     <Compile Include="Crypto\RSASmartcardKeyPairs.cs" />
     <Compile Include="Crypto\RSACryptoServiceProviderKeyPair.cs" />
@@ -70,7 +75,6 @@
     <Compile Include="Crypto\Windows\NativeCapi.types.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
-    <Compile Include="Crypto\WrongPinException.cs" />
     <Compile Include="KeyProvider\KeyFileLocation.cs" />
     <Compile Include="KeyProvider\SmartcardEncryptedKeyProvider.cs" />
     <Compile Include="Keys\LiveKeyDataStore.cs" />

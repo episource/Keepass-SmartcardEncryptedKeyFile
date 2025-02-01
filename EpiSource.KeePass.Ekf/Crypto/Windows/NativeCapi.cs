@@ -11,6 +11,8 @@ using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Windows.Forms;
 
+using EpiSource.KeePass.Ekf.Crypto.Exceptions;
+using EpiSource.KeePass.Ekf.Crypto.Windows.Exceptions;
 using EpiSource.KeePass.Ekf.UI.Windows;
 using EpiSource.KeePass.Ekf.Util;
 
@@ -24,7 +26,11 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
 
         public static bool IsCancelledByUserException(CryptographicException ex) {
-            return unchecked((CryptoResult)ex.HResult) == CryptoResult.SCARD_W_CANCELLED_BY_USER;
+            return ex is CryptoOperationCancelledException || unchecked((CryptoResult)ex.HResult) == CryptoResult.SCARD_W_CANCELLED_BY_USER;
+        }
+
+        public static bool IsInputRequiredException(CryptographicException ex) {
+            return ex is InputRequiredException || unchecked((CryptoResult)ex.HResult) == CryptoResult.NTE_SILENT_CONTEXT;
         }
 
         public static bool IsWrongPinException(CryptographicException ex) {
@@ -355,7 +361,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             PinvokeUtil.DoPinvokeWithException(() =>
                 NativeCryptMsgPinvoke.CryptMsgControl(
                     msgHandle, CryptMsgControlFlags.None, CryptMsgControlType.CMSG_CTRL_DECRYPT, ref para),
-                CreateCryptoExceptionForErrorCode);
+                CryptoExceptionFactory.forErrorCode);
 
             return GetCryptMsgContent(msgHandle);
         }
@@ -363,27 +369,9 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         private static CryptoResult DoNcryptWithException(Func<CryptoResult> ncryptFunction, params CryptoResult[] validResults) {
             var internalResult = ncryptFunction();
             if (ncryptFunction() != CryptoResult.ERROR_SUCCESS && (validResults == null || !validResults.Contains(internalResult))) {
-                throw CreateCryptoExceptionForErrorCode(internalResult);
+                throw CryptoExceptionFactory.forErrorCode(internalResult);
             }
             return internalResult;
-        }
-
-        private static Exception CreateCryptoExceptionForErrorCode(int errorCode) {
-            return CreateCryptoExceptionForErrorCode(unchecked((CryptoResult)errorCode));
-        }
-        private static Exception CreateCryptoExceptionForErrorCode(CryptoResult errorCode) {
-            var w32Exception = new Win32Exception(unchecked((int)errorCode));
-            
-            switch (errorCode) {
-                case CryptoResult.SCARD_W_WRONG_CHV:
-                    return new WrongPinException(w32Exception.Message, w32Exception);
-                case CryptoResult.SCARD_W_CHV_BLOCKED:
-                    return new PinBlockedException(w32Exception.Message, w32Exception);
-                case CryptoResult.SCARD_W_CANCELLED_BY_USER:
-                    return new OperationCanceledException(w32Exception.Message, w32Exception);
-                default:
-                    return new CryptographicException(w32Exception.Message, w32Exception);
-            }
         }
     }
 }

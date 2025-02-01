@@ -115,6 +115,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
         /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
         /// out or no authorized smartcard was found.</exception>
+        /// <exception cref="InputRequiredException"></exception>
+        /// <exception cref="PinBlockedException"></exception>
+        /// <exception cref="WrongPinException"></exception>
         public DecryptedKeyFile Decrypt(string contextDescription = null, IntPtr uiOwner = new IntPtr(), bool alwaysSilent = false, PortableProtectedString pin = null) {
             var decrypted = NativeCapi.DecryptEnvelopedCms(this.encryptedKeyStore, alwaysSilent, contextDescription, uiOwner, pin);
             return new DecryptedKeyFile(this.Authorization, decrypted);
@@ -135,6 +138,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
         /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
         /// out or no authorized smartcard was found.</exception>
+        /// <exception cref="InputRequiredException"></exception>
+        /// <exception cref="PinBlockedException"></exception>
+        /// <exception cref="WrongPinException"></exception>
         /// <exception cref="ArgumentNullException">The provided key pair is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The provided key pair is not suitable to decrypt the key
         /// file.</exception>
@@ -165,6 +171,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
         /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
         /// out or no authorized smartcard was found.</exception>
+        /// <exception cref="InputRequiredException"></exception>
+        /// <exception cref="PinBlockedException"></exception>
+        /// <exception cref="WrongPinException"></exception>
         /// <exception cref="ArgumentNullException">The provided key pair is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The provided key pair is not suitable to decrypt the key
         /// file.</exception>
