@@ -109,14 +109,14 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// Blocks if a busy hardware device is involved.
         /// </remarks>
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
-        /// <param name="pinUsage">Description of the application or operation that is accessing the private key.</param>
+        /// <param name="contextDescription">Description of the application or operation that is accessing the private key.</param>
         /// <param name="uiOwner">Window that should become owner of any dialog that needs to be shown.</param>
         /// <param name="pin">Pin for unlocking the private key. When given, silent operation is requested.</param>
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
         /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
         /// out or no authorized smartcard was found.</exception>
-        public DecryptedKeyFile Decrypt(string pinUsage = null, IntPtr uiOwner = new IntPtr(), PortableProtectedString pin = null) {
-            var decrypted = NativeCapi.DecryptEnvelopedCms(this.encryptedKeyStore, pinUsage, uiOwner, pin);
+        public DecryptedKeyFile Decrypt(string contextDescription = null, IntPtr uiOwner = new IntPtr(), bool alwaysSilent = false, PortableProtectedString pin = null) {
+            var decrypted = NativeCapi.DecryptEnvelopedCms(this.encryptedKeyStore, alwaysSilent, contextDescription, uiOwner, pin);
             return new DecryptedKeyFile(this.Authorization, decrypted);
         }
 
@@ -128,8 +128,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// The operation blocks until the user has successfully unlocked the smartcard or the operation times out. 
         /// </summary>
         /// <param name="recipientKeyPair">This key pair is used for decryption.</param>
-        /// <param name="pinUsage">Description of the application or operation that is accessing the private key.</param>
+        /// <param name="contextDescription">Description of the application or operation that is accessing the private key.</param>
         /// <param name="uiOwner">Window that should become owner of any dialog that needs to be shown.</param>
+        /// <param name="alwaysSilent">Request silent operation, also if no pin is given. Useful to check if the smartcard or key is currently unlocked.</param>
         /// <param name="pin">Pin for unlocking the private key. When given, silent operation is requested.</param>
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
         /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
@@ -137,7 +138,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <exception cref="ArgumentNullException">The provided key pair is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The provided key pair is not suitable to decrypt the key
         /// file.</exception>
-        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair, string pinUsage = null, IntPtr uiOwner = new IntPtr(), PortableProtectedString pin = null) {
+        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair, string contextDescription = null, IntPtr uiOwner = new IntPtr(), bool alwaysSilent=false, PortableProtectedString pin = null) {
             if (recipientKeyPair == null) {
                 throw new ArgumentNullException("recipientKeyPair");
             }
@@ -145,7 +146,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                 throw new ArgumentOutOfRangeException("recipientKeyPair", "recipientKeyPair not ready for decrypt.");
             }
 
-            var decrypted = NativeCapi.DecryptEnvelopedCms(this.encryptedKeyStore, recipientKeyPair, pinUsage, uiOwner, pin);
+            var decrypted = NativeCapi.DecryptEnvelopedCms(this.encryptedKeyStore, recipientKeyPair, alwaysSilent, contextDescription, uiOwner, pin);
             return new DecryptedKeyFile(this.Authorization, decrypted);
         }
 
@@ -157,8 +158,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// The operation blocks until the user has successfully unlocked the smartcard or the operation times out. 
         /// </summary>
         /// <param name="recipientKeyPair">This key pair is used for decryption.</param>
-        /// <param name="pinUsage">Description of the application or operation that is accessing the private key.</param>
+        /// <param name="contextDescription">Description of the application or operation that is accessing the private key.</param>
         /// <param name="uiOwner">Window that should become owner of any dialog that needs to be shown.</param>
+        /// <param name="alwaysSilent">Request silent operation, also if no pin is given. Useful to check if the smartcard or key is currently unlocked.</param>
         /// <param name="pin">Pin for unlocking the private key. When given, silent operation is requested.</param>
         /// <returns>A <see cref="DecryptedKeyFile">DecryptedKeyFile</see>.</returns>
         /// <exception cref="CryptographicException">Failed to decrypt the key file. E.g. because the operation timed
@@ -166,7 +168,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <exception cref="ArgumentNullException">The provided key pair is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The provided key pair is not suitable to decrypt the key
         /// file.</exception>
-        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair, string pinUsage = null, Form uiOwner = null, PortableProtectedString pin = null) {
+        public DecryptedKeyFile Decrypt(IKeyPair recipientKeyPair, string contextDescription = null, Form uiOwner = null, bool alwaysSilent=false, PortableProtectedString pin = null) {
             if (recipientKeyPair == null) {
                 throw new ArgumentNullException("recipientKeyPair");
             }
@@ -174,7 +176,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                 throw new ArgumentOutOfRangeException("recipientKeyPair", "recipientKeyPair not ready for decrypt.");
             }
 
-            var decrypted = NativeCapi.DecryptEnvelopedCms(this.encryptedKeyStore, recipientKeyPair, pinUsage, uiOwner != null ? uiOwner.Handle : IntPtr.Zero, pin);
+            var decrypted = NativeCapi.DecryptEnvelopedCms(this.encryptedKeyStore, recipientKeyPair, alwaysSilent, contextDescription, uiOwner != null ? uiOwner.Handle : IntPtr.Zero, pin);
             return new DecryptedKeyFile(this.Authorization, decrypted);
         }
 

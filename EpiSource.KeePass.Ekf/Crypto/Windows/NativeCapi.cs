@@ -98,7 +98,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
 
-        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, string optPinUsage, IntPtr optOwner, PortableProtectedString optPin) {
+        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, bool alwaysSilent=false, string contextDescription=null, IntPtr uiOwner=new IntPtr(), PortableProtectedString pin=null) {
             if (encodedEnvelopedCms == null) {
                 throw new ArgumentNullException("encodedEnvelopedCms");
             }
@@ -131,7 +131,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                             continue;
                         }
 
-                        return DecryptEnvelopedCms(envelopedCms, encodedEnvelopedCms, recipientCert, recipientIndex, optPinUsage, optOwner, optPin);
+                        return DecryptEnvelopedCms(envelopedCms, encodedEnvelopedCms, recipientCert, recipientIndex, alwaysSilent, contextDescription, uiOwner, pin);
                     } catch (Exception ex) {
                         exceptions.Add(ex);
                         // continue trying next one
@@ -145,14 +145,14 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             throw new CryptographicException("No available key found for any recipient of enveloped-data message.", new AggregateException("Decryption failed.", exceptions));
         }
 
-        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, IKeyPair recipient, string optPinUsage, IntPtr optOwner, PortableProtectedString optPin) {
+        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, IKeyPair recipient, bool alwaysSilent=false, string contextDescription=null, IntPtr uiOwner=new IntPtr(), PortableProtectedString pin=null) {
             if (recipient == null) {
                 throw new ArgumentNullException("recipient");
             }
-            return DecryptEnvelopedCms(encodedEnvelopedCms, recipient.Certificate, optPinUsage, optOwner, optPin);
+            return DecryptEnvelopedCms(encodedEnvelopedCms, recipient.Certificate, alwaysSilent, contextDescription, uiOwner, pin);
         }
 
-        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, X509Certificate2 recipientCert, string optPinUsage, IntPtr optOwner, PortableProtectedString optPin) {
+        public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, X509Certificate2 recipientCert, bool alwaysSilent=false, string contextDescription=null, IntPtr uiOwner=new IntPtr(), PortableProtectedString pin=null) {
             if (encodedEnvelopedCms == null) {
                 throw new ArgumentNullException("encodedEnvelopedCms");
             }
@@ -173,10 +173,13 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 throw new ArgumentException("Recipient type is not KeyTransport.", "recipient");
             }
             
-            return DecryptEnvelopedCms(envelopedCms, encodedEnvelopedCms, recipientCert, recipientIndex, optPinUsage, optOwner, optPin);
+            return DecryptEnvelopedCms(envelopedCms, encodedEnvelopedCms, recipientCert, recipientIndex, alwaysSilent, contextDescription, uiOwner, pin);
         }
 
-        private static PortableProtectedBinary DecryptEnvelopedCms(EnvelopedCms envelopedCms, byte[] encodedEnvelopedCms, X509Certificate2 recipientCert, int recipientIndex, string optPinUsage, IntPtr optOwner, PortableProtectedString optPin) {
+        private static PortableProtectedBinary DecryptEnvelopedCms(
+                EnvelopedCms envelopedCms, byte[] encodedEnvelopedCms, X509Certificate2 recipientCert, int recipientIndex, bool alwaysSilent,
+                string optContextDescription, IntPtr optOwner, PortableProtectedString optPin
+        ) {
             if (envelopedCms == null) {
                 throw new ArgumentNullException("envelopedCms");
             }
@@ -184,7 +187,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 throw new ArgumentNullException("recipientCert");
             }
         
-            var silent = optPin != null && false;
+            var silent = alwaysSilent || optPin != null;
             var keyHandleRaw = IntPtr.Zero;
             var keySpec = CryptPrivateKeySpec.UNDEFINED;
             var mustFreeHandle = false;
@@ -203,7 +206,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                     keyHandle.KeySpec == CryptPrivateKeySpec.AT_KEYEXCHANGE ? CryptSetProvParamType.PP_KEYEXCHANGE_PIN : CryptSetProvParamType.PP_SIGNATURE_PIN,
                     silent, optPin);
 
-                if (optPinUsage != null) SetNcryptOrCspPropertyU(keyHandle, "Use Context", CryptSetProvParamType.PP_PIN_PROMPT_STRING, silent, optPinUsage);
+                if (optContextDescription != null) SetNcryptOrCspPropertyU(keyHandle, "Use Context", CryptSetProvParamType.PP_PIN_PROMPT_STRING, silent, optContextDescription);
                 
                 return DecryptCryptMsg(msgHandle, keyHandle, recipientIndex);
             }

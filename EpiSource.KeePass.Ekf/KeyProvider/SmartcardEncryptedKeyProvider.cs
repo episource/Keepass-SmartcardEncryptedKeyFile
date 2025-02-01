@@ -165,9 +165,9 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
                 
                 if (enableCancellation) {
                     return SmartcardOperationDialog
-                           .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, null)).PlaintextKey;
+                           .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, false, null)).PlaintextKey;
                 }
-                return Task.Run(() => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, null)).AwaitWithMessagePump().PlaintextKey;
+                return Task.Run(() => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, false, null)).AwaitWithMessagePump().PlaintextKey;
             } catch (OperationCanceledException e) {
                 return null;
             } catch (CryptographicException ex) { 
