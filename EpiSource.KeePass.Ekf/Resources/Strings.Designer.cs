@@ -591,23 +591,5 @@ namespace Episource.KeePass.EKF.Resources {
                 return ResourceManager.GetString("SmartcardRequiredDialog.LabelThumbprint", resourceCulture);
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to &quot;Wrong PIN entered..
-        /// </summary>
-        internal static string WrongPinDialog_DialogText {
-            get {
-                return ResourceManager.GetString("WrongPinDialog.DialogText", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Wrong PIN.
-        /// </summary>
-        internal static string WrongPinDialog_DialogTitle {
-            get {
-                return ResourceManager.GetString("WrongPinDialog.DialogTitle", resourceCulture);
-            }
-        }
     }
 }

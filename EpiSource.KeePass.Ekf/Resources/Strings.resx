@@ -202,12 +202,6 @@
   <data name="PinBlockedDialog.DialogText" xml:space="preserve">
     <value>PIN blocked permanently. Use PUK to recover.</value>
   </data>
-  <data name="WrongPinDialog.DialogTitle" xml:space="preserve">
-    <value>Wrong PIN</value>
-  </data>
-  <data name="WrongPinDialog.DialogText" xml:space="preserve">
-    <value>"Wrong PIN entered.</value>
-  </data>
   <data name="NativeSmartcardUI.ContextTest" xml:space="preserve">
     <comment>{0} is the certificate's subject name in multiline format</comment>
     <value>KeePass requests access to private key:&#xD;&#xA;&#xD;&#xA;{0}</value>

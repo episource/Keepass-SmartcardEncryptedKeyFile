@@ -155,40 +155,8 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
                 .DoCryptoWithMessagePumpShort(ct => EncryptedKeyFile.Decode(encryptedKeyFileData));
 
             var recipient = SmartcardRequiredDialog.ChooseKeyPairForDecryption(ekfFile, GlobalWindowManager.TopWindow);
-            if (recipient == null) {
-                return null;
-            }
-
             try {
-                var decryptUiOwnerHandle = GlobalWindowManager.TopWindow.Handle;
-                var contextDescription = string.Format(Strings.Culture, Strings.NativeSmartcardUI_ContextTest, recipient.Certificate.SubjectName.Format(true));
-                
-                if (enableCancellation) {
-                    return SmartcardOperationDialog
-                           .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, false, null)).PlaintextKey;
-                }
-                return Task.Run(() => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, false, null)).AwaitWithMessagePump().PlaintextKey;
-            } catch (OperationCanceledException e) {
-                return null;
-            } catch (CryptographicException ex) { 
-                // operation was canceled using windows dialog or failed otherwise
-                if (NativeCapi.IsCancelledByUserException(ex)) {
-                    return null;
-                }
-                if (NativeCapi.IsWrongPinException(ex)) {
-                    MessageBox.Show(Strings.WrongPinDialog_DialogText, Strings.WrongPinDialog_DialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                    return null;
-                }
-                if (NativeCapi.IsPinBlockedException(ex)) {
-                    MessageBox.Show(Strings.PinBlockedDialog_DialogText, Strings.PinBlockedDialog_DialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return null;
-                }
-
-                throw;
-            } catch (DeniedByVirusScannerFalsePositive e) {
-                var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
-                    ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return null;
+                return this.DecryptEncryptedKeyFile(ekfFile, recipient, enableCancellation);
             } catch (TaskCrashedException) {
                 if (retryOnCrash) {
                     // there's a known bug in win 10 credentials ui, that causes a crash when opening the dialog
@@ -198,7 +166,54 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
                     return this.DecryptEncryptedKeyFile(ctx, false, enableCancellation);
                 }
                 throw;
+            } catch (DeniedByVirusScannerFalsePositive e) {
+                var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
+                    ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return null;
             }
         }
+
+        private PortableProtectedBinary DecryptEncryptedKeyFile(EncryptedKeyFile ekfFile, IKeyPair recipient, bool enableCancellation) {
+            if (recipient == null) {
+                return null;
+            }
+
+            PinPromptDialog.PinPromptDialogResult pinInfo = null;
+            while (pinInfo == null || !pinInfo.IsCanceled) { // retry on wrong pin
+                try {
+                    var decryptUiOwnerHandle = GlobalWindowManager.TopWindow.Handle;
+                    var contextDescription = string.Format(Strings.Culture, Strings.NativeSmartcardUI_ContextTest, recipient.Certificate.SubjectName.Format(true));
+
+                    // TODO: if requested - remember pin on success
+                    var pin = pinInfo == null ? null : pinInfo.Pin;
+                    if (enableCancellation) {
+                        return SmartcardOperationDialog
+                               .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin)).PlaintextKey;
+                    }
+                    return Task.Run(() => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin)).AwaitWithMessagePump().PlaintextKey;
+                } catch (CryptographicException ex) {
+                    // operation was canceled using windows dialog or failed otherwise
+                    if (NativeCapi.IsCancelledByUserException(ex)) {
+                        return null;
+                    }
+                    if (NativeCapi.IsPinBlockedException(ex)) {
+                        MessageBox.Show(Strings.PinBlockedDialog_DialogText, Strings.PinBlockedDialog_DialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return null;
+                    }
+                    
+                    if (NativeCapi.IsInputRequiredException(ex)) {
+                        pinInfo = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow);
+                    } else if (NativeCapi.IsWrongPinException(ex)) {
+                        // TODO: clear pin cache!
+                        pinInfo = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow, isRetry: true);
+                    } else {
+                        throw;
+                    }
+                }
+            }
+            
+            return null;
+        }
+
     }
 }
