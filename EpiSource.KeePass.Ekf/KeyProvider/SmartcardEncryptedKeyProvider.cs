@@ -191,6 +191,9 @@ namespace EpiSource.KeePass.Ekf.KeyProvider {
                                .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin)).PlaintextKey;
                     }
                     return Task.Run(() => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin)).AwaitWithMessagePump().PlaintextKey;
+                } catch (TaskCanceledException e) {
+                    // cancelled by user
+                    return null;
                 } catch (CryptographicException ex) {
                     // operation was canceled using windows dialog or failed otherwise
                     if (NativeCapi.IsCancelledByUserException(ex)) {
