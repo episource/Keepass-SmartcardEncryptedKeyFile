@@ -98,6 +98,19 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             return this.ReadUnprotectedAscii(true);
         }
 
+        public override bool Equals(object obj) {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj is PortableProtectedString && this.Equals((PortableProtectedString) obj);
+        }
+        
+        private bool Equals(PortableProtectedString other) {
+            return Equals(this.protectedChars, other.protectedChars);
+        }
+        public override int GetHashCode() {
+            return (this.protectedChars != null ? this.protectedChars.GetHashCode() : 0);
+        }
+
         private static void appendNull(ref char[] chars) {
             var withNull = new char[chars.Length + 1];
             Array.Copy(chars, 0, withNull, 0, chars.Length);

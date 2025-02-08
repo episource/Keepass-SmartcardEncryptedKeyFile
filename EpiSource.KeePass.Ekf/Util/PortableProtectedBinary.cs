@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Security.Cryptography;
 
@@ -85,6 +86,29 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             Array.Copy(protectedDataCopy, 0, result, 0, this.plainLength);
             Array.Clear(protectedDataCopy, 0, protectedDataCopy.Length);
             return result;
+        }
+
+        private bool Equals(PortableProtectedBinary other) {
+            if (this.plainLength != other.plainLength) {
+                return false;
+            }
+            if ((this.protectedData == null) != (other.protectedData == null)) {
+                return false;
+            }
+            if (this.protectedData == null) {
+                return true;
+            }
+            return this.protectedData.SequenceEqual(other.protectedData);
+        }
+        public override bool Equals(object obj) {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj is PortableProtectedBinary && this.Equals((PortableProtectedBinary) obj);
+        }
+        public override int GetHashCode() {
+            unchecked {
+                return ((this.protectedData != null ? this.protectedData.GetHashCode() : 0) * 397) ^ this.plainLength;
+            }
         }
     }
 }
