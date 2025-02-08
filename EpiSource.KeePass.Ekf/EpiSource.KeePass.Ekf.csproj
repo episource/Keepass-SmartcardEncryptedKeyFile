@@ -110,6 +110,8 @@
     </Compile>
     <Compile Include="UI\Windows\NativeForms.cs" />
     <Compile Include="Unblocker\EpiSource.Unblocker\**\*.cs" Exclude="Unblocker\EpiSource.Unblocker\Properties\*" />
+    <Compile Include="Util\HGlobalHandle.cs" />
+    <Compile Include="Util\MarshaledStructureHandleCollection.cs" />
     <Compile Include="Util\PinvokeUtil.cs" />
     <Compile Include="Util\PortableProtectedBinary.cs" />
     <Compile Include="Util\PortableProtectedString.cs" />
@@ -117,6 +119,7 @@
     <Compile Include="Util\ProtectedStringExtensions.cs" />
     <Compile Include="Util\StreamExtensions.cs" />
     <Compile Include="Util\TaskExtensions.cs" />
+    <Compile Include="Util\Windows\GenericCredential.cs" />
     <Compile Include="Util\Windows\NativeDevice.cs" />
     <Compile Include="Util\Windows\NativeDevice.pinvoke.cs">
       <DependentUpon>NativeDevice.cs</DependentUpon>
@@ -127,6 +130,13 @@
     </Compile>
     <Compile Include="Util\Windows\NativeDeviceEvents.types.cs">
       <DependentUpon>NativeDeviceEvents.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Util\Windows\WinCred.cs" />
+    <Compile Include="Util\Windows\WinCred.pinvoke.cs">
+      <DependentUpon>WinCred.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Util\Windows\WinCred.types.cs">
+      <DependentUpon>WinCred.cs</DependentUpon>
     </Compile>
     <Compile Include="Util\Windows\WinVersion.cs" />
     <Compile Include="Util\Windows\WinVersion.pinvoke.cs">
