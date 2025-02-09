@@ -2,7 +2,7 @@ using System;
 
 using KeePassLib.Security;
 
-namespace EpiSource.KeePass.Ekf.Crypto {
+namespace EpiSource.KeePass.Ekf.Util {
     public static class ProtectedBinaryExtensions {
         public static PortableProtectedBinary ToPortable(this ProtectedBinary protectedBinary) {
             return PortableProtectedBinary.Move(protectedBinary.ReadData());

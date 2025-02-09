@@ -1,7 +1,7 @@
 using System;
 
 
-namespace EpiSource.KeePass.Ekf.Crypto.Windows {
+namespace EpiSource.KeePass.Ekf.Util.Windows {
     public static partial class NativeCapi {
         
         /// <summary>

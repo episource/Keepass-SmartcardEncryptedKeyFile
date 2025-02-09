@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
-namespace EpiSource.KeePass.Ekf.Crypto {
+namespace EpiSource.KeePass.Ekf.Util {
     // ReSharper disable once InconsistentNaming
     public static class RSASmartcardKeyPairs {       
         /// <summary>

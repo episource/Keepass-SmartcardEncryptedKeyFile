@@ -6,7 +6,7 @@ using System.Text;
 using KeePassLib.Cryptography;
 using KeePassLib.Security;
 
-namespace EpiSource.KeePass.Ekf.Crypto {
+namespace EpiSource.KeePass.Ekf.Util {
     public class RandomKeyGenerator {
         public ProtectedBinary Shuffle(string entropy) {
             return this.Shuffle(Encoding.ASCII.GetBytes(entropy));

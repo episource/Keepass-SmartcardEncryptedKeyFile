@@ -3,7 +3,7 @@ using System.Text;
 
 using KeePassLib.Security;
 
-namespace EpiSource.KeePass.Ekf.Crypto {
+namespace EpiSource.KeePass.Ekf.Util {
     public static class ProtectedStringExtensions {
         
         public static PortableProtectedString ToPortable(this ProtectedString protectedString) {

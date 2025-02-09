@@ -3,10 +3,10 @@ using System.ComponentModel;
 using System.Runtime.Serialization;
 using System.Security.Cryptography;
 
-using EpiSource.KeePass.Ekf.Crypto.Windows;
-using EpiSource.KeePass.Ekf.Crypto.Windows.Exceptions;
+using EpiSource.KeePass.Ekf.Util.Windows.Exceptions;
+using EpiSource.KeePass.Ekf.Util.Windows;
 
-namespace EpiSource.KeePass.Ekf.Crypto.Exceptions {
+namespace EpiSource.KeePass.Ekf.Util.Exceptions {
     [Serializable]
     public class GenericCryptoException : CryptographicException {
 

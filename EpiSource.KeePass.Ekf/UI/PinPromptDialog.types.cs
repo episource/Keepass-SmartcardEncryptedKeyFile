@@ -1,6 +1,6 @@
 using System;
 
-using EpiSource.KeePass.Ekf.Crypto;
+using EpiSource.KeePass.Ekf.Util;
 
 using KeePassLib.Security;
 

@@ -16,7 +16,7 @@ using Microsoft.Win32.SafeHandles;
 // ReSharper disable InconsistentNaming
 // ReSharper disable EnumUnderlyingTypeIsInt
 
-namespace EpiSource.KeePass.Ekf.Crypto.Windows {
+namespace EpiSource.KeePass.Ekf.Util.Windows {
     public static partial class NativeCapi {
         
         // https://docs.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-cmsg_ctrl_decrypt_para

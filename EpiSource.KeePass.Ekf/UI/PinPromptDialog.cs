@@ -2,7 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-using EpiSource.KeePass.Ekf.Crypto;
+using EpiSource.KeePass.Ekf.Util;
 
 using Episource.KeePass.EKF.Resources;
 

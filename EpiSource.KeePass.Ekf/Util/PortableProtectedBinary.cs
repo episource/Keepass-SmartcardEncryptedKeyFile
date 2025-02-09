@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 
 using KeePassLib.Security;
 
-namespace EpiSource.KeePass.Ekf.Crypto {
+namespace EpiSource.KeePass.Ekf.Util {
     [Serializable]
     public sealed class PortableProtectedBinary : ISerializable {
 

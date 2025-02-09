@@ -11,10 +11,10 @@ using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Windows.Forms;
 
-using EpiSource.KeePass.Ekf.Crypto.Exceptions;
-using EpiSource.KeePass.Ekf.Crypto.Windows.Exceptions;
 using EpiSource.KeePass.Ekf.UI.Windows;
 using EpiSource.KeePass.Ekf.Util;
+using EpiSource.KeePass.Ekf.Util.Exceptions;
+using EpiSource.KeePass.Ekf.Util.Windows.Exceptions;
 
 using KeePassLib;
 using KeePassLib.Security;
@@ -22,7 +22,7 @@ using KeePassLib.Security;
 // ReSharper disable InconsistentNaming
 // ReSharper disable EnumUnderlyingTypeIsInt
 
-namespace EpiSource.KeePass.Ekf.Crypto.Windows {
+namespace EpiSource.KeePass.Ekf.Util.Windows {
     public static partial class NativeCapi {
 
         public static bool IsCancelledByUserException(CryptographicException ex) {

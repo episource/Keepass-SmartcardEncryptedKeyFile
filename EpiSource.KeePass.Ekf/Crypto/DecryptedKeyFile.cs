@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 
 using KeePassLib.Security;
 
-namespace EpiSource.KeePass.Ekf.Crypto {
+namespace EpiSource.KeePass.Ekf.Util {
     /// <remarks>
     /// This class can be serialized. The serialized data is encrypted using a session key bound to the current user
     /// session. This means deserialization is only requires the same session to be active that was used for

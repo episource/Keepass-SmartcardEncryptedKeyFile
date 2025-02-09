@@ -5,9 +5,6 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using EpiSource.KeePass.Ekf.Crypto;
-using EpiSource.KeePass.Ekf.Crypto.Windows;
-
 using Episource.KeePass.EKF.Resources;
 
 using EpiSource.KeePass.Ekf.UI;

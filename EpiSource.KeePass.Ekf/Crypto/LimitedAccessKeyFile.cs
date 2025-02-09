@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace EpiSource.KeePass.Ekf.Crypto {
+namespace EpiSource.KeePass.Ekf.Util {
     [Serializable]
     public abstract class LimitedAccessKeyFile {
         private readonly IList<IKeyPair> authorization;
