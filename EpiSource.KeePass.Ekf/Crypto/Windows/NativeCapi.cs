@@ -279,7 +279,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             var valueSize = 0;
             // https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers
             PinvokeUtil.DoPinvokeWithException(() => NativeLegacyCapiPinvoke.CryptGetProvParam(cspHandle, dwParam, null, ref valueSize, 0),
-                res => res || Marshal.GetLastWin32Error() == (int) CryptoResult.ERROR_MORE_DATA);
+                res => res.Result || res.Win32ErrorCode == (int) CryptoResult.ERROR_MORE_DATA);
                 
             var value = new byte[valueSize];
             PinvokeUtil.DoPinvokeWithException(() => NativeLegacyCapiPinvoke.CryptGetProvParam(cspHandle, dwParam, value, ref valueSize, 0));
@@ -319,7 +319,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
                     CryptMsgEncodingTypeFlags.X509_ASN_ENCODING | CryptMsgEncodingTypeFlags.PKCS_7_ASN_ENCODING,
                     CryptMsgFlags.None, CryptMsgType.RetrieveTypeFromHeader,
                     IntPtr.Zero, IntPtr.Zero, IntPtr.Zero),
-                r => r != null && !r.IsInvalid);
+                r => r.Result != null && !r.Result.IsInvalid);
 
             PinvokeUtil.DoPinvokeWithException(() => NativeCryptMsgPinvoke.CryptMsgUpdate(msgHandle, encodedEnvelopedCms,
                 (uint) encodedEnvelopedCms.Length, true));
@@ -361,7 +361,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             PinvokeUtil.DoPinvokeWithException(() =>
                 NativeCryptMsgPinvoke.CryptMsgControl(
                     msgHandle, CryptMsgControlFlags.None, CryptMsgControlType.CMSG_CTRL_DECRYPT, ref para),
-                CryptoExceptionFactory.forErrorCode);
+                r => CryptoExceptionFactory.forErrorCode(r.Win32ErrorCode));
 
             return GetCryptMsgContent(msgHandle);
         }

@@ -296,7 +296,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
         private static DeviceInfoListHandle SetupDiCreateDeviceInfoListUnboundImpl() {
             return PinvokeUtil.DoPinvokeWithException(
                 () => NativeDevicePinvoke.SetupDiCreateDeviceInfoList(IntPtr.Zero, IntPtr.Zero),
-                x => !x.IsInvalid);
+                x => !x.Result.IsInvalid);
         }
 
         // fills device info list with requested information
@@ -327,7 +327,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
                 // ReSharper disable once AccessToDisposedClosure
                 var success = PinvokeUtil.DoPinvokeWithException(
                     () => NativeDevicePinvoke.SetupDiEnumDeviceInfo(deviceInfoSet, memberIndex, boundHandle),
-                    res => res || Marshal.GetLastWin32Error() == ERROR_NO_MORE_ITEMS);
+                    res => res.Result || res.Win32ErrorCode == ERROR_NO_MORE_ITEMS);
                 
                 if (success) {
                     deviceInfoHandle = boundHandle;
@@ -357,7 +357,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             uint requiredSize = 0;
             var result = PinvokeUtil.DoPinvokeWithException(() => NativeDevicePinvoke.SetupDiGetDeviceRegistryProperty(
                 deviceInfoSet, deviceInfoHandle, property, out dataType, null, 0, out requiredSize),
-                res => res || Marshal.GetLastWin32Error() == ERROR_INVALID_DATA || Marshal.GetLastWin32Error() == ERROR_INSUFFICIENT_BUFFER);
+                res => res.Result || res.Win32ErrorCode == ERROR_INVALID_DATA || res.Win32ErrorCode == ERROR_INSUFFICIENT_BUFFER);
             if (!result && Marshal.GetLastWin32Error() != ERROR_INSUFFICIENT_BUFFER) {
                 return null;
             }
@@ -369,7 +369,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             result = PinvokeUtil.DoPinvokeWithException(() =>
                 NativeDevicePinvoke.SetupDiGetDeviceRegistryProperty(deviceInfoSet, deviceInfoHandle, property,
                     out dataType, nameBuffer, requiredSize, out requiredSize),
-                    res => res || Marshal.GetLastWin32Error() == ERROR_INVALID_DATA);
+                    res => res.Result || res.Win32ErrorCode == ERROR_INVALID_DATA);
             if (!result) {
                 return null;
             }

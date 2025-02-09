@@ -73,7 +73,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
                 return PinvokeUtil.DoPinvokeWithException(
                     () => NativeDeviceEventsPinvoke.RegisterDeviceNotification(receiver.Handle,
                         filterStructGcHandle.AddrOfPinnedObject(), flags),
-                    r => r != IntPtr.Zero);
+                    r => r.Result != IntPtr.Zero);
             }
             finally {
                 filterStructGcHandle.Free();
@@ -82,7 +82,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
 
         private static void UnregisterDeviceNotificationImpl(IntPtr notificationHandle) {
             PinvokeUtil.DoPinvokeWithException(
-                () => NativeDeviceEventsPinvoke.UnregisterDeviceNotification(notificationHandle), r => r);
+                () => NativeDeviceEventsPinvoke.UnregisterDeviceNotification(notificationHandle));
         }
 
         private static DeviceEventArgs ReadMessageAsDeviceEventArgs(Message m) {
