@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
@@ -11,12 +13,14 @@ using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Windows.Forms;
 
+using EpiSource.KeePass.Ekf.Crypto.Exceptions;
 using EpiSource.KeePass.Ekf.UI.Windows;
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.KeePass.Ekf.Util.Exceptions;
 using EpiSource.KeePass.Ekf.Util.Windows.Exceptions;
 
 using KeePassLib;
+using KeePassLib.Cryptography;
 using KeePassLib.Security;
 
 // ReSharper disable InconsistentNaming
@@ -180,6 +184,24 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             }
             
             return DecryptEnvelopedCms(envelopedCms, encodedEnvelopedCms, recipientCert, recipientIndex, alwaysSilent, contextDescription, uiOwner, pin);
+        }
+
+        public static PortableProtectedBinary DecryptAesGcm(AesGcmCryptoCipherResult cipherResult, PortableProtectedBinary key) {
+            PortableProtectedBinary plaintext;
+            EncryptOrDecryptAesGcm(PortableProtectedBinary.CopyOf(cipherResult.Ciphertext), out plaintext, key, cipherResult.Nonce, cipherResult.Tag, true);
+            return plaintext;
+        }
+
+        public static AesGcmCryptoCipherResult EncryptAesGcm(PortableProtectedBinary plaintext, PortableProtectedBinary key, byte[] nonce=null, int tagSizeBytes=16) {
+            if (nonce == null) {
+                nonce = CryptoRandom.Instance.GetRandomBytes((uint)key.Length);
+            }
+            
+            PortableProtectedBinary ciphertext;
+            var tag = new byte[tagSizeBytes];
+            
+            EncryptOrDecryptAesGcm(plaintext, out ciphertext, key, nonce, tag, false);
+            return new AesGcmCryptoCipherResult(ciphertext.ReadUnprotected(), nonce, tag);
         }
 
         private static PortableProtectedBinary DecryptEnvelopedCms(
@@ -372,6 +394,87 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
                 throw CryptoExceptionFactory.forErrorCode(internalResult);
             }
             return internalResult;
+        }
+
+        private static void EncryptOrDecryptAesGcm(PortableProtectedBinary input, out PortableProtectedBinary output, PortableProtectedBinary key, IList<byte> nonce, IList<byte> tag, bool decrypt) {
+            if (key.Length != 16 && key.Length != 32) {
+                throw new ArgumentOutOfRangeException("key.Length", key.Length, "key must be 128 or 256 bytes.");
+            }
+            if (nonce.Count != key.Length) {
+                throw new ArgumentOutOfRangeException("nonce.Length", nonce.Count, "nonce must be of same length as key");
+            }
+            if (input.Length % key.Length != 0) {
+                throw new ArgumentOutOfRangeException("data.Length", input.Length, "data size must be multiple of key size");
+            }
+            
+            BCryptAlgorithmHandle cryptoAlgorithm;
+            var lastResult = NativeBCryptPinvoke.BCryptOpenAlgorithmProvider(out cryptoAlgorithm, "AES");
+            using (cryptoAlgorithm) {
+                lastResult.EnsureSuccess();
+
+                var chainingMode = Encoding.Unicode.GetBytes("ChainingModeGCM\0");
+                NativeBCryptPinvoke.BCryptSetProperty(cryptoAlgorithm, "ChainingMode", chainingMode, chainingMode.Length).EnsureSuccess();
+
+                BCRYPT_KEY_LENGTHS_STRUCT tagSizeInfo;
+                int ignored;
+                NativeBCryptPinvoke.BCryptGetProperty(
+                    cryptoAlgorithm, "AuthTagLength", out tagSizeInfo,
+                    Marshal.SizeOf<BCRYPT_KEY_LENGTHS_STRUCT>(), out ignored).EnsureSuccess();
+
+                if (tag.Count < tagSizeInfo.dwMinLength || tag.Count > tagSizeInfo.dwMaxLength
+                        || (tag.Count - tagSizeInfo.dwMinLength) % tagSizeInfo.dwIncrement != 0) {
+                    throw new ArgumentOutOfRangeException("tag.length", tag.Count, "Unsupported tag size. Tag size must be within " + tagSizeInfo.dwMinLength + ".." + tagSizeInfo.dwMaxLength + " with increment " + tagSizeInfo.dwIncrement + ".");
+                }
+
+                BCryptKeyHandle keyHandle;
+                using (var keyDataHandle = new PortableProtectedBinaryHandle(key)) {
+                    lastResult = NativeBCryptPinvoke.BCryptGenerateSymmetricKey(cryptoAlgorithm, out keyHandle, IntPtr.Zero, 0, keyDataHandle, keyDataHandle.Size);
+                }
+                lastResult.EnsureSuccess();
+
+                using (keyHandle) 
+                using (var inputHandle = new PortableProtectedBinaryHandle(input))
+                using (var outputHandle = new PortableProtectedBinaryHandle(input.Length))
+                using (var nonceHandle = new HGlobalHandle(nonce))
+                using (var tagHandle = new HGlobalHandle((int)tag.Count)) {
+                    if (decrypt) {
+                        Marshal.Copy((tag as byte[]) ?? tag.ToArray(), 0, tagHandle.DangerousGetHandle(), tag.Count);
+                    }
+
+                    var cryptoData = new BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO() {
+                        cbSize = Marshal.SizeOf<BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO>(),
+                        dwInfoVersion = 1,
+                        pbNonce = nonceHandle.DangerousGetHandle(),
+                        cbNonce = nonce.Count,
+                        pbAuthData = IntPtr.Zero,
+                        cbAuthData = 0,
+                        pbTag = tagHandle.DangerousGetHandle(),
+                        cbTag = tagHandle.Size,
+                        pbMacContext = IntPtr.Zero,
+                        cbMacContext = 0,
+                        cbAAD = 0,
+                        cbData = 0,
+                        dwFlags = 0
+                    };
+
+                    try {
+                        (decrypt
+                                ? NativeBCryptPinvoke.BCryptDecrypt(keyHandle, inputHandle, inputHandle.Size, ref cryptoData, nonceHandle, nonceHandle.Size, outputHandle, outputHandle.Size, out ignored)
+                                : NativeBCryptPinvoke.BCryptEncrypt(keyHandle, inputHandle, inputHandle.Size, ref cryptoData, nonceHandle, nonceHandle.Size, outputHandle, outputHandle.Size, out ignored)
+                            ).EnsureSuccess();
+                        output = outputHandle.ReadProtected();
+
+                        if (!decrypt) {
+                            tagHandle.ReadTo(tag);
+                        }
+                    } catch (Win32Exception e) {
+                        if (unchecked((NTStatusUtil.NTStatus) e.NativeErrorCode) == NTStatusUtil.NTStatus.STATUS_AUTH_TAG_MISMATCH) {
+                            throw new MessageAuthenticationCodeMismatchException(e.Message, e, e.HResult);
+                        }
+                        throw new CryptographicException("AES-GCM encryption/decryption failed: " + e.Message, e);
+                    }
+                }
+            }
         }
     }
 }

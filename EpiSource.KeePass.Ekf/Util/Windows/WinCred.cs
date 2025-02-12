@@ -43,7 +43,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             var attributeStorageSizeBytes = 
                 attributeDataOffset + credential.Attributes.Sum(attr => attr.Value.Count);
 
-            using (var credentialBlobHandle = new BytePtrHandle(credential.CredentialBlob))
+            using (var credentialBlobHandle = new PortableProtectedBinaryHandle(credential.CredentialBlob))
             using (var attributesMemoryHandle = new HGlobalHandle(attributeStorageSizeBytes))
             using (var marshaledStructureHandle = new MarshaledStructureHandleCollection()) {
                 credential.Attributes.Aggregate(0, (idx, attr) => {

@@ -38,29 +38,6 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
                 return Marshal.PtrToStructure<NativeCredential>(this.handle).ToGenericCredential();
             }
         }
-
-        private sealed class BytePtrHandle : HGlobalHandle {
-            
-            public BytePtrHandle() : base(false) {
-            }
-
-            public BytePtrHandle(PortableProtectedBinary protectedBinary) : base(protectedBinary.Length) {
-                var managedCredentialBlob = protectedBinary.ReadUnprotected();
-                Marshal.Copy(managedCredentialBlob, 0, this.handle, protectedBinary.Length);
-                Array.Clear(managedCredentialBlob, 0, managedCredentialBlob.Length);
-            }
-            
-            protected override bool ReleaseHandle() {
-                // not owned on native->managed transition
-                // => ReleaseHandle only invoked for managed HGlobal Allocations
-                
-                var zero = new byte[this.Size];
-                Marshal.Copy(zero, 0, this.handle, this.Size);
-                
-                return base.ReleaseHandle();
-            }
-            
-        }
         
         /// https://learn.microsoft.com/en-us/windows/win32/api/wincred/ns-wincred-credentiala
         private enum CredType {

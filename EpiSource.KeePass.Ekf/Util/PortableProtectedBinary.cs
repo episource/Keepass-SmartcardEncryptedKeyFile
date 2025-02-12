@@ -43,15 +43,15 @@ namespace EpiSource.KeePass.Ekf.Util {
             info.AddValue("plainLength", this.plainLength);
         }
 
-        public static PortableProtectedBinary CopyOf(byte[] data) {
-            var numBlocks = data.Length / BlockSize;
-            if (numBlocks * BlockSize < data.Length) numBlocks++;
+        public static PortableProtectedBinary CopyOf(IList<byte> data) {
+            var numBlocks = data.Count / BlockSize;
+            if (numBlocks * BlockSize < data.Count) numBlocks++;
             
             var protectedData = new byte[numBlocks * BlockSize];
-            Array.Copy(data, 0, protectedData, 0, data.Length);
+            data.CopyTo(protectedData, 0);
             ProtectedMemory.Protect(protectedData, DefaultProtectionScope);
             
-            return new PortableProtectedBinary(protectedData, data.Length);
+            return new PortableProtectedBinary(protectedData, data.Count);
         }
         
         public static PortableProtectedBinary Move(byte[] data) {
@@ -59,6 +59,16 @@ namespace EpiSource.KeePass.Ekf.Util {
                 return CopyOf(data);
             } finally {
                 Array.Clear(data, 0, data.Length);
+            }
+        }
+        
+        public static PortableProtectedBinary Move(IList<byte> data) {
+            if (data.IsReadOnly) throw new ArgumentException("data is read-only");
+            
+            try {
+                return CopyOf(data);
+            } finally {
+                data.Clear();
             }
         }
         

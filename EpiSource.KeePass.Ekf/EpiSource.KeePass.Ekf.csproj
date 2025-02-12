@@ -56,6 +56,7 @@
     <Compile Include="Crypto\Exceptions\CryptoExceptionFactory.cs" />
     <Compile Include="Crypto\Exceptions\CryptoOperationCancelledException.cs" />
     <Compile Include="Crypto\Exceptions\GenericCryptoException.cs" />
+    <Compile Include="Crypto\Exceptions\MessageAuthenticationCodeMismatchException.cs" />
     <Compile Include="Crypto\Exceptions\PinBlockedException.cs" />
     <Compile Include="Crypto\Exceptions\InputRequiredException.cs" />
     <Compile Include="Crypto\Exceptions\WrongPinException.cs" />
@@ -114,6 +115,7 @@
     <Compile Include="Util\MarshaledStructureHandleCollection.cs" />
     <Compile Include="Util\PinvokeUtil.cs" />
     <Compile Include="Util\PortableProtectedBinary.cs" />
+    <Compile Include="Util\PortableProtectedBinaryHandle.cs" />
     <Compile Include="Util\PortableProtectedString.cs" />
     <Compile Include="Util\ProtectedBinaryExtensions.cs" />
     <Compile Include="Util\ProtectedStringExtensions.cs" />
