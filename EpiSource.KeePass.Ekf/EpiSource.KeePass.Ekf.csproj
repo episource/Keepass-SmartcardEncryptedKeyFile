@@ -131,6 +131,7 @@
     <Compile Include="Util\Windows\NativeDeviceEvents.types.cs">
       <DependentUpon>NativeDeviceEvents.cs</DependentUpon>
     </Compile>
+    <Compile Include="Util\Windows\NTStatusUtil.cs" />
     <Compile Include="Util\Windows\WinCred.cs" />
     <Compile Include="Util\Windows\WinCred.pinvoke.cs">
       <DependentUpon>WinCred.cs</DependentUpon>
