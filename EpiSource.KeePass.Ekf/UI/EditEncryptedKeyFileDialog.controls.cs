@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 
-using EpiSource.KeePass.Ekf.KeyProvider;
+using EpiSource.KeePass.Ekf.Plugin;
 
 using Episource.KeePass.EKF.Resources;
 

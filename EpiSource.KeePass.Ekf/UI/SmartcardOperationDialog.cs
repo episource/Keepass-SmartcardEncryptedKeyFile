@@ -10,16 +10,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using EpiSource.KeePass.Ekf.KeyProvider;
-
 using Episource.KeePass.EKF.Resources;
 
 using EpiSource.KeePass.Ekf.UI.Windows;
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.Unblocker;
 using EpiSource.Unblocker.Hosting;
-using EpiSource.Unblocker.Tasks;
-using EpiSource.Unblocker.Util;
 
 using KeePass.UI;
 

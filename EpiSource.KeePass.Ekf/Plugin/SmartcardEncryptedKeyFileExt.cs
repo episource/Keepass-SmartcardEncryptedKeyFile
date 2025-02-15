@@ -1,6 +1,7 @@
-using EpiSource.KeePass.Ekf.KeyProvider;
+using EpiSource.KeePass.Ekf.Plugin;
 
 using KeePass.Plugins;
+
 
 // KeePass requirement: Fully classified name of plugin class must be
 // <AssemblyName>.<AssemblyName>Ext
@@ -14,7 +15,7 @@ using KeePass.Plugins;
 namespace EpiSource.KeePass.Ekf.EpiSource.KeePass {
     // KeePass requirement:
     // ReSharper disable once UnusedMember.Global
-    public class EkfExt : Plugin {
+    public class EkfExt : global::KeePass.Plugins.Plugin {
         private IPluginHost pluginHost;
 
         public override bool Initialize(IPluginHost host) {

@@ -4,8 +4,8 @@ using System.Linq;
 using System.Windows.Forms;
 
 using EpiSource.KeePass.Ekf.Crypto;
-using EpiSource.KeePass.Ekf.KeyProvider;
 using EpiSource.KeePass.Ekf.Keys;
+using EpiSource.KeePass.Ekf.Plugin;
 
 using Episource.KeePass.EKF.Resources;
 

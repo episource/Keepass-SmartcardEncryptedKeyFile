@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-using EpiSource.KeePass.Ekf.KeyProvider;
+using EpiSource.KeePass.Ekf.Plugin;
 using EpiSource.KeePass.Ekf.Util;
 
 using KeePassLib.Security;

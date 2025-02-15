@@ -23,7 +23,7 @@ using KeePassLib.Keys;
 using KeePassLib.Serialization;
 using KeePassLib.Utility;
 
-namespace EpiSource.KeePass.Ekf.KeyProvider {
+namespace EpiSource.KeePass.Ekf.Plugin {
     
     public class SmartcardEncryptedKeyProvider : KeePassLib.Keys.KeyProvider {
         

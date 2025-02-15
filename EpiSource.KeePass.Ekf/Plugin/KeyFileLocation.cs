@@ -1,7 +1,7 @@
 using KeePassLib;
 using KeePassLib.Serialization;
 
-namespace EpiSource.KeePass.Ekf.KeyProvider {
+namespace EpiSource.KeePass.Ekf.Plugin {
     public static class KeyFileLocation {
         public const string EkfExtension = ".ekf";
         
