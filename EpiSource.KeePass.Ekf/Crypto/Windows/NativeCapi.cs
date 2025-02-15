@@ -62,7 +62,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             };
 
             var pcbData = 0;
-            var success = NativeCapiPinvoke.CertGetCertificateContextProperty(cert.Handle,
+            var success = NativeCertPinvoke.CertGetCertificateContextProperty(cert.Handle,
                 CertContextPropId.CERT_KEY_PROV_INFO_PROP_ID,
                 IntPtr.Zero, ref pcbData);
             if (!success) {
@@ -71,7 +71,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
 
             var pvData = Marshal.AllocHGlobal(pcbData);
             try {
-                success = NativeCapiPinvoke.CertGetCertificateContextProperty(cert.Handle,
+                success = NativeCertPinvoke.CertGetCertificateContextProperty(cert.Handle,
                     CertContextPropId.CERT_KEY_PROV_INFO_PROP_ID,
                     pvData, ref pcbData);
 
@@ -219,7 +219,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             var keyHandleRaw = IntPtr.Zero;
             var keySpec = CryptPrivateKeySpec.UNDEFINED;
             var mustFreeHandle = false;
-            PinvokeUtil.DoPinvokeWithException(() => NativeCapiPinvoke.CryptAcquireCertificatePrivateKey(recipientCert.Handle,
+            PinvokeUtil.DoPinvokeWithException(() => NativeCertPinvoke.CryptAcquireCertificatePrivateKey(recipientCert.Handle,
                 CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
                 | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                 | (optOwner != IntPtr.Zero && ! silent ? CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_WINDOW_HANDLE_FLAG : 0) 
@@ -294,186 +294,6 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
                 SetNcryptProperty((NCryptContextHandle)handle, ncryptProperty, value, silent ? NCryptSetPropertyFlags.NCRYPT_SILENT_FLAG : NCryptSetPropertyFlags.None);
             } else {
                 SetCspProperty((CryptContextHandle)handle, cspParam, value);
-            }
-        }
-
-        private static byte[] GetCspProperty(CryptContextHandle cspHandle, CryptGetProvParamType dwParam) {
-            var valueSize = 0;
-            // https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers
-            PinvokeUtil.DoPinvokeWithException(() => NativeLegacyCapiPinvoke.CryptGetProvParam(cspHandle, dwParam, null, ref valueSize, 0),
-                res => res.Result || res.Win32ErrorCode == (int) CryptoResult.ERROR_MORE_DATA);
-                
-            var value = new byte[valueSize];
-            PinvokeUtil.DoPinvokeWithException(() => NativeLegacyCapiPinvoke.CryptGetProvParam(cspHandle, dwParam, value, ref valueSize, 0));
-
-            Array.Resize(ref value, valueSize);
-            return value;
-        }
-
-        private static void SetCspProperty(CryptContextHandle cspHandle, CryptSetProvParamType dwParam, byte[] value) {
-            PinvokeUtil.DoPinvokeWithException(() => NativeLegacyCapiPinvoke.CryptSetProvParam(
-                cspHandle == null ? new CryptContextHandle(IntPtr.Zero, false, CryptPrivateKeySpec.UNDEFINED) : cspHandle, dwParam, value, 0));
-        }
-         
-        /// https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers
-        private static byte[] GetNcryptProperty(NCryptContextHandle keyHandle, string propertyName) {
-            var valueSize = 0;
-            DoNcryptWithException(() => NativeNCryptPinvoke.NCryptGetProperty(keyHandle, propertyName, null, 0, out valueSize, NCryptGetPropertyFlags.None));
-                
-            var value = new byte[valueSize];
-            DoNcryptWithException(() => NativeNCryptPinvoke.NCryptGetProperty(keyHandle, propertyName, value, value.Length, out valueSize, NCryptGetPropertyFlags.None));
-
-            Array.Resize(ref value, valueSize);
-            return value;
-        }
-        
-        private static void SetNcryptProperty(NCryptContextHandle keyHandle, string propertyName, byte[] value, NCryptSetPropertyFlags flags) {
-            DoNcryptWithException(() => NativeNCryptPinvoke.NCryptSetProperty(keyHandle, propertyName, value, value.Length , flags));
-        }
-
-        private static CryptMsgHandle DecodeEnvelopedCmsImpl(byte[] encodedEnvelopedCms) {
-            if (encodedEnvelopedCms == null) {
-                throw new ArgumentNullException("encodedEnvelopedCms");
-            }
-
-            var msgHandle = PinvokeUtil.DoPinvokeWithException(
-                () => NativeCryptMsgPinvoke.CryptMsgOpenToDecode(
-                    CryptMsgEncodingTypeFlags.X509_ASN_ENCODING | CryptMsgEncodingTypeFlags.PKCS_7_ASN_ENCODING,
-                    CryptMsgFlags.None, CryptMsgType.RetrieveTypeFromHeader,
-                    IntPtr.Zero, IntPtr.Zero, IntPtr.Zero),
-                r => r.Result != null && !r.Result.IsInvalid);
-
-            PinvokeUtil.DoPinvokeWithException(() => NativeCryptMsgPinvoke.CryptMsgUpdate(msgHandle, encodedEnvelopedCms,
-                (uint) encodedEnvelopedCms.Length, true));
-
-            uint msgTypeRaw = 0;
-            int msgTypeSize = Marshal.SizeOf<uint>();
-            PinvokeUtil.DoPinvokeWithException(() =>
-                NativeCryptMsgPinvoke.CryptMsgGetParamDword(msgHandle, CryptMsgParamType.CMSG_TYPE_PARAM, 0, ref msgTypeRaw,
-                    ref msgTypeSize));
-            if (msgTypeRaw != (uint) CryptMsgType.CMSG_ENVELOPED) {
-                throw new ArgumentException("No valid enveloped cms message.", "encodedEnvelopedCms");
-            }
-
-            return msgHandle;
-        }
-
-        private static PortableProtectedBinary GetCryptMsgContent(CryptMsgHandle msgHandle) {
-            byte[] content = null;
-            int contentSize = 0;
-            PinvokeUtil.DoPinvokeWithException(() =>
-                NativeCryptMsgPinvoke.CryptMsgGetParamByteArray(msgHandle, CryptMsgParamType.CMSG_CONTENT_PARAM, 0,
-                    content, ref contentSize));
-            
-            content = new byte[contentSize];
-            PinvokeUtil.DoPinvokeWithException(() =>
-                NativeCryptMsgPinvoke.CryptMsgGetParamByteArray(msgHandle, CryptMsgParamType.CMSG_CONTENT_PARAM, 0,
-                    content, ref contentSize));
-
-            if (content.Length != contentSize) {
-                Array.Clear(content, 0, content.Length);
-                throw new Exception("failed to decrypt message.");
-            }
-            
-            return PortableProtectedBinary.Move(content);
-        }
-
-        private static PortableProtectedBinary DecryptCryptMsg(CryptMsgHandle msgHandle, NcryptOrContextHandle nCryptKey, int recipientIndex) {
-            var para = new CmsgCtrlDecryptPara(nCryptKey, recipientIndex);
-            PinvokeUtil.DoPinvokeWithException(() =>
-                NativeCryptMsgPinvoke.CryptMsgControl(
-                    msgHandle, CryptMsgControlFlags.None, CryptMsgControlType.CMSG_CTRL_DECRYPT, ref para),
-                r => CryptoExceptionFactory.forErrorCode(r.Win32ErrorCode));
-
-            return GetCryptMsgContent(msgHandle);
-        }
-
-        private static CryptoResult DoNcryptWithException(Func<CryptoResult> ncryptFunction, params CryptoResult[] validResults) {
-            var internalResult = ncryptFunction();
-            if (ncryptFunction() != CryptoResult.ERROR_SUCCESS && (validResults == null || !validResults.Contains(internalResult))) {
-                throw CryptoExceptionFactory.forErrorCode(internalResult);
-            }
-            return internalResult;
-        }
-
-        private static void EncryptOrDecryptAesGcm(PortableProtectedBinary input, out PortableProtectedBinary output, PortableProtectedBinary key, IList<byte> nonce, IList<byte> tag, bool decrypt) {
-            if (key.Length != 16 && key.Length != 32) {
-                throw new ArgumentOutOfRangeException("key.Length", key.Length, "key must be 128 or 256 bytes.");
-            }
-            if (nonce.Count != key.Length) {
-                throw new ArgumentOutOfRangeException("nonce.Length", nonce.Count, "nonce must be of same length as key");
-            }
-            if (input.Length % key.Length != 0) {
-                throw new ArgumentOutOfRangeException("data.Length", input.Length, "data size must be multiple of key size");
-            }
-            
-            BCryptAlgorithmHandle cryptoAlgorithm;
-            var lastResult = NativeBCryptPinvoke.BCryptOpenAlgorithmProvider(out cryptoAlgorithm, "AES");
-            using (cryptoAlgorithm) {
-                lastResult.EnsureSuccess();
-
-                var chainingMode = Encoding.Unicode.GetBytes("ChainingModeGCM\0");
-                NativeBCryptPinvoke.BCryptSetProperty(cryptoAlgorithm, "ChainingMode", chainingMode, chainingMode.Length).EnsureSuccess();
-
-                BCRYPT_KEY_LENGTHS_STRUCT tagSizeInfo;
-                int ignored;
-                NativeBCryptPinvoke.BCryptGetProperty(
-                    cryptoAlgorithm, "AuthTagLength", out tagSizeInfo,
-                    Marshal.SizeOf<BCRYPT_KEY_LENGTHS_STRUCT>(), out ignored).EnsureSuccess();
-
-                if (tag.Count < tagSizeInfo.dwMinLength || tag.Count > tagSizeInfo.dwMaxLength
-                        || (tag.Count - tagSizeInfo.dwMinLength) % tagSizeInfo.dwIncrement != 0) {
-                    throw new ArgumentOutOfRangeException("tag.length", tag.Count, "Unsupported tag size. Tag size must be within " + tagSizeInfo.dwMinLength + ".." + tagSizeInfo.dwMaxLength + " with increment " + tagSizeInfo.dwIncrement + ".");
-                }
-
-                BCryptKeyHandle keyHandle;
-                using (var keyDataHandle = new PortableProtectedBinaryHandle(key)) {
-                    lastResult = NativeBCryptPinvoke.BCryptGenerateSymmetricKey(cryptoAlgorithm, out keyHandle, IntPtr.Zero, 0, keyDataHandle, keyDataHandle.Size);
-                }
-                lastResult.EnsureSuccess();
-
-                using (keyHandle) 
-                using (var inputHandle = new PortableProtectedBinaryHandle(input))
-                using (var outputHandle = new PortableProtectedBinaryHandle(input.Length))
-                using (var nonceHandle = new HGlobalHandle(nonce))
-                using (var tagHandle = new HGlobalHandle((int)tag.Count)) {
-                    if (decrypt) {
-                        Marshal.Copy((tag as byte[]) ?? tag.ToArray(), 0, tagHandle.DangerousGetHandle(), tag.Count);
-                    }
-
-                    var cryptoData = new BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO() {
-                        cbSize = Marshal.SizeOf<BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO>(),
-                        dwInfoVersion = 1,
-                        pbNonce = nonceHandle.DangerousGetHandle(),
-                        cbNonce = nonce.Count,
-                        pbAuthData = IntPtr.Zero,
-                        cbAuthData = 0,
-                        pbTag = tagHandle.DangerousGetHandle(),
-                        cbTag = tagHandle.Size,
-                        pbMacContext = IntPtr.Zero,
-                        cbMacContext = 0,
-                        cbAAD = 0,
-                        cbData = 0,
-                        dwFlags = 0
-                    };
-
-                    try {
-                        (decrypt
-                                ? NativeBCryptPinvoke.BCryptDecrypt(keyHandle, inputHandle, inputHandle.Size, ref cryptoData, nonceHandle, nonceHandle.Size, outputHandle, outputHandle.Size, out ignored)
-                                : NativeBCryptPinvoke.BCryptEncrypt(keyHandle, inputHandle, inputHandle.Size, ref cryptoData, nonceHandle, nonceHandle.Size, outputHandle, outputHandle.Size, out ignored)
-                            ).EnsureSuccess();
-                        output = outputHandle.ReadProtected();
-
-                        if (!decrypt) {
-                            tagHandle.ReadTo(tag);
-                        }
-                    } catch (Win32Exception e) {
-                        if (unchecked((NTStatusUtil.NTStatus) e.NativeErrorCode) == NTStatusUtil.NTStatus.STATUS_AUTH_TAG_MISMATCH) {
-                            throw new MessageAuthenticationCodeMismatchException(e.Message, e, e.HResult);
-                        }
-                        throw new CryptographicException("AES-GCM encryption/decryption failed: " + e.Message, e);
-                    }
-                }
             }
         }
     }

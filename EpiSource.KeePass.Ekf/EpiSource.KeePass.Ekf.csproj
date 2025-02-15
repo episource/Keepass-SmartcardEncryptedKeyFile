@@ -66,14 +66,35 @@
     <Compile Include="Crypto\RandomKeyGenerator.cs" />
     <Compile Include="Crypto\RSASmartcardKeyPairs.cs" />
     <Compile Include="Crypto\RSACryptoServiceProviderKeyPair.cs" />
-    <Compile Include="Crypto\Windows\NativeCapi.cs" />
-    <Compile Include="Crypto\Windows\NativeCapi.enums.cs">
+    <Compile Include="Crypto\Windows\NativeCapi.bcrypt.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
-    <Compile Include="Crypto\Windows\NativeCapi.pinvoke.cs">
+    <Compile Include="Crypto\Windows\NativeCapi.bcrypt.pinvoke.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.cert.pinvoke.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.cryptmsg.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.cryptmsg.pinvoke.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.cs" />
+    <Compile Include="Crypto\Windows\NativeCapi.csp.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.csp.pinvoke.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.ncrypt.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
     <Compile Include="Crypto\Windows\NativeCapi.types.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.ncrypt.pinvoke.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
     <Compile Include="KeyProvider\KeyFileLocation.cs" />
