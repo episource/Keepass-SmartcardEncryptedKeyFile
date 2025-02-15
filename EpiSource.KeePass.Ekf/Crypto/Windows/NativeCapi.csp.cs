@@ -1,6 +1,8 @@
 using System;
 
-namespace EpiSource.KeePass.Ekf.Util.Windows {
+using EpiSource.KeePass.Ekf.Util;
+
+namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
         private static byte[] GetCspProperty(CryptContextHandle cspHandle, CryptGetProvParamType dwParam) {
             var valueSize = 0;

@@ -1,32 +1,23 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Text;
-using System.Windows.Forms;
 
 using EpiSource.KeePass.Ekf.Crypto.Exceptions;
-using EpiSource.KeePass.Ekf.UI.Windows;
+using EpiSource.KeePass.Ekf.Crypto.Windows.Exceptions;
 using EpiSource.KeePass.Ekf.Util;
-using EpiSource.KeePass.Ekf.Util.Exceptions;
-using EpiSource.KeePass.Ekf.Util.Windows.Exceptions;
 
-using KeePassLib;
 using KeePassLib.Cryptography;
-using KeePassLib.Security;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable EnumUnderlyingTypeIsInt
 
-namespace EpiSource.KeePass.Ekf.Util.Windows {
+namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
 
         public static bool IsCancelledByUserException(CryptographicException ex) {

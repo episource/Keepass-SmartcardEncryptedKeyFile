@@ -1,10 +1,19 @@
 using System;
 using System.Collections.Generic;
 
-using EpiSource.KeePass.Ekf.Util.Exceptions;
+using EpiSource.KeePass.Ekf.Crypto.Exceptions;
 
-namespace EpiSource.KeePass.Ekf.Util.Windows {
+namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
+        
+        /// https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptacquirecertificateprivatekey
+        private enum CryptPrivateKeySpec {
+            UNDEFINED             = 0,
+            AT_KEYEXCHANGE        = 1,
+            AT_SIGNATURE          = 2,
+            CERT_NCRYPT_KEY_SPEC  = unchecked((int)0xffffffff),
+        }
+        
         private static CryptoResult DoNcryptWithException(Func<CryptoResult> ncryptFunction, params CryptoResult[] validResults) {
             var internalResult = ncryptFunction();
             if (ncryptFunction() != CryptoResult.ERROR_SUCCESS && (validResults == null || !((IList<CryptoResult>)validResults).Contains(internalResult))) {

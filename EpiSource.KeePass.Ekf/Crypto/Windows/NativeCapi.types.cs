@@ -5,7 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Windows.Forms;
 
-namespace EpiSource.KeePass.Ekf.Util.Windows {
+namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
         public sealed class ComparableIssuerSerial {
             

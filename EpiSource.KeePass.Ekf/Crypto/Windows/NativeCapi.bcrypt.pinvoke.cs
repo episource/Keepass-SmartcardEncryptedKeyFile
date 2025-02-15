@@ -1,9 +1,12 @@
 using System;
 using System.Runtime.InteropServices;
 
+using EpiSource.KeePass.Ekf.Util;
+using EpiSource.KeePass.Ekf.Util.Windows;
+
 using Microsoft.Win32.SafeHandles;
 
-namespace EpiSource.KeePass.Ekf.Util.Windows {
+namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     
     public static partial class NativeCapi {
         

@@ -1,8 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-using EpiSource.KeePass.Ekf.Util.Exceptions;
-using EpiSource.KeePass.Ekf.Util.Windows;
+using EpiSource.KeePass.Ekf.Crypto.Windows;
 
 namespace EpiSource.KeePass.Ekf.Crypto.Exceptions {
     public class MessageAuthenticationCodeMismatchException : GenericCryptoException {

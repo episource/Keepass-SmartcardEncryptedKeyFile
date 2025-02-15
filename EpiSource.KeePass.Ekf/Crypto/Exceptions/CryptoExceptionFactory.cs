@@ -1,9 +1,9 @@
 using System.ComponentModel;
 
-using EpiSource.KeePass.Ekf.Util.Windows;
-using EpiSource.KeePass.Ekf.Util.Windows.Exceptions;
+using EpiSource.KeePass.Ekf.Crypto.Windows;
+using EpiSource.KeePass.Ekf.Crypto.Windows.Exceptions;
 
-namespace EpiSource.KeePass.Ekf.Util.Exceptions {
+namespace EpiSource.KeePass.Ekf.Crypto.Exceptions {
     public static class CryptoExceptionFactory {
 
         public static GenericCryptoException forErrorCode(int errorCode) {

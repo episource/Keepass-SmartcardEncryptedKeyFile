@@ -1,10 +1,9 @@
 using System;
 using System.Runtime.Serialization;
-using System.Security.Cryptography;
 
-using EpiSource.KeePass.Ekf.Util.Windows;
+using EpiSource.KeePass.Ekf.Crypto.Windows;
 
-namespace EpiSource.KeePass.Ekf.Util.Exceptions {
+namespace EpiSource.KeePass.Ekf.Crypto.Exceptions {
     [Serializable]
     public class InputRequiredException : GenericCryptoException {
 

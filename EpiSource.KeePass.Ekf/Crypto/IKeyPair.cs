@@ -1,6 +1,6 @@
 using System.Security.Cryptography.X509Certificates;
 
-namespace EpiSource.KeePass.Ekf.Util {
+namespace EpiSource.KeePass.Ekf.Crypto {
     public interface IKeyPair {
         /// <summary>
         /// Retrieves whether the key pair is provided by a smart card.

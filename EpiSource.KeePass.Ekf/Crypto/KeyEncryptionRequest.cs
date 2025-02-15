@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 
 using EpiSource.KeePass.Ekf.KeyProvider;
+using EpiSource.KeePass.Ekf.Util;
 
 using KeePassLib.Security;
 using KeePassLib.Serialization;
 
-namespace EpiSource.KeePass.Ekf.Util {
+namespace EpiSource.KeePass.Ekf.Crypto {
     public class KeyEncryptionRequest {
         private readonly IOConnectionInfo dbPath;
         private readonly PortableProtectedBinary plaintextKey;

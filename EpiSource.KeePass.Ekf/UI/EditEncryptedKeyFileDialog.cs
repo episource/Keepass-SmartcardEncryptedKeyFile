@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
-using EpiSource.KeePass.Ekf.Util;
+using EpiSource.KeePass.Ekf.Crypto;
 using EpiSource.KeePass.Ekf.KeyProvider;
 using EpiSource.KeePass.Ekf.Keys;
 

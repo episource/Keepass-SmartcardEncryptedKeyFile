@@ -3,11 +3,10 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Windows.Forms.VisualStyles;
 
-using EpiSource.KeePass.Ekf.Util.Windows;
+using EpiSource.KeePass.Ekf.Crypto.Windows;
 
-namespace EpiSource.KeePass.Ekf.Util {
+namespace EpiSource.KeePass.Ekf.Crypto {
     /// <summary>
     /// Gives access to RSA smart cards that are compatible with the windows crypto service provider framework.
     /// </summary>

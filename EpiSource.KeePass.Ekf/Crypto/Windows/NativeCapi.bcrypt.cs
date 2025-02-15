@@ -7,8 +7,10 @@ using System.Security.Cryptography;
 using System.Text;
 
 using EpiSource.KeePass.Ekf.Crypto.Exceptions;
+using EpiSource.KeePass.Ekf.Util;
+using EpiSource.KeePass.Ekf.Util.Windows;
 
-namespace EpiSource.KeePass.Ekf.Util.Windows {
+namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
         private static void EncryptOrDecryptAesGcm(PortableProtectedBinary input, out PortableProtectedBinary output, PortableProtectedBinary key, IList<byte> nonce, IList<byte> tag, bool decrypt) {
             if (key.Length != 16 && key.Length != 32) {

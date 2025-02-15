@@ -1,9 +1,10 @@
 using System;
 using System.Runtime.InteropServices;
 
-using EpiSource.KeePass.Ekf.Util.Exceptions;
+using EpiSource.KeePass.Ekf.Crypto.Exceptions;
+using EpiSource.KeePass.Ekf.Util;
 
-namespace EpiSource.KeePass.Ekf.Util.Windows {
+namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
         private static CryptMsgHandle DecodeEnvelopedCmsImpl(byte[] encodedEnvelopedCms) {
             if (encodedEnvelopedCms == null) {

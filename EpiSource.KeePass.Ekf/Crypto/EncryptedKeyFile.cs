@@ -5,15 +5,17 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography.Xml;
 using System.Windows.Forms;
 
+using EpiSource.KeePass.Ekf.Crypto.Exceptions;
+using EpiSource.KeePass.Ekf.Crypto.Windows;
+using EpiSource.KeePass.Ekf.Crypto.Windows.Exceptions;
+using EpiSource.KeePass.Ekf.Util;
 using EpiSource.KeePass.Ekf.Util.Windows;
 
-using KeePassLib.Security;
 using KeePassLib.Utility;
 
-namespace EpiSource.KeePass.Ekf.Util {
+namespace EpiSource.KeePass.Ekf.Crypto {
     /// <remarks>
     /// Methods block if a busy hardware device is involved.
     /// </remarks>

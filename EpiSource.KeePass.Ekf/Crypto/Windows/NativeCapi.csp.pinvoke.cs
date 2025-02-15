@@ -12,7 +12,7 @@ using System.Runtime.InteropServices;
 // ReSharper disable InconsistentNaming
 // ReSharper disable EnumUnderlyingTypeIsInt
 
-namespace EpiSource.KeePass.Ekf.Util.Windows {
+namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
         
         /// https://docs.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptacquirecontextw
@@ -25,14 +25,6 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             CRYPT_DELETEKEYSET = 0x10,
             CRYPT_SILENT = 0x40,
             CRYPT_DEFAULT_CONTAINER_OPTIONAL = 0x80
-        }
-
-        /// https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptacquirecertificateprivatekey
-        private enum CryptPrivateKeySpec {
-            UNDEFINED             = 0,
-            AT_KEYEXCHANGE        = 1,
-            AT_SIGNATURE          = 2,
-            CERT_NCRYPT_KEY_SPEC  = unchecked((int)0xffffffff),
         }
 
         /// https://learn.microsoft.com/de-de/windows/win32/api/wincrypt/nf-wincrypt-cryptgetprovparam

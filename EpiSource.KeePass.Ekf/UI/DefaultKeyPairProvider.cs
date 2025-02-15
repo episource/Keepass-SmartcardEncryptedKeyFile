@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using EpiSource.KeePass.Ekf.Util;
+using EpiSource.KeePass.Ekf.Crypto;
 using EpiSource.KeePass.Ekf.KeyProvider;
 
 using KeePassLib.Serialization;
