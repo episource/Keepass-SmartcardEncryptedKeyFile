@@ -19,6 +19,7 @@ using EpiSource.Unblocker.Util;
 using KeePass.Plugins;
 using KeePass.UI;
 
+using KeePassLib.Cryptography;
 using KeePassLib.Keys;
 using KeePassLib.Serialization;
 using KeePassLib.Utility;
@@ -30,6 +31,8 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         public const string ProviderName = "Smartcard Encrypted Key File Provider";
 
         private readonly IPluginHost pluginHost;
+        private readonly string rememberedSmartcardPinStoreKeyId;
+        private readonly ProtectedWinCred rememberedSmartcardPinStore;
 
         public SmartcardEncryptedKeyProvider(IPluginHost pluginHost) {
             if (pluginHost == null) {
@@ -37,6 +40,10 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             }
             
             this.pluginHost = pluginHost;
+
+            PortableProtectedBinary rememberedSmartcardPinStoreKey;
+            this.GetOrCreatePinStoreKey(out rememberedSmartcardPinStoreKey, out this.rememberedSmartcardPinStoreKeyId);
+            this.rememberedSmartcardPinStore = new ProtectedWinCred(rememberedSmartcardPinStoreKey);
             
             var editMenu = new ToolStripMenuItem(Strings.SmartcardEncryptedKeyProvider_ButtonEditKeyFile);
             editMenu.Enabled = false;
@@ -177,19 +184,31 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                 return null;
             }
 
-            PinPromptDialog.PinPromptDialogResult pinInfo = null;
-            while (pinInfo == null || !pinInfo.IsCanceled) { // retry on wrong pin
+            var storedPinTargetName = "KeePass.EKF@" + this.rememberedSmartcardPinStoreKeyId + ".Cert:" + recipient.Certificate.Thumbprint + ":" + recipient.Certificate.Subject;
+            storedPinTargetName = storedPinTargetName.Length > WinCred.MaxTargetNameLength ? storedPinTargetName.Substring(0, WinCred.MaxTargetNameLength) : storedPinTargetName;
+            
+            // start with remembered pin or null (if not found)
+            // null: an attempt is made to access the smart card without pin. This works if the card is already unlocked.
+            var pin = this.rememberedSmartcardPinStore.ReadProtectedPassword(storedPinTargetName);
+            PinPromptDialog.PinPromptDialogResult pinPromptResult = null;
+            while (pinPromptResult == null || !pinPromptResult.IsCanceled) { // retry on wrong pin
+                if (pinPromptResult != null) {
+                    pin = pinPromptResult.Pin;
+                }
+
                 try {
                     var decryptUiOwnerHandle = GlobalWindowManager.TopWindow.Handle;
                     var contextDescription = string.Format(Strings.Culture, Strings.NativeSmartcardUI_ContextTest, recipient.Certificate.SubjectName.Format(true));
 
-                    // TODO: if requested - remember pin on success
-                    var pin = pinInfo == null ? null : pinInfo.Pin;
-                    if (enableCancellation) {
-                        return SmartcardOperationDialog
-                               .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin)).PlaintextKey;
+                    var decryptedKeyFile = enableCancellation
+                        ? SmartcardOperationDialog.DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin))
+                        : Task.Run(() => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin)).AwaitWithMessagePump();
+
+                    if (pinPromptResult != null && pinPromptResult.RememberPinRequested) {
+                        this.rememberedSmartcardPinStore.WriteProtectedPassword(storedPinTargetName, pin);
                     }
-                    return Task.Run(() => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin)).AwaitWithMessagePump().PlaintextKey;
+                    
+                    return decryptedKeyFile.PlaintextKey;
                 } catch (TaskCanceledException e) {
                     // cancelled by user
                     return null;
@@ -204,18 +223,38 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                     }
                     
                     if (NativeCapi.IsInputRequiredException(ex)) {
-                        pinInfo = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow);
+                        pinPromptResult = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow);
                     } else if (NativeCapi.IsWrongPinException(ex)) {
-                        // TODO: clear pin cache!
-                        pinInfo = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow, isRetry: true);
+                        this.rememberedSmartcardPinStore.ClearProtectedPassword(storedPinTargetName);
+                        pinPromptResult = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow, isRetry: true);
                     } else {
                         throw;
                     }
+
                 }
             }
             
             return null;
         }
 
+        private void GetOrCreatePinStoreKey(out PortableProtectedBinary key, out string keyId) {
+            const string hexKeyConfigKey = "EpiSource.KeePass.Ekf.RememberedPinStoreKey";
+            const string keyIdConfigKey = "EpiSource.KeePass.Ekf.RememberedPinStoreKeyId";
+            
+            var keyHexString = this.pluginHost.CustomConfig.GetString(hexKeyConfigKey);
+            
+            var keyBytes = keyHexString == null ? null : MemUtil.HexStringToByteArray(keyHexString);
+            if (keyBytes == null) {
+                keyBytes = CryptoRandom.Instance.GetRandomBytes(32);
+                this.pluginHost.CustomConfig.SetString(hexKeyConfigKey, MemUtil.ByteArrayToHexString(keyBytes));
+            }
+            key = PortableProtectedBinary.Move(keyBytes);
+            
+            keyId = this.pluginHost.CustomConfig.GetString(keyIdConfigKey);
+            if (keyId == null) {
+                keyId = string.Format("{0:X8}", BobJenkinsOneAtATimeHash.CalculateHash(DateTime.Now.ToString("yyyyMMddHHmmssfff")));
+                this.pluginHost.CustomConfig.SetString(keyIdConfigKey, keyId);
+            }
+        }
     }
 }

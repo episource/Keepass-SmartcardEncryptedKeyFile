@@ -43,15 +43,21 @@ namespace EpiSource.KeePass.Ekf.Util {
             info.AddValue("plainLength", this.plainLength);
         }
 
-        public static PortableProtectedBinary CopyOf(IList<byte> data) {
-            var numBlocks = data.Count / BlockSize;
-            if (numBlocks * BlockSize < data.Count) numBlocks++;
+        public static PortableProtectedBinary CopyOf(IList<byte> data, int offset = 0, int count = -1) {
+            if (count < 0) {
+                count = data.Count - offset;
+            }
+            
+            var numBlocks = count / BlockSize;
+            if (numBlocks * BlockSize < count) numBlocks++;
             
             var protectedData = new byte[numBlocks * BlockSize];
-            data.CopyTo(protectedData, 0);
-            ProtectedMemory.Protect(protectedData, DefaultProtectionScope);
+            for (int i = 0; i < count; i++) {
+                protectedData[i] = data[i + offset];
+            }
             
-            return new PortableProtectedBinary(protectedData, data.Count);
+            ProtectedMemory.Protect(protectedData, DefaultProtectionScope);
+            return new PortableProtectedBinary(protectedData, count);
         }
         
         public static PortableProtectedBinary Move(byte[] data) {
@@ -76,26 +82,43 @@ namespace EpiSource.KeePass.Ekf.Util {
             get { return this.plainLength; }
         }
 
-        public PortableProtectedBinary Clone() {
-            var clonedData = new byte[this.protectedData.Length];
-            Array.Copy(this.protectedData, clonedData, this.protectedData.Length);
+        public PortableProtectedBinary CopyRange(int offset = 0, int count = -1) {
+            if (count < 0) count = this.Length - offset;
+
+            if (offset == 0 && count == this.Length) {
+                return this;
+            }
             
-            return new PortableProtectedBinary(clonedData, this.plainLength);
+            var numBlocks = count / BlockSize;
+            if (numBlocks * BlockSize < count) numBlocks++;
+            
+            var clone = new byte[numBlocks * BlockSize];
+            this.ReadUnprotectedTo(clone, offset, 0, count);
+            ProtectedMemory.Protect(clone, DefaultProtectionScope);
+            
+            return new PortableProtectedBinary(clone, count);
+        }
+        
+        public byte[] ReadUnprotected() {
+            var unprotected = new byte[this.Length];
+            this.ReadUnprotectedTo(unprotected);
+            return unprotected;
         }
 
-        public byte[] ReadUnprotected() {
+        public void ReadUnprotectedTo(byte[] target, int offset = 0, int targetOffset = 0, int count = -1) {
+            if (offset + count > this.Length) {
+                throw new ArgumentException("offset + count > length");
+            }
+            if (count < 0) {
+                count = this.Length - offset;
+            }
+            
             var protectedDataCopy = new byte[this.protectedData.Length];
             Array.Copy(this.protectedData, protectedDataCopy, this.protectedData.Length);
             ProtectedMemory.Unprotect(protectedDataCopy, DefaultProtectionScope);
-
-            if (protectedDataCopy.Length == this.plainLength) {
-                return protectedDataCopy;
-            }
-
-            var result = new byte[this.plainLength];
-            Array.Copy(protectedDataCopy, 0, result, 0, this.plainLength);
+            
+            Array.Copy(protectedDataCopy, offset, target, targetOffset, count);
             Array.Clear(protectedDataCopy, 0, protectedDataCopy.Length);
-            return result;
         }
 
         private bool Equals(PortableProtectedBinary other) {

@@ -1,6 +1,14 @@
+using System;
+using System.Security.Cryptography;
+
 using EpiSource.KeePass.Ekf.Plugin;
+using EpiSource.KeePass.Ekf.Util;
 
 using KeePass.Plugins;
+
+using KeePassLib.Cryptography;
+using KeePassLib.Security;
+using KeePassLib.Utility;
 
 
 // KeePass requirement: Fully classified name of plugin class must be

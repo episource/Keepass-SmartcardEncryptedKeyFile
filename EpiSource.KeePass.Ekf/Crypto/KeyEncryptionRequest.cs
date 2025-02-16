@@ -14,7 +14,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         
         public KeyEncryptionRequest(IOConnectionInfo dbPath, PortableProtectedBinary plaintextKey, IEnumerable<IKeyPair> authorizedKeyPairs) {
             this.dbPath = dbPath.CloneDeep();
-            this.plaintextKey = plaintextKey.Clone();
+            this.plaintextKey = plaintextKey;
             this.authorizedKeyPairs = new List<IKeyPair>(authorizedKeyPairs).AsReadOnly();
         }
 
@@ -36,7 +36,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// A copy of the raw key array.
         /// </returns>
         public PortableProtectedBinary PlaintextKey {
-            get { return this.plaintextKey.Clone(); }
+            get { return this.plaintextKey; }
         }
 
         public IList<IKeyPair> AuthorizedKeyPairs {

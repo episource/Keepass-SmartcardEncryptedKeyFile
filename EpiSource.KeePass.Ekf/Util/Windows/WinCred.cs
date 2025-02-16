@@ -7,6 +7,9 @@ using EpiSource.KeePass.Ekf.Util;
 
 namespace EpiSource.KeePass.Ekf.Util.Windows {
     public partial class WinCred {
+        /// 337 chars including trailing \0 - https://learn.microsoft.com/de-de/windows/win32/api/wincred/ns-wincred-credentialw
+        public const int MaxTargetNameLength = 336;
+        
         public static bool DeleteGenericCredential(string targetName) {
             return PinvokeUtil.DoPinvokeWithException(() => CredDeleteW(targetName, CredType.GENERIC, 0),
                 r => r.Result || r.Win32ErrorCode == (int)WinCredErrorCode.ERROR_NOT_FOUND);

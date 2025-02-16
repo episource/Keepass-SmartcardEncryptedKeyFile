@@ -182,6 +182,16 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             EncryptOrDecryptAesGcm(PortableProtectedBinary.CopyOf(cipherResult.Ciphertext), out plaintext, key, cipherResult.Nonce, cipherResult.Tag, true);
             return plaintext;
         }
+        
+        public static PortableProtectedBinary DecryptAesGcm(IList<byte> ciphertext, PortableProtectedBinary key, IList<byte> nonce, IList<byte> tag) {
+            return DecryptAesGcm(PortableProtectedBinary.CopyOf(ciphertext), key, nonce, tag);
+        }
+        
+        public static PortableProtectedBinary DecryptAesGcm(PortableProtectedBinary ciphertext, PortableProtectedBinary key, IList<byte> nonce, IList<byte> tag) {
+            PortableProtectedBinary plaintext;
+            EncryptOrDecryptAesGcm(ciphertext, out plaintext, key, nonce, tag, true);
+            return plaintext;
+        }
 
         public static AesGcmCryptoCipherResult EncryptAesGcm(PortableProtectedBinary plaintext, PortableProtectedBinary key, byte[] nonce=null, int tagSizeBytes=16) {
             if (nonce == null) {

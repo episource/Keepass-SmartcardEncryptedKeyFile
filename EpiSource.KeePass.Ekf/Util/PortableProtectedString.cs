@@ -10,9 +10,11 @@ namespace EpiSource.KeePass.Ekf.Util {
         
         private readonly PortableProtectedBinary protectedChars;
 
-        private PortableProtectedString(char[] strToCopy) {
-            var bytes = new byte[2 * strToCopy.Length];
-            for (var i = 0; i < strToCopy.Length; ++i) {
+        private PortableProtectedString(char[] strToCopy, int count) {
+            count = Math.Min(count, strToCopy.Length);
+            
+            var bytes = new byte[2 * count];
+            for (var i = 0; i < count; ++i) {
                 var cb = BitConverter.GetBytes(strToCopy[i]);
                 bytes[i*2] = cb[0];
                 bytes[i*2 + 1] = cb[1];
@@ -21,8 +23,8 @@ namespace EpiSource.KeePass.Ekf.Util {
         }
 
 
-        public static PortableProtectedString CopyOf(char[] str) {
-            return new PortableProtectedString(str);
+        public static PortableProtectedString CopyOf(char[] str, int count=-1) {
+            return new PortableProtectedString(str, count < 0 ? str.Length : count);
         }
         
         public static PortableProtectedString Move(char[] str) {
@@ -33,10 +35,41 @@ namespace EpiSource.KeePass.Ekf.Util {
             }
         }
 
+        public static PortableProtectedString FromAscii(PortableProtectedBinary binary, bool trimNullTerminator = false) {
+            return FromEncoded(binary, Encoding.ASCII, trimNullTerminator);
+        }
+        
+        public static PortableProtectedString FromUtf8(PortableProtectedBinary binary, bool trimNullTerminator = false) {
+            return FromEncoded(binary, Encoding.UTF8, trimNullTerminator);
+        }
+        
+        public static PortableProtectedString FromUtf16(PortableProtectedBinary binary, bool trimNullTerminator = false) {
+            return FromEncoded(binary, Encoding.Unicode, trimNullTerminator);
+        }
+
+        public static PortableProtectedString FromEncoded(PortableProtectedBinary binary, Encoding encoding, bool trimNullTerminator = false) {
+            if (binary == null) {
+                return null;
+            }
+            
+            var unprotectedBinary = binary.ReadUnprotected();
+            var unprotectedChars = encoding.GetChars(unprotectedBinary);
+            Array.Clear(unprotectedBinary, 0, unprotectedBinary.Length);
+
+            int count = unprotectedChars.Length;
+            while (count > 0 && unprotectedChars[count - 1] == '\0') {
+                count--;
+            }
+            
+            var protectedString = CopyOf(unprotectedChars, count);
+            Array.Clear(unprotectedChars, 0, unprotectedChars.Length);
+            return protectedString;
+        }
+
         public int Length {
             get { return this.protectedChars.Length / 2; }
         }
-        
+
         public char[] ReadUnprotected() {
             var bytes = this.protectedChars.ReadUnprotected();
             try {
@@ -51,15 +84,7 @@ namespace EpiSource.KeePass.Ekf.Util {
         }
         
         public byte[] ReadUnprotectedUtf8(bool nullTerminator = false) {
-            // not using string operations - strings are immutable and cannot be easily overwritten
-            var chars = this.ReadUnprotected();
-            if (nullTerminator) appendNull(ref chars);
-
-            try {
-                return Encoding.UTF8.GetBytes(chars);
-            } finally {
-                Array.Clear(chars, 0, chars.Length);
-            }
+            return this.ReadUnprotectedEncoded(Encoding.UTF8, nullTerminator);
         }
 
         public byte[] ReadUnprotectedUtf8NullTerminated() {
@@ -67,15 +92,7 @@ namespace EpiSource.KeePass.Ekf.Util {
         }
         
         public byte[] ReadUnprotectedUtf16(bool nullTerminator = false) {
-            // not using string operations - strings are immutable and cannot be easily overwritten
-            var chars = this.ReadUnprotected();
-            if (nullTerminator) appendNull(ref chars);
-
-            try {
-                return Encoding.Unicode.GetBytes(chars);
-            } finally {
-                Array.Clear(chars, 0, chars.Length);
-            }
+            return this.ReadUnprotectedEncoded(Encoding.Unicode, nullTerminator);
         }
 
         public byte[] ReadUnprotectedUtf16NullTerminated() {
@@ -83,19 +100,57 @@ namespace EpiSource.KeePass.Ekf.Util {
         }
         
         public byte[] ReadUnprotectedAscii(bool nullTerminator = false) {
+            return this.ReadUnprotectedEncoded(Encoding.ASCII, nullTerminator);
+        }
+
+        public byte[] ReadUnprotectedAsciiNullTerminated() {
+            return this.ReadUnprotectedAscii(true);
+        }
+
+        public byte[] ReadUnprotectedEncoded(Encoding encoding, bool nullTerminator = false) {
             // not using string operations - strings are immutable and cannot be easily overwritten
             var chars = this.ReadUnprotected();
-            if (nullTerminator) appendNull(ref chars);
+            if (nullTerminator) AppendNull(ref chars);
 
             try {
-                return Encoding.ASCII.GetBytes(chars);
+                return encoding.GetBytes(chars);
             } finally {
                 Array.Clear(chars, 0, chars.Length);
             }
         }
 
-        public byte[] ReadUnprotectedAsciiNullTerminated() {
-            return this.ReadUnprotectedAscii(true);
+        public byte[] ReadUnprotectedEncodedNullTerminated(Encoding encoding) {
+            return this.ReadUnprotectedEncoded(encoding, true);
+        }
+        
+        public PortableProtectedBinary ToUtf8() {
+            var unprotectedUtf8 = this.ReadUnprotectedUtf8();
+            return PortableProtectedBinary.Move(unprotectedUtf8);
+        }
+
+        public PortableProtectedBinary ToUtf8NullTerminated() {
+            var unprotectedUtf8 = this.ReadUnprotectedUtf8NullTerminated();
+            return PortableProtectedBinary.Move(unprotectedUtf8);
+        }
+
+        public PortableProtectedBinary ToUtf16() {
+            var unprotectedUtf16 = this.ReadUnprotectedUtf16();
+            return PortableProtectedBinary.Move(unprotectedUtf16);
+        }
+
+        public PortableProtectedBinary ToUtf16NullTerminated() {
+            var unprotectedUtf16 = this.ReadUnprotectedUtf16NullTerminated();
+            return PortableProtectedBinary.Move(unprotectedUtf16);
+        }
+
+        public PortableProtectedBinary ToAscii() {
+            var unprotectedAscii = this.ReadUnprotectedAscii();
+            return PortableProtectedBinary.Move(unprotectedAscii);
+        }
+
+        public PortableProtectedBinary ToAsciiNullTerminated() {
+            var unprotectedAscii = this.ReadUnprotectedAsciiNullTerminated();
+            return PortableProtectedBinary.Move(unprotectedAscii);
         }
 
         public override bool Equals(object obj) {
@@ -111,7 +166,7 @@ namespace EpiSource.KeePass.Ekf.Util {
             return (this.protectedChars != null ? this.protectedChars.GetHashCode() : 0);
         }
 
-        private static void appendNull(ref char[] chars) {
+        private static void AppendNull(ref char[] chars) {
             var withNull = new char[chars.Length + 1];
             Array.Copy(chars, 0, withNull, 0, chars.Length);
             

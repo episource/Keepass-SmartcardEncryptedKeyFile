@@ -20,8 +20,11 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             this.comment = "KeePass EKF Credential";
             this.targetAlias = "";
             this.userName = "";
-            this.attributes = new Dictionary<string, IList<byte>>();
+            this.attributes = new ReadOnlyDictionary<string, IList<byte>>(new Dictionary<string, IList<byte>>());
         }
+        
+        public GenericCredential(string targetName, PortableProtectedBinary credentialBlob, string userName, string targetAlias, string comment)
+            : this(targetName, credentialBlob, userName, targetAlias, comment, null, true) { }
         public GenericCredential(string targetName, PortableProtectedBinary credentialBlob, string userName, string targetAlias, string comment, IDictionary<string, IList<byte>> attributes)
             : this(targetName, credentialBlob, userName, targetAlias, comment, attributes, true) { }
 
@@ -32,7 +35,9 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             this.userName = userName;
             this.credentialBlob = credentialBlob;
 
-            if (copyAttributes) {
+            if (attributes == null) {
+                this.attributes = new ReadOnlyDictionary<string, IList<byte>>(new Dictionary<string, IList<byte>>());
+            } else if (copyAttributes) {
                 var attributesCopy = new Dictionary<string, IList<byte>>(attributes.Count);
                 foreach (var attr in attributes) {
                     attributesCopy.Add(attr.Key, new ReadOnlyCollection<byte>(new List<byte>(attr.Value)));
@@ -79,10 +84,14 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             return new GenericCredential(this.targetName, this.credentialBlob, this.userName, this.targetAlias, this.comment, nextAttributes, false);
         }
         
-        public GenericCredential RemoveAttribute(string name, IList<byte> value) {
+        public GenericCredential RemoveAttribute(string name) {
             var nextAttributes = new Dictionary<string, IList<byte>>(this.attributes);
             nextAttributes.Remove(name);
             return new GenericCredential(this.targetName, this.credentialBlob, this.userName, this.targetAlias, this.comment, nextAttributes, false);
+        }
+
+        public void Save(WinCred.CredentialPersistence persistence = WinCred.CredentialPersistence.LocalMachine) {
+            WinCred.WriteGenericCredential(this,persistence);
         }
             
         public string Comment { get { return this.comment; } }
