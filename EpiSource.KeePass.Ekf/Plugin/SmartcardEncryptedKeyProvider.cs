@@ -88,11 +88,9 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             get { return ProviderName; }
         }
 
-        // This plugin only provides secure desktop support for Win10.
-        // See also: SmartCardOperationDialog#SetDesktopAndExecute
         public override bool SecureDesktopCompatible {
             
-            get { return WinVersion.IsWin10; }
+            get { return true; }
         }
 
         public override bool DirectKey {

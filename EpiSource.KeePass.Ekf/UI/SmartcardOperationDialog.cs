@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,7 +10,6 @@ using System.Windows.Forms;
 
 using Episource.KeePass.EKF.Resources;
 
-using EpiSource.KeePass.Ekf.UI.Windows;
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.Unblocker;
 using EpiSource.Unblocker.Hosting;
@@ -22,65 +19,9 @@ using KeePass.UI;
 namespace EpiSource.KeePass.Ekf.UI {
     public sealed class SmartcardOperationDialog : Form, IGwmWindow {
         
-        #region WorkerResult
-        
-        [Serializable]
-        private class WorkerResult<TTarget, TReturn> {
-
-            private readonly LinkedList<Exception> exceptions = new LinkedList<Exception>();
-            
-            private InvocationResult<TTarget, TReturn> result;
-
-            // ReSharper disable once MemberHidesStaticFromOuterClass
-            private IEnumerable<IntPtr> remainingDesktopHandles;
-            
-            public IEnumerable<IntPtr> RemainingDesktopHandles {
-                get {
-                    if (this.remainingDesktopHandles == null) {
-                        throw new InvalidOperationException("remainingDesktopHandles not set");
-                    }
-                    return this.remainingDesktopHandles;
-                }
-            }
-
-            public InvocationResult<TTarget, TReturn> GetResultOrThrow() {
-                if (this.exceptions.Count > 1) {
-                    throw new AggregateException("Smartcard operation failed.", this.exceptions);
-                } 
-                if (this.exceptions.Count == 1) {
-                    ExceptionDispatchInfo.Capture(this.exceptions.First()).Throw();
-                    throw new InvalidOperationException("This code should be unreachable...");
-                }
-
-                return this.result;
-            }
-
-            public void AddException(Exception e) {
-                this.exceptions.AddLast(e);
-            }
-
-            // ReSharper disable once ParameterHidesMember
-            public void SetResult(InvocationResult<TTarget, TReturn> result) {
-                this.result = result;
-            }
-
-            // ReSharper disable once ParameterHidesMember
-            public void SetRemainingDesktopHandles(IEnumerable<IntPtr> remainingDesktopHandles) {
-                if (this.remainingDesktopHandles != null) {
-                    throw new InvalidOperationException("remainingDesktopHandles already set");
-                }
-                
-                this.remainingDesktopHandles = remainingDesktopHandles;
-            }
-            
-        }
-        
-        #endregion
-        
         public static readonly TimeSpan UsuallyShortTaskRecommendedDialogDelay = TimeSpan.FromSeconds(1);
 
         private const int gracefulAbortTimeoutMs = 100;
-        private const string defaultDesktopName = "Default";
         
         // A dedicated worker process pool is used:
         // - smartcard operations involve native code without support for cancellation; hence the process needs
@@ -94,9 +35,6 @@ namespace EpiSource.KeePass.Ekf.UI {
         private static readonly UnblockerHost smartcardWorker = new UnblockerHost(
             standbyDelay: TimeSpan.FromSeconds(500000), maxWorkers: 1, debug: DebugMode.None);
 
-        // set via ReplaceRemainingHandles only
-        private static volatile ISet<IntPtr> remainingDesktopHandles = new HashSet<IntPtr>();
-        
         private readonly TableLayoutPanel layout = new TableLayoutPanel();
         private readonly CancellationTokenSource cts;
 
@@ -198,7 +136,7 @@ namespace EpiSource.KeePass.Ekf.UI {
         
         #region DoCrypto Implementation
 
-        private static async Task<InvocationResult<TTarget, TReturn>> DoCryptoImpl<TTarget, TReturn>(
+        private static async Task<IFunctionInvocationResult<TTarget, TReturn>> DoCryptoImpl<TTarget, TReturn>(
             InvocationRequest<TTarget, TReturn> cryptoOperationRequest, CancellationToken ct, TimeSpan? showDialogDelay
         ) {
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -222,149 +160,20 @@ namespace EpiSource.KeePass.Ekf.UI {
             }
 
             try {
-                Expression<Func<CancellationToken, WorkerResult<TTarget, TReturn>>> desktopBoundInvocation = cct => SetDesktopAndExecute<TTarget, TReturn>(
-                    cct, cryptoOperationRequest.ToPortableInvocationRequest(), NativeForms.GetCurrentThreadDesktopName(),
-                    GetAndResetRemainingHandles());
-
                 // continueOnCapturedContext: true => finally must run within UI thread!
                 // This is default, but be explicit here!
-                var retVal = await smartcardWorker.InvokeAsync(
-                        desktopBoundInvocation, cts.Token, TimeSpan.FromMilliseconds(gracefulAbortTimeoutMs),
+                return await smartcardWorker.InvokeMutableAsync(
+                        cryptoOperationRequest, cts.Token, TimeSpan.FromMilliseconds(gracefulAbortTimeoutMs),
                         ForcedCancellationMode.CleanupBeforeCancellation)
                                 .ConfigureAwait(true);
-
-                AddRemainingHandles(retVal.RemainingDesktopHandles);
-                
-                return retVal.GetResultOrThrow();
             } finally {
                 cts.Cancel();
                 scOperationDialog.Close();
             }
         }
-
-        private static IEnumerable<IntPtr> GetAndResetRemainingHandles() {
-            ISet<IntPtr> currentRemainingHandles;
-            var nextRemainingHandles = new HashSet<IntPtr>();
-            
-            do {
-                currentRemainingHandles = remainingDesktopHandles;
-
-                // currently this succeeds immediately, as the maxWorker setting effectively serialized things
-                // but: be 100% sure in case of future changes
-            } while(currentRemainingHandles != Interlocked.CompareExchange(ref remainingDesktopHandles,
-                        nextRemainingHandles, currentRemainingHandles));
-
-            return currentRemainingHandles;
-        }
-        private static void AddRemainingHandles(IEnumerable<IntPtr> newRemainingHandles) {
-            ISet<IntPtr> currentRemainingHandles;
-            ISet<IntPtr> nextRemainingHandles;
-            
-            do {
-                currentRemainingHandles = remainingDesktopHandles;
-                nextRemainingHandles = new HashSet<IntPtr>(currentRemainingHandles);
-                
-                // ReSharper disable once PossibleMultipleEnumeration
-                foreach (var handle in newRemainingHandles) {
-                    nextRemainingHandles.Add(handle);
-                }
-
-                // currently this succeeds immediately, as the maxWorker setting effectively serialized things
-                // but: be 100% sure in case of future changes
-            } while(currentRemainingHandles != Interlocked.CompareExchange(ref remainingDesktopHandles,
-                nextRemainingHandles, currentRemainingHandles));
-            
-        }
-
-        // Switch to "secure" desktop prior to smart card operations: This is needed for any user interaction to
-        // be visible if "secure" desktop is used.
-        // Note: Some system components, e.g. Win 10 smartcard dialogs, keep running in background for a while after
-        // the dialog has ended. This prevents the secure desktop handle to be closed immediately. An attempt to close
-        // remaining handles is done with every smartcard operation.
-        // As long as desktop handles are not closed, the temporary "secure" desktop created by keepass remains active.
-        // Therefore, if immediate closing fails, the temporary desktop is kept alive longer than needed, e.g. until
-        // the next smartcard operation. This is tolerated. It doesn't affect user experience, but increases resource
-        // consumption.
-        // At latest, all desktop handles are released when the worker process shuts down, that is after the chosen
-        // standby timeout has passed without user operation.
-        // TODO: Only effective for Win10 smartcard dialogs - Win11 shows smartcard UI using separate process
-        //       (CredentialUIBroker.exe), therefore setting the active desktop for the current process has no
-        //       effect on the smartcard UIs shown by the OS. In contrast Win10 uses the current process to show
-        //       the UI. 
-        private static WorkerResult<TTarget, TReturn> SetDesktopAndExecute<TTarget, TReturn>(
-            CancellationToken ct, IPortableInvocationRequest portableRequest, string desktop,
-            IEnumerable<IntPtr> desktopHandlesToClose) {
-
-            var remainingHandles = new List<IntPtr>(desktopHandlesToClose);
-            var currentDesktopHandle = IntPtr.Zero;
-
-            var result = new WorkerResult<TTarget, TReturn>();
-
-            try {
-                if (desktop != null && desktop != defaultDesktopName ) {
-                    currentDesktopHandle = NativeForms.GetCurrentThreadDesktop();
-                    var secureDesktopHandle = NativeForms.OpenDesktop(desktop);
-
-                    if (currentDesktopHandle != secureDesktopHandle) {
-                        NativeForms.SetCurrentThreadDesktop(secureDesktopHandle);
-                        remainingHandles.Add(secureDesktopHandle);
-                    } else {
-                        NativeForms.CloseDesktop(secureDesktopHandle);
-                    }
-                }
-
-                try {
-                    ct.Register(() => Process.GetCurrentProcess().CloseMainWindow());
-                    var request = portableRequest.ToInvocationRequest();
-                    var invocationResult = request.Invoke(ct);
-                    result.SetResult(new InvocationResult<TTarget, TReturn>((TTarget)request.Target, (TReturn)invocationResult, request.HasReturnParameter));
-                } catch (Exception e) {
-                    result.AddException(e);
-                }
-            } finally {
-                try {
-                    Process.GetCurrentProcess().CloseMainWindow();
-                } catch { /* try anyway - no need to forward exception */ }
-
-                try {
-                    if (currentDesktopHandle != IntPtr.Zero) {
-                        NativeForms.SetCurrentThreadDesktop(currentDesktopHandle);
-                    }
-                } catch (Exception e) {
-                    result.AddException(e);
-                }
-
-                result.SetRemainingDesktopHandles(remainingHandles.Where(h => {
-                    try {
-                        NativeForms.CloseDesktop(h);
-                        return false;
-                    } catch (Win32Exception e) {
-                        const int errorBusy =  0x000000AA;
-                        const int errorInvalid = 0x00000006;
-
-                        switch (e.NativeErrorCode) {
-                            case errorBusy:
-                                // try again next time
-                                return true;
-                            case errorInvalid:
-                                // desktop has already been disposed (maybe new worker process)
-                                return false;
-                            default:
-                                result.AddException(e);
-                                return true;
-                        }
-                    } catch (Exception e) {
-                        result.AddException(e);
-                        return true;
-                    }
-                }).ToList());
-            }
-
-            return result;
-        }
-
+        
         #endregion
-
+        
         #region UI
         
         private void InitializeUI() {
