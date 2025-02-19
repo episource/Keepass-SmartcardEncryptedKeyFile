@@ -57,7 +57,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         }
 
         public override byte[] GetKey(KeyProviderQueryContext ctx) {
-            PortableProtectedBinary plainKey = null;
+            PortableProtectedBinary plainKey;
             try {
                 plainKey = ctx.CreatingNewKey ? this.CreateNewKey(ctx) : this.DecryptEncryptedKeyFile(ctx);
             } catch (FileNotFoundException) {
@@ -65,8 +65,9 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                     ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return null;
             } catch (DeniedByVirusScannerFalsePositive e) {
-                var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
+                MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
                     ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return null;
             }
 
             if (plainKey == null) {
