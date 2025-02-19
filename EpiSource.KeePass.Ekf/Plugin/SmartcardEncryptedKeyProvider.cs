@@ -151,7 +151,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             return encryptionRequest.PlaintextKey;
         }
 
-        private PortableProtectedBinary DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true, bool enableCancellation = true) {
+        private PortableProtectedBinary DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true) {
             // IOConnection not serializable - need to read file outside unlocker task
             var ekfPath = ctx.DatabaseIOInfo.ResolveEncryptedKeyFile();
             var encryptedKeyFileData = IOConnection.OpenRead(ekfPath).ReadAllBinaryAndClose();
@@ -162,14 +162,14 @@ namespace EpiSource.KeePass.Ekf.Plugin {
 
             var recipient = SmartcardRequiredDialog.ChooseKeyPairForDecryption(ekfFile, GlobalWindowManager.TopWindow);
             try {
-                return this.DecryptEncryptedKeyFile(ekfFile, recipient, enableCancellation);
+                return this.DecryptEncryptedKeyFile(ekfFile, recipient);
             } catch (TaskCrashedException) {
                 if (retryOnCrash) {
                     // there's a known bug in win 10 credentials ui, that causes a crash when opening the dialog
                     // -> https://github.com/mRemoteNG/mRemoteNG/issues/853
                     // -> https://developercommunity.visualstudio.com/content/problem/352484/buffer-overflow-within-windowsuixamlhostdll-when-p.html
                     // retry once before failing!
-                    return this.DecryptEncryptedKeyFile(ctx, false, enableCancellation);
+                    return this.DecryptEncryptedKeyFile(ctx, false);
                 }
                 throw;
             } catch (DeniedByVirusScannerFalsePositive e) {
@@ -179,7 +179,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             }
         }
 
-        private PortableProtectedBinary DecryptEncryptedKeyFile(EncryptedKeyFile ekfFile, IKeyPair recipient, bool enableCancellation) {
+        private PortableProtectedBinary DecryptEncryptedKeyFile(EncryptedKeyFile ekfFile, IKeyPair recipient) {
             if (recipient == null) {
                 return null;
             }
@@ -200,9 +200,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                     var decryptUiOwnerHandle = GlobalWindowManager.TopWindow.Handle;
                     var contextDescription = string.Format(Strings.Culture, Strings.NativeSmartcardUI_ContextTest, recipient.Certificate.SubjectName.Format(true));
 
-                    var decryptedKeyFile = enableCancellation
-                        ? SmartcardOperationDialog.DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin))
-                        : Task.Run(() => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin)).AwaitWithMessagePump();
+                    var decryptedKeyFile = SmartcardOperationDialog.DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin));
 
                     if (pinPromptResult != null && pinPromptResult.RememberPinRequested) {
                         this.rememberedSmartcardPinStore.WriteProtectedPassword(storedPinTargetName, pin);
