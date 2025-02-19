@@ -33,6 +33,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         private readonly IPluginHost pluginHost;
         private readonly string rememberedSmartcardPinStoreKeyId;
         private readonly ProtectedWinCred rememberedSmartcardPinStore;
+        private readonly bool useNativePinDialog;
 
         public SmartcardEncryptedKeyProvider(IPluginHost pluginHost) {
             if (pluginHost == null) {
@@ -44,6 +45,8 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             PortableProtectedBinary rememberedSmartcardPinStoreKey;
             this.GetOrCreatePinStoreKey(out rememberedSmartcardPinStoreKey, out this.rememberedSmartcardPinStoreKeyId);
             this.rememberedSmartcardPinStore = new ProtectedWinCred(rememberedSmartcardPinStoreKey);
+            
+            this.useNativePinDialog = this.pluginHost.CustomConfig.GetBool("EpiSource.KeePass.Ekf.UseNativePinDialog", false);
             
             var editMenu = new ToolStripMenuItem(Strings.SmartcardEncryptedKeyProvider_ButtonEditKeyFile);
             editMenu.Enabled = false;
@@ -90,8 +93,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         }
 
         public override bool SecureDesktopCompatible {
-            
-            get { return true; }
+            get { return !this.useNativePinDialog; }
         }
 
         public override bool DirectKey {
@@ -188,7 +190,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             
             // start with remembered pin or null (if not found)
             // null: an attempt is made to access the smart card without pin. This works if the card is already unlocked.
-            var pin = this.rememberedSmartcardPinStore.ReadProtectedPassword(storedPinTargetName);
+            var pin = this.useNativePinDialog ? null : this.rememberedSmartcardPinStore.ReadProtectedPassword(storedPinTargetName);
             PinPromptDialog.PinPromptDialogResult pinPromptResult = null;
             while (pinPromptResult == null || !pinPromptResult.IsCanceled) { // retry on wrong pin
                 if (pinPromptResult != null) {
@@ -199,7 +201,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                     var decryptUiOwnerHandle = GlobalWindowManager.TopWindow.Handle;
                     var contextDescription = string.Format(Strings.Culture, Strings.NativeSmartcardUI_ContextTest, recipient.Certificate.SubjectName.Format(true));
 
-                    var decryptedKeyFile = SmartcardOperationDialog.DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, true, pin));
+                    var decryptedKeyFile = SmartcardOperationDialog.DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, !this.useNativePinDialog, pin));
 
                     if (pinPromptResult != null && pinPromptResult.RememberPinRequested) {
                         this.rememberedSmartcardPinStore.WriteProtectedPassword(storedPinTargetName, pin);
@@ -223,6 +225,11 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                         pinPromptResult = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow);
                     } else if (NativeCapi.IsWrongPinException(ex)) {
                         this.rememberedSmartcardPinStore.ClearProtectedPassword(storedPinTargetName);
+
+                        if (this.useNativePinDialog) {
+                            return null;
+                        }
+                        
                         pinPromptResult = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow, isRetry: true);
                     } else {
                         throw;
