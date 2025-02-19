@@ -163,13 +163,6 @@
     <Compile Include="Util\Windows\WinCred.types.cs">
       <DependentUpon>WinCred.cs</DependentUpon>
     </Compile>
-    <Compile Include="Util\Windows\WinVersion.cs" />
-    <Compile Include="Util\Windows\WinVersion.pinvoke.cs">
-      <DependentUpon>WinVersion.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Util\Windows\WinVersion.types.cs">
-      <DependentUpon>WinVersion.cs</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="UI\Controls" />
