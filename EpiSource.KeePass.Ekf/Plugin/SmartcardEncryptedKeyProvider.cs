@@ -225,7 +225,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                     }
                     
                     if (NativeCapi.IsInputRequiredException(ex)) {
-                        pinPromptResult = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow);
+                        pinPromptResult = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow, description: recipient.Certificate.Subject);
                     } else if (NativeCapi.IsWrongPinException(ex)) {
                         this.rememberedSmartcardPinStore.ClearProtectedPassword(storedPinTargetName);
 
@@ -233,7 +233,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                             return null;
                         }
                         
-                        pinPromptResult = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow, isRetry: true);
+                        pinPromptResult = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow, description: recipient.Certificate.Subject, isRetry: true);
                     } else {
                         throw;
                     }
