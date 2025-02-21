@@ -1,5 +1,5 @@
 # Smartcard Encrypted Key File Provider Plugin for KeePass
-This plugin adds support for using (multiple) smartcards as second factor to unlock KeePass databases. This is implemented in a manner, that is fully compatibly with built-in key files: An existing or newly created key file is encrypted using public keys of one or many rsa smartcards. The encrypted key file is saved next to the database file, while the user is given the possibility to save the corresponding plaintext key file in a safe location. When unlocking a database using the  `Smartcard Encrypted Key File Provider`, the user is asked to insert/connect and unlock an authorized smartcard. As alternative the user can also unlock the database using the plaintext key file without need for the corresponding plugin to be installed. Hence, access to the database is granted reliably, even if this plugin should not available.
+This plugin adds support for using (multiple) smartcards as second factor to unlock KeePass databases. This is implemented in a manner, that is fully compatibly with built-in key files: An existing or newly created key file is encrypted using public keys of one or many rsa smartcards. The encrypted key file is saved next to the database file, while the user is given the possibility to save the corresponding plaintext key file in a safe location. When unlocking a database using the  `Smartcard Encrypted Key File Provider`, the user is asked to insert/connect and unlock an authorized smartcard. As alternative, the user can also unlock the database using the plaintext key file without need for the corresponding plugin to be installed. Hence, access to the database is granted reliably, even if this plugin should not available.
 
 ## Supported smartcards
 In theory, this plugin supports any [PIV (Personal Identity Verification) compatible smartcard][1]. YubiKey 5 series has been tested successfully. Other smartcards have not been tested yet.
@@ -24,8 +24,9 @@ Remember to copy the `.ekf`-file along with the `.kdbx` KeePass database.
 5. Connect an authorized smartcard to the computer. The dialog will close automatically once the smartcard is recognized. If more than one authorized smartcard is already connected, select the smartcard to be used and confirm the dialog.
 6. The previously chosen smartcard is used to decrypt the key file. Depending on the actual smartcard being used, this is likely to require user interaction and/or may take a few moments. Feel free to abort, else confirm the operation.
 <br/>![Unlock database using smartcard: Waiting for smartcard](./doc/unlock-database-using-smartcard_waiting.png)
-    1. It is likely that a PIN must be entered to unlock the smartcard. Therefore the following dialog might popup on your main screen:
+    1. It is likely that a PIN must be entered to unlock the smartcard. Therefore, the following dialog might popup:
     <br/>![Unlock database using smartcard: PIN input](./doc/unlock-database-using-smartcard_pin.png)
+    <br/>Chosing `Remeber PIN` stores the PIN in the windows credential store. The stored PIN is encrypted with a per-instance key stored in the keepass configuration file. This is useful e.g. when using a YubiKey and only the button should be needed to unlock the key.
     2. When using a YubiKey or similiar device, it might be necessary to confirm the private key operation by pressing a hardware button. YubiKeys like the one shown below will blink when the device is waiting for confirmation.
     <br/>![Unlock database using smartcard: YubiKey button](./doc/unlock-database-using-smartcard_yubikey.png)
 7. All done: Assuming the correct `Master Password` was entered, the database has finally been unlocked!
@@ -102,7 +103,7 @@ Basic setup is possible using graphical tools only. Yubico default configuration
 ## Advanced setup using command line tools
 **Prerequisites:** single YubiKey connected to your computer; [YubiKey PIV Tool (command line)][4]; no need to install YubiKey Smart Card Minidriver
 
-Advanced setup requires using command line tools provided by yubico. Compared with basic setup, advanced configuration permits more variants for unlocking the YubiKey (pin-policy, touch-policy). E.g. the token can be configured for unlocking with PIN+button press, only button, and more. Yubico provides [an outdated pdf guide][7] to the YubiKey PIV Tool, that gives a good overview over available configuration options. Most recent information is available from [source code of the piv tool][8].
+Advanced setup requires using command line tools provided by yubico. Compared with basic setup, advanced configuration permits more variants for unlocking the YubiKey (pin-policy, touch-policy). E.g. the token can be configured for unlocking with PIN+button press, only button, and more. ~~Yubico provides [an outdated pdf guide][7] to the YubiKey PIV Tool, that gives a good overview over available configuration options.~~ Most recent information is available from [source code of the piv tool][8].
 
 Below are example commands to replace the certificate in slot 9a with a newly created self-signed certificate and custom unlock configuration (pin-policy, touch-policy). Note however, that pin-policy is currently not honored by windows builtin drivers and yubikey's minidriver. Pin will always be asked when performing the first private key operation. Touch-operations are fully supported, though.
 
@@ -132,11 +133,27 @@ $ .\build-plgx-project.ps1 -csproj .\SmartcardEncryptedKeyFile.csproj -outdir .\
 
 Important warning: This script cleans `outdir` and `objdir` without asking for confirmation! Carefully choose the paths you enter here!
 
+# Advanced options
+## Force native smartcard PIN prompt
+Per default a custom PIN prompt is used. The custom PIN prompt enables secure desktop support and provides an option to remember encrypted/obfuscated PINs in the windows credential store.
+
+Add below snippet to `KeePass.config.xml` to revert to windows builtin smartcard PIN prompt:
+
+```xml
+<Configuration>
+    <Custom>
+       <Item>
+          <Key>EpiSource.KeePass.Ekf.UseNativePinDialog</Key>
+          <Value>true</Value>
+       </Item>
+    </Custom>
+</Configuration>
+```
+
 # Known Issues & Limitations
-1. The PIN prompt for unlocking a PIV smartcard is always shown in the center of the main screen, not on top of KeePass.
-2. Currently only RSA smartcards are supported.
-3. Non-Local databases have not been tested, but might work as well.
-4. KeePass builtin synchronization won't synchronize changes related to the encrypted key file (e.g. access granted to additional smartcard).
+1. Currently only RSA smartcards are supported.
+2. Non-Local databases have not been tested, but might work as well.
+3. KeePass builtin synchronization won't synchronize changes related to the encrypted key file (e.g. access granted to additional smartcard).
 
 
 [1]: https://csrc.nist.gov/publications/detail/sp/800-73/4/final
