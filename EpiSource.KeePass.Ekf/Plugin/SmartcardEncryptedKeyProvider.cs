@@ -29,6 +29,9 @@ namespace EpiSource.KeePass.Ekf.Plugin {
     public class SmartcardEncryptedKeyProvider : KeePassLib.Keys.KeyProvider {
         
         public const string ProviderName = "Smartcard Encrypted Key File Provider";
+        private const string configKeyUseNativePinDialog = "EpiSource.KeePass.Ekf.UseNativePinDialog";
+        private const string configKeyPinStoreKey = "EpiSource.KeePass.Ekf.RememberedPinStoreKey";
+        private const string configKeyPinStoreKeyId = "EpiSource.KeePass.Ekf.RememberedPinStoreKeyId";
 
         private readonly IPluginHost pluginHost;
         private readonly string rememberedSmartcardPinStoreKeyId;
@@ -46,7 +49,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             this.GetOrCreatePinStoreKey(out rememberedSmartcardPinStoreKey, out this.rememberedSmartcardPinStoreKeyId);
             this.rememberedSmartcardPinStore = new ProtectedWinCred(rememberedSmartcardPinStoreKey);
             
-            this.useNativePinDialog = this.pluginHost.CustomConfig.GetBool("EpiSource.KeePass.Ekf.UseNativePinDialog", false);
+            this.useNativePinDialog = this.pluginHost.CustomConfig.GetBool(configKeyUseNativePinDialog, false);
             
             var editMenu = new ToolStripMenuItem(Strings.SmartcardEncryptedKeyProvider_ButtonEditKeyFile);
             editMenu.Enabled = false;
@@ -242,22 +245,19 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         }
 
         private void GetOrCreatePinStoreKey(out PortableProtectedBinary key, out string keyId) {
-            const string hexKeyConfigKey = "EpiSource.KeePass.Ekf.RememberedPinStoreKey";
-            const string keyIdConfigKey = "EpiSource.KeePass.Ekf.RememberedPinStoreKeyId";
-            
-            var keyHexString = this.pluginHost.CustomConfig.GetString(hexKeyConfigKey);
+            var keyHexString = this.pluginHost.CustomConfig.GetString(configKeyPinStoreKey);
             
             var keyBytes = keyHexString == null ? null : MemUtil.HexStringToByteArray(keyHexString);
             if (keyBytes == null) {
                 keyBytes = CryptoRandom.Instance.GetRandomBytes(32);
-                this.pluginHost.CustomConfig.SetString(hexKeyConfigKey, MemUtil.ByteArrayToHexString(keyBytes));
+                this.pluginHost.CustomConfig.SetString(configKeyPinStoreKey, MemUtil.ByteArrayToHexString(keyBytes));
             }
             key = PortableProtectedBinary.Move(keyBytes);
             
-            keyId = this.pluginHost.CustomConfig.GetString(keyIdConfigKey);
+            keyId = this.pluginHost.CustomConfig.GetString(configKeyPinStoreKeyId);
             if (keyId == null) {
                 keyId = string.Format("{0:X8}", BobJenkinsOneAtATimeHash.CalculateHash(DateTime.Now.ToString("yyyyMMddHHmmssfff")));
-                this.pluginHost.CustomConfig.SetString(keyIdConfigKey, keyId);
+                this.pluginHost.CustomConfig.SetString(configKeyPinStoreKeyId, keyId);
             }
         }
     }
