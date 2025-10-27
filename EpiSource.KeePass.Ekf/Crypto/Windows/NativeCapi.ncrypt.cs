@@ -23,12 +23,17 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         }
         
         /// https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers
-        private static byte[] GetNcryptProperty(NCryptContextHandle keyHandle, string propertyName) {
+        private static byte[] GetNcryptProperty(NCryptContextHandle keyHandle, string propertyName, NCryptGetPropertyFlags flags) {
             var valueSize = 0;
-            DoNcryptWithException(() => NativeNCryptPinvoke.NCryptGetProperty(keyHandle, propertyName, null, 0, out valueSize, NCryptGetPropertyFlags.None));
+            var result = DoNcryptWithException(() => NativeNCryptPinvoke.NCryptGetProperty(keyHandle, propertyName, null, 0, out valueSize, flags),
+                CryptoResult.NTE_INVALID_PARAMETER, CryptoResult.NTE_NOT_SUPPORTED);
+
+            if (result != CryptoResult.ERROR_SUCCESS) {
+                return Array.Empty<byte>();
+            }
                 
             var value = new byte[valueSize];
-            DoNcryptWithException(() => NativeNCryptPinvoke.NCryptGetProperty(keyHandle, propertyName, value, value.Length, out valueSize, NCryptGetPropertyFlags.None));
+            DoNcryptWithException(() => NativeNCryptPinvoke.NCryptGetProperty(keyHandle, propertyName, value, value.Length, out valueSize, flags));
 
             Array.Resize(ref value, valueSize);
             return value;

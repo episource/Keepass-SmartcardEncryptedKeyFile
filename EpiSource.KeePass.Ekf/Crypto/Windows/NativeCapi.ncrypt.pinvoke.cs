@@ -8,6 +8,15 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         
         /// https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptgetproperty
         [Flags]
+        private enum NCryptCommonFlags {
+            None = 0x0,
+            
+            NCRYPT_MACHINE_KEY_FLAG    = 0x00000020,
+            NCRYPT_SILENT_FLAG         = 0x00000040
+        }
+        
+        /// https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptgetproperty
+        [Flags]
         private enum NCryptGetPropertyFlags {
             None = 0x0,
             
@@ -16,7 +25,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             DACL_SECURITY_INFORMATION  = 0x00000004,
             SACL_SECURITY_INFORMATION  = 0x00000008,
             
-            NCRYPT_SILENT_FLAG         = NCryptSetPropertyFlags.NCRYPT_SILENT_FLAG,
+            NCRYPT_SILENT_FLAG         = NCryptCommonFlags.NCRYPT_SILENT_FLAG,
             NCRYPT_PERSIST_ONLY_FLAG   = NCryptSetPropertyFlags.NCRYPT_PERSIST_ONLY_FLAG,
         }
         
@@ -24,7 +33,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         [Flags]
         private enum NCryptSetPropertyFlags {
             None                     = 0x0,
-            NCRYPT_SILENT_FLAG       = 0x00000040,
+            NCRYPT_SILENT_FLAG       = NCryptCommonFlags.NCRYPT_SILENT_FLAG,
             NCRYPT_PERSIST_ONLY_FLAG = 0x40000000,
             NCRYPT_PERSIST_FLAG      = unchecked((int)0x80000000)
         }
@@ -69,6 +78,16 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             /// https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptfreeobject
             [DllImport("Ncrypt.dll", CharSet = CharSet.Unicode, SetLastError = false)]
             public static extern int NCryptFreeObject(IntPtr hObject);
+            
+            /// https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptopenstorageprovider
+            [DllImport("Ncrypt.dll", CharSet = CharSet.Unicode, SetLastError = false)]
+            public static extern CryptoResult NCryptOpenStorageProvider(
+                out NCryptContextHandle hObject, string pszProviderName, int dwFlagsAlwaysZero);
+            
+            /// https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptopenkey
+            [DllImport("Ncrypt.dll", CharSet = CharSet.Unicode, SetLastError = false)]
+            public static extern CryptoResult NCryptOpenKey(
+                NCryptContextHandle hProvider, out NCryptContextHandle phKey, string pszKeyName, CryptPrivateKeySpec dwLegacyKeySpec, NCryptCommonFlags dwFlags);
             
             /// https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptgetproperty
             [DllImport("Ncrypt.dll", CharSet = CharSet.Unicode, SetLastError = false)]

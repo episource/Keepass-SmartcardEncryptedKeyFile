@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -14,6 +15,8 @@ using EpiSource.KeePass.Ekf.Util;
 
 using KeePassLib.Cryptography;
 
+using Microsoft.Win32.SafeHandles;
+
 // ReSharper disable InconsistentNaming
 // ReSharper disable EnumUnderlyingTypeIsInt
 
@@ -22,6 +25,31 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
         public static bool IsCancelledByUserException(CryptographicException ex) {
             return ex is CryptoOperationCancelledException || unchecked((CryptoResult)ex.HResult) == CryptoResult.SCARD_W_CANCELLED_BY_USER;
+        }
+        
+        /// <summary>
+        /// Silently checks if private key is accessible. The alternatives implemented in .Net framework may show UI to ask for missing Smart Card etc.
+        /// </summary>
+        /// <param name="cert"></param>
+        /// <returns></returns>
+        public static bool IsCertificatePrivateKeyAccessible(X509Certificate2 cert) {
+            var optOwner = IntPtr.Zero;
+            var keyHandleRaw = IntPtr.Zero;
+            var keySpec = CryptPrivateKeySpec.UNDEFINED;
+            var mustFreeHandle = false;
+
+            var directAcquireResult = PinvokeUtil.DoPinvokeWithException(() => NativeCertPinvoke.CryptAcquireCertificatePrivateKey(cert.Handle,
+                    CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
+                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
+                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
+                    ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle),
+                r => r.Result
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEYSET)
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_READERS_AVAILABLE));
+
+            using (NcryptOrContextHandle.of(keyHandleRaw, mustFreeHandle, keySpec)) {
+                return directAcquireResult;
+            }
         }
 
         public static bool IsInputRequiredException(CryptographicException ex) {
@@ -204,6 +232,90 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             EncryptOrDecryptAesGcm(plaintext, out ciphertext, key, nonce, tag, false);
             return new AesGcmCryptoCipherResult(ciphertext.ReadUnprotected(), nonce, tag);
         }
+        
+        public static KeyInfo QueryCertificatePrivateKey(X509Certificate cert) {
+            // see also:
+            //  - https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers
+            //  - https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptgetprovparam
+            
+            var cspParams = NativeCapi.GetParameters(cert);
+            if (cspParams == null) {
+                return new KeyInfo();
+            }
+            
+            
+            bool isHardware = false;
+            bool isRemovable = false;
+            bool canExport = false;
+            
+            // 0: Ncrypt Key Provider (no indication) - let's assume CanDecrypt for now
+            // 1: We can decrypt, the key is of type Exchange
+            bool canDecrypt = cspParams.KeyNumber == 0 || cspParams.KeyNumber == (int)KeyNumber.Exchange;
+            bool canSign = canDecrypt || cspParams.KeyNumber == (int)KeyNumber.Signature;
+
+
+            NcryptOrContextHandle providerHandle = null;
+            
+            // CryptNG
+            if (cspParams.KeyNumber == 0) {
+                NCryptContextHandle ncryptProviderHandle = null;
+                DoNcryptWithException(() => NativeNCryptPinvoke.NCryptOpenStorageProvider(out ncryptProviderHandle, cspParams.ProviderName, 0));
+                providerHandle = ncryptProviderHandle;
+            } else {
+                CryptContextHandle cspHandle = null;
+                NativeLegacyCapiPinvoke.CryptAcquireContext(out cspHandle, null, cspParams.ProviderName, cspParams.ProviderType, CryptAcquireContextFlags.CRYPT_SILENT | CryptAcquireContextFlags.CRYPT_VERIFYCONTEXT);
+                providerHandle = cspHandle;
+            }
+
+            using (providerHandle) {
+                byte[] providerImplementation = getNcryptOrCspProperty(providerHandle, "Impl Type", CryptGetProvParamType.PP_IMPTYPE, true);
+                isHardware = providerImplementation.Length > 0 && (providerImplementation[0] & 0x1) == 0x1;
+                isRemovable = providerImplementation.Length > 0 && (providerImplementation[0] & 0x8) == 0x8;
+                canExport = !isHardware;
+            }
+            
+            
+            var optOwner = IntPtr.Zero;
+            var keyHandleRaw = IntPtr.Zero;
+            var keySpec = CryptPrivateKeySpec.UNDEFINED;
+            var mustFreeHandle = false;
+
+            PinvokeUtil.DoPinvokeWithException(() => NativeCertPinvoke.CryptAcquireCertificatePrivateKey(cert.Handle,
+                    CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
+                    // attempt to access cached key information if smart card is not connected!
+                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_USE_PROV_INFO_FLAG
+                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
+                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
+                    ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle),
+                r => r.Result
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEYSET)
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_READERS_AVAILABLE));
+
+            using (NcryptOrContextHandle keyHandle = NcryptOrContextHandle.of(keyHandleRaw, mustFreeHandle, keySpec)) {
+                if (keyHandle.IsInvalid) {
+                    return new KeyInfo(canDecrypt, canExport, canSign, isHardware, isRemovable);
+                }
+                
+                byte[] keyImplementation = getNcryptOrCspProperty(keyHandle, "Impl Type", CryptGetProvParamType.PP_IMPTYPE, true);
+                if (keyImplementation.Length > 0) {
+                    isHardware = keyImplementation.Length > 0 && (keyImplementation[0] & 0x1) == 0x1;
+                    isRemovable = keyImplementation.Length > 0 && (keyImplementation[0] & 0x8) == 0x8;
+                    canExport = !isHardware;
+                }
+
+                var ncryptKeyHandle = keyHandle as NCryptContextHandle;
+                if (ncryptKeyHandle != null) {
+                    byte[] exportPolicy = GetNcryptProperty(ncryptKeyHandle, "Export Policy", NCryptGetPropertyFlags.NCRYPT_SILENT_FLAG);
+                    canExport = exportPolicy.Length == 0 ? canExport : (exportPolicy[0] & 0x1) == 0x1; 
+                    
+                    byte[] keyUsagePolicy = GetNcryptProperty(ncryptKeyHandle, "Key Usage", NCryptGetPropertyFlags.NCRYPT_SILENT_FLAG);
+                    canDecrypt = keyUsagePolicy.Length == 0 ? canDecrypt : (keyUsagePolicy[0] & 0x1) == 0x1;
+                    canSign = keyUsagePolicy.Length    == 0 ? canSign : (keyUsagePolicy[0]    & 0x2) == 0x2;
+                }
+            }
+            
+            return new KeyInfo(canDecrypt, canExport, canSign, isHardware, isRemovable);
+        }
 
         private static PortableProtectedBinary DecryptEnvelopedCms(
                 EnvelopedCms envelopedCms, byte[] encodedEnvelopedCms, X509Certificate2 recipientCert, int recipientIndex, bool alwaysSilent,
@@ -290,12 +402,21 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
         
-        private static void setNcryptOrCspProperty(NcryptOrContextHandle handle, string ncryptProperty, CryptSetProvParamType cspParam,  bool silent, byte[] value) {
+        private static void setNcryptOrCspProperty(NcryptOrContextHandle handle, string ncryptProperty, CryptSetProvParamType cspParam, bool silent, byte[] value) {
             if (handle is NCryptContextHandle) {
                 SetNcryptProperty((NCryptContextHandle)handle, ncryptProperty, value, silent ? NCryptSetPropertyFlags.NCRYPT_SILENT_FLAG : NCryptSetPropertyFlags.None);
             } else {
                 SetCspProperty((CryptContextHandle)handle, cspParam, value);
             }
         }
+
+        private static byte[] getNcryptOrCspProperty(NcryptOrContextHandle handle, string ncryptProperty, CryptGetProvParamType cspParam, bool silent) {
+            if (handle is NCryptContextHandle) {
+                return GetNcryptProperty((NCryptContextHandle)handle, ncryptProperty, silent ? NCryptGetPropertyFlags.NCRYPT_SILENT_FLAG : NCryptGetPropertyFlags.None);
+            } else {
+                return GetCspProperty((CryptContextHandle)handle, cspParam);
+            }
+        }
+        
     }
 }

@@ -6,6 +6,7 @@ using System.Security.Cryptography.Xml;
 using System.Windows.Forms;
 
 namespace EpiSource.KeePass.Ekf.Crypto.Windows {
+
     public static partial class NativeCapi {
         public sealed class ComparableIssuerSerial {
             
@@ -75,6 +76,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         /// </summary>
         internal enum CryptoResult : uint {
             ERROR_SUCCESS =                 0x00,
+            ERROR_INVALID_PARAMETER =       0x57,
             ERROR_MORE_DATA =               0xEA,
             
             NTE_BAD_UID =                   0x80090001,
@@ -131,6 +133,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             NTE_ENCRYPTION_FAILURE =        0x80090034,
             NTE_DEVICE_NOT_FOUND =          0x80090035,
             CRYPT_E_NOT_FOUND =             0x80092004,
+            
+            SCARD_E_NO_READERS_AVAILABLE =  0x8010002E,
             
             /// wrong pin
             SCARD_W_WRONG_CHV =             0x8010006B,

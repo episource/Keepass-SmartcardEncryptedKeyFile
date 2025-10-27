@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
+using EpiSource.KeePass.Ekf.Crypto.Windows;
+
 namespace EpiSource.KeePass.Ekf.Crypto {
     // ReSharper disable once InconsistentNaming
     public static class RSASmartcardKeyPairs {       
@@ -29,10 +31,9 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                     userStoreCerts.Union(machineStoreCerts)
                                   .GroupBy(c => c.Thumbprint)
                                   .Select(cGroup =>
-                                      (IKeyPair) RSACryptoServiceProviderKeyPair.FromX509CertificateOrNull(
+                                      (IKeyPair) WindowsKeyPair.FromX509CertificateOrNull(
                                           cGroup.First()));
-                
-                // blocks if busy hardware devices are involved
+
                 return ListEncryptionCardsAsList(certs);
             }
         }

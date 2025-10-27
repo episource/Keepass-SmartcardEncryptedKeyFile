@@ -159,7 +159,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             // IOConnection not serializable - need to read file outside unlocker task
             var ekfPath = ctx.DatabaseIOInfo.ResolveEncryptedKeyFile();
             var encryptedKeyFileData = IOConnection.OpenRead(ekfPath).ReadAllBinaryAndClose();
-            
+
             // EncryptedKeyFile.Read/Decode blocks if busy HW is involved
             var ekfFile = SmartcardOperationDialog
                 .DoCryptoWithMessagePumpShort(ct => EncryptedKeyFile.Decode(encryptedKeyFileData));

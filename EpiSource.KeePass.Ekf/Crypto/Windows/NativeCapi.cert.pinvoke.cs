@@ -6,16 +6,29 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         
         /// <summary>
         /// Subset of crypt32 certificate context property id.
-        /// Reference: https://github.com/Alexpux/mingw-w64/blob/master/mingw-w64-headers/include/wincrypt.h
+        /// Reference: https://github.com/mingw-w64/mingw-w64/blob/master/mingw-w64-headers/include/wincrypt.h
         /// </summary>
         private enum CertContextPropId : int {
             CERT_KEY_PROV_HANDLE_PROP_ID = 1,
-            CERT_KEY_PROV_INFO_PROP_ID = 2
+            CERT_KEY_PROV_INFO_PROP_ID = 2,
+            CERT_KEY_CONTEXT_PROP_ID = 5,
+            CERT_SMART_CARD_DATA_PROP_ID = 16,
+            CERT_NCRYPT_KEY_HANDLE_PROP_ID = 78,
+            CERT_NCRYPT_KEY_HANDLE_TRANSFER_PROP_ID = 99,
+            CERT_HCRYPTPROV_TRANSFER_PROP_ID = 100
+        }
+        
+        /// https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-cert_key_context
+        private struct CertKeyContext {
+            public uint cbSize;
+            public IntPtr hCryptOrNCryptHandle;
+            public CryptPrivateKeySpec dwKeySpec;
         }
 
         /// https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptacquirecertificateprivatekey
         private enum CryptAcquireCertificatePrivateKeyFlags {
             CRYPT_ACQUIRE_CACHE_FLAG             = 0x00001,
+            CRYPT_ACQUIRE_USE_PROV_INFO_FLAG     = 0x00002,
             CRYPT_ACQUIRE_COMPARE_KEY_FLAG       = 0x00004,
             CRYPT_ACQUIRE_NO_HEALING             = 0x00008,
             CRYPT_ACQUIRE_SILENT_FLAG            = 0x00040,
