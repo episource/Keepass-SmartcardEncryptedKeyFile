@@ -151,7 +151,7 @@ Add below snippet to `KeePass.config.xml` to revert to windows builtin smartcard
 ```
 
 # Known Issues & Limitations
-1. Currently only RSA smartcards are supported.
+1. ~~Currently only RSA smartcards are supported.~~ Other PKCS & windows compatible smartcards should work now as well (starting with v1.1) - untested, though!
 2. Non-Local databases have not been tested, but might work as well.
 3. KeePass builtin synchronization won't synchronize changes related to the encrypted key file (e.g. access granted to additional smartcard).
 
