@@ -73,7 +73,7 @@ try {
     # Make sure all referenced files are within the project directory
     $originalReferences = $projectModel.Items | ?{ $_.ItemType -eq "Reference" }
     $originalReferences | %{
-        if ($_.EvaluatedInclude -match "^keepass,") {
+        if ($_.EvaluatedInclude -match "^keepass(,.*)?$") {
             $keepassExe = Resolve-Path $_.GetMetadata("HintPath").EvaluatedValue
             
             $_.RemoveMetadata("HintPath")
