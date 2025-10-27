@@ -35,7 +35,7 @@
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="KeePass, Version=2.57.1.16889, Culture=neutral, PublicKeyToken=fed2ed7716aecf5c">
+    <Reference Include="KeePass">
       <HintPath>..\ThirdParty\KeePass\KeePass.exe</HintPath>
     </Reference>
     <Reference Include="System" />
