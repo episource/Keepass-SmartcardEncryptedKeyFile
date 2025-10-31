@@ -134,6 +134,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             NTE_DEVICE_NOT_FOUND =          0x80090035,
             CRYPT_E_NOT_FOUND =             0x80092004,
             
+            SCARD_E_NO_SMARTCARD =          0x8010000C,
             SCARD_E_NO_READERS_AVAILABLE =  0x8010002E,
             
             /// wrong pin

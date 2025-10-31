@@ -22,6 +22,11 @@ using Microsoft.Win32.SafeHandles;
 
 namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
+        
+        private static readonly Func<PinvokeUtil.PinvokeResult<bool>, bool> isSuccessOrMissingKeyPredicate = r =>
+            r.Result || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEYSET)
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_SMARTCARD)
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_READERS_AVAILABLE);
 
         public static bool IsCancelledByUserException(CryptographicException ex) {
             return ex is CryptoOperationCancelledException || unchecked((CryptoResult)ex.HResult) == CryptoResult.SCARD_W_CANCELLED_BY_USER;
@@ -43,9 +48,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
                     ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle),
-                r => r.Result
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEYSET)
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_READERS_AVAILABLE));
+                isSuccessOrMissingKeyPredicate);
 
             using (NcryptOrContextHandle.of(keyHandleRaw, mustFreeHandle, keySpec)) {
                 return directAcquireResult;
@@ -287,9 +290,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
                     ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle),
-                r => r.Result
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEYSET)
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_READERS_AVAILABLE));
+                isSuccessOrMissingKeyPredicate);
 
             using (NcryptOrContextHandle keyHandle = NcryptOrContextHandle.of(keyHandleRaw, mustFreeHandle, keySpec)) {
                 if (keyHandle.IsInvalid) {
@@ -417,6 +418,6 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 return GetCspProperty((CryptContextHandle)handle, cspParam);
             }
         }
-        
+
     }
 }
