@@ -12,13 +12,21 @@ using EpiSource.KeePass.Ekf.Util.Windows;
 
 namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
+
+        public const int AesGcmNonceSize = 12;
+        
         private static void EncryptOrDecryptAesGcm(PortableProtectedBinary input, out PortableProtectedBinary output, PortableProtectedBinary key, IList<byte> nonce, IList<byte> tag, bool decrypt) {
             if (key.Length != 16 && key.Length != 32) {
                 throw new ArgumentOutOfRangeException("key.Length", key.Length, "key must be 128 or 256 bytes.");
             }
-            if (nonce.Count != key.Length) {
-                throw new ArgumentOutOfRangeException("nonce.Length", nonce.Count, "nonce must be of same length as key");
-            }
+            if (nonce.Count != AesGcmNonceSize && (!decrypt || nonce.Count != key.Length)) {
+                // 96bits is recommended size (various sources)
+                // for some windows builds, BCryptEncrypt fails with STATUS_INVALID_PARAMETER if nonce size differs (own observation)
+                // most windows builds support IV with size equal to the key as well (own observation)
+                // => for best compatibility limit encryption to fixed IV size of 96bits,
+                //    however allow attempt to decrypt longer IV as well
+                throw new ArgumentOutOfRangeException("nonce.Count", nonce.Count, "for encryption, 12 bytes / 96bits is the only supported nonce size");
+            } 
             if (input.Length % key.Length != 0) {
                 throw new ArgumentOutOfRangeException("data.Length", input.Length, "data size must be multiple of key size");
             }

@@ -223,7 +223,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
         public static AesGcmCryptoCipherResult EncryptAesGcm(PortableProtectedBinary plaintext, PortableProtectedBinary key, byte[] nonce=null, int tagSizeBytes=16) {
             if (nonce == null) {
-                nonce = CryptoRandom.Instance.GetRandomBytes((uint)key.Length);
+                nonce = CryptoRandom.Instance.GetRandomBytes(AesGcmNonceSize);
             }
             
             PortableProtectedBinary ciphertext;
