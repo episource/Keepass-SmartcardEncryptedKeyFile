@@ -112,7 +112,6 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
-    <Compile Include="UI\CertificateListViewItem.cs" />
     <Compile Include="UI\PinPromptDialog.cs" />
     <Compile Include="UI\PinPromptDialog.types.cs">
       <DependentUpon>PinPromptDialog.cs</DependentUpon>

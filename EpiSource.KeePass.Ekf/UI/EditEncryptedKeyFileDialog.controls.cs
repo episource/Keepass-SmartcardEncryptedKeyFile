@@ -193,6 +193,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnChange, autoSizeHeader);
             this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnSubject, autoSizeHeader);
             this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnSerial, autoSizeHeader);
+            this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnAlgorithm, autoSizeHeader);
             this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnProvider, autoSizeHeader);
 
             UIUtil.SetExplorerTheme(this.keyListView, false);
@@ -317,6 +318,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             item.Checked = keyModel.NextAuthorization == KeyPairModel.Authorization.Authorized;
             item.SubItems.Add(cert.Subject);
             item.SubItems.Add(cert.SerialNumber);
+            item.SubItems.Add(cert.PublicKey.Oid.FriendlyName);
             item.SubItems.Add(keyModel.ProviderName);
             item.ToolTipText = string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_LabelThumbprint, cert.Thumbprint);
             

@@ -123,6 +123,15 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Algorithm.
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_ColumnAlgorithm {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.ColumnAlgorithm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to ☑ Change.
         /// </summary>
         internal static string EditEncryptedKeyFileDialog_ColumnChange {
@@ -508,6 +517,15 @@ namespace Episource.KeePass.EKF.Resources {
         internal static string SmartcardOperationDialog_DialogTitle {
             get {
                 return ResourceManager.GetString("SmartcardOperationDialog.DialogTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Algorithm.
+        /// </summary>
+        internal static string SmartcardRequiredDialog_ColumnAlgorithm {
+            get {
+                return ResourceManager.GetString("SmartcardRequiredDialog.ColumnAlgorithm", resourceCulture);
             }
         }
         

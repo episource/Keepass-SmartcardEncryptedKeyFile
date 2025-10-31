@@ -237,6 +237,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             this.keyListView.Columns.Add(Strings.SmartcardRequiredDialog_ColumnReady, autoSizeHeader);
             this.keyListView.Columns.Add(Strings.SmartcardRequiredDialog_ColumnSubject, autoSizeHeader);
             this.keyListView.Columns.Add(Strings.SmartcardRequiredDialog_ColumnSerial, autoSizeHeader);
+            this.keyListView.Columns.Add(Strings.SmartcardRequiredDialog_ColumnAlgorithm, autoSizeHeader);
             this.keyListView.Columns.Add(Strings.SmartcardRequiredDialog_ColumnProvider, autoSizeHeader);
 
             UIUtil.SetExplorerTheme(this.keyListView, false);
@@ -357,7 +358,8 @@ namespace EpiSource.KeePass.Ekf.UI {
                     item.Tag = kpm;
                     item.SubItems.Add(cert.Subject);
                     item.SubItems.Add(cert.SerialNumber);
-                    item.SubItems.Add(kpm.Provider.ToString());
+                    item.SubItems.Add(cert.PublicKey.Oid.FriendlyName);
+                    item.SubItems.Add(kpm.ProviderName);
                     item.ToolTipText = string.Format(Strings.Culture, Strings.SmartcardRequiredDialog_LabelThumbprint, cert.Thumbprint);
                     this.keyListView.Items.Add(item);
 

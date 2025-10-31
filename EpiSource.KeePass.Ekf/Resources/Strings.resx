@@ -123,6 +123,9 @@
   <data name="EditEncryptedKeyFileDialog.ColumnProvider" xml:space="preserve">
     <value>Provider</value>
   </data>
+  <data name="EditEncryptedKeyFileDialog.ColumnAlgorithm" xml:space="preserve">
+    <value>Algorithm</value>
+  </data>
   <data name="EditEncryptedKeyFileDialog.LabelThumbprint" xml:space="preserve">
     <value>Thumbprint: {0}</value>
     <comment>{0} is thumbprint</comment>
@@ -168,6 +171,9 @@
   </data>
   <data name="SmartcardRequiredDialog.ColumnProvider" xml:space="preserve">
     <value>Provider</value>
+  </data>
+  <data name="SmartcardRequiredDialog.ColumnAlgorithm" xml:space="preserve">
+    <value>Algorithm</value>
   </data>
   <data name="SmartcardRequiredDialog.LabelThumbprint" xml:space="preserve">
     <value>Thumbprint: {0}</value>

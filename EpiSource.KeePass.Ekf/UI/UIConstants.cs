@@ -8,7 +8,7 @@ namespace EpiSource.KeePass.Ekf.UI {
         public const int DefaultButtonWidth = 75;
         public static readonly Size DefaultButtonSize = new Size(DefaultButtonWidth, DefaultButtonHeight);
 
-        public const int MaxAutoWidth = 800;
+        public const int MaxAutoWidth = 1200;
         
         // https://stackoverflow.com/a/29766847
         public const AutoScaleMode AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
