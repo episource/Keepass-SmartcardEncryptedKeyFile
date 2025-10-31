@@ -157,9 +157,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
                 foreach (var recipientCert in matchingCerts.Where(recipientCert => recipientCert.HasPrivateKey)) {
                     try {
-                        var cspParams = NativeCapi.GetParameters(recipientCert);
-                        var cspInfo = new CspKeyContainerInfo(cspParams);
-                        if (cspInfo.KeyNumber != KeyNumber.Exchange || !cspInfo.Accessible) {
+                        var keyInfo = NativeCapi.QueryCertificatePrivateKey(recipientCert);
+                        if (!keyInfo.CanDecrypt || !NativeCapi.IsCertificatePrivateKeyAccessible(recipientCert)) {
                             continue;
                         }
 
