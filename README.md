@@ -81,29 +81,31 @@ Note: If the current database already uses a plaintext key file in addition to t
 # YubiKey 5 PIV setup
 
 ## Activate PIV interface of YubiKey 5 series tokens
-**Prerequisites:** single YubiKey connected to your computer; [YubiKey Manager (graphical interface)][4]; no need to install YubiKey Smart Card Minidriver
-1. Start YubiKey Manager application
-2. Go to tab `Interfaces`
+**Prerequisites:** single YubiKey connected to your computer; [Yubico Authenticator (graphical interface)][4]; no need to install YubiKey Smart Card Minidriver (only required for ECC certificates, but these are not yet supported by this plugin)
+1. Start YubiKey Authenticator application
+2. Select `Toggle Applications` in right sidebar
 3. Tick `PIV` for either USB, NFC or both interfaces
-4. Click `Save Interfaces`
+4. Click `Save`
 
 ## Basic setup using graphical tools
-**Prerequisites:** single YubiKey connected to your computer; PIV interface has been activated ([see above](#activate-piv-interface-of-yubikey-5-series-tokens)); [YubiKey Manager (graphical interface)][4]; no need to install YubiKey Smart Card Minidriver
+**Prerequisites:** single YubiKey connected to your computer; PIV interface has been activated ([see above](#activate-piv-interface-of-yubikey-5-series-tokens)); [Yubico Authenticator (graphical interface)][4]; no need to install YubiKey Smart Card Minidriver (only required for ECC certificates, but these are not yet supported by this plugin)
 
 Basic setup is possible using graphical tools only. Yubico default configuration to unlock the token is used (e.g. PIN for slot 9a; multiple operations only require single pin input).
 
-1. Start YubiKey Manager application
-2. Click tab `Applications` and select `PIV`
-3. Click `PIN Management` and follow wizzard to change well-known default PIN, PUK and Management Key; further [information about pin and management key][5] are available from yubico
-4. Leave `PIN Management` wizzard by clicking `Back`
-5. Click `Certificates`to open PIV certificate wizzard
-6. Select tab `Authentication` (smartcard slot 9a for authentication certificates); futher [information about PIV slots and their default configuration][6] is available from yubico
-7. Generate self signed certificate or import certificate; **Important: currently this plugin only supports RSA encryption! Therefore choose RSA!**
+1. Start Yubico Authenticator application
+2. Select `Certificates` in left sidebar
+3. Recommended: Within right sidebar change well-known default PIN (`Change PIN`), PUK (`Change PUK`) and Management Key (`Management Key`); further [information about pin and management key][5], including defaults, is available from yubico
+4. Select certificate `9a - Authentication`
+5. Within right sidebar, click `Generate Key` to open PIV certificate wizzard
+6. Generate self signed certificate or import certificate;
+   - The certificate's distinguished name (subject) is used to identify the yubikey within keepass. Select a name, that helps you to identifý the specific YubiKey. Consider including the YubiKey's serial number (optional).
+   - Take care of the expiry date!
+   - **Important: currently this plugin only supports RSA encryption! Therefore, choose RSA!**
 
 ## Advanced setup using command line tools
-**Prerequisites:** single YubiKey connected to your computer; [YubiKey PIV Tool (command line)][4]; no need to install YubiKey Smart Card Minidriver
+**Prerequisites:** single YubiKey connected to your computer; command line [YubiKey PIV Tool][8] ([download][9]); no need to install YubiKey Smart Card Minidriver (only required for ECC certificates, but these are not yet supported by this plugin)
 
-Advanced setup requires using command line tools provided by yubico. Compared with basic setup, advanced configuration permits more variants for unlocking the YubiKey (pin-policy, touch-policy). E.g. the token can be configured for unlocking with PIN+button press, only button, and more. ~~Yubico provides [an outdated pdf guide][7] to the YubiKey PIV Tool, that gives a good overview over available configuration options.~~ Most recent information is available from [source code of the piv tool][8].
+Advanced setup requires using command line tools provided by yubico. Compared with basic setup, advanced configuration permits more variants for unlocking the YubiKey (pin-policy, touch-policy). E.g. the token can be configured for unlocking with PIN+button press, only button, and more. Yubico provides [a pdf guide][7] to the YubiKey PIV Tool, that gives a good overview over available configuration options.
 
 Below are example commands to replace the certificate in slot 9a with a newly created self-signed certificate and custom unlock configuration (pin-policy, touch-policy). Note however, that pin-policy is currently not honored by windows builtin drivers and yubikey's minidriver. Pin will always be asked when performing the first private key operation. Touch-operations are fully supported, though.
 
@@ -122,7 +124,7 @@ Below are example commands to replace the certificate in slot 9a with a newly cr
 4. Disconnect and reconnect YubiKey
   
 # Build
-This project is best built using JetBrains Rider, but plain msbuild or Visual Studio should work as well. For debug builds, only the plugin dll is built. When using release configuration, a [plgx plugin file][9] with improved compatibility is built as well. Pre-built `plgx` builds are available as github releases.
+This project is best built using JetBrains Rider, but plain msbuild or Visual Studio should work as well. For debug builds, only the plugin dll is built. When using release configuration, a [plgx plugin file][10] with improved compatibility is built as well. Pre-built `plgx` builds are available as github releases.
 
 ## Build plgx without devtools
 Building the plgx plugin file is possible using powershell only. No development tools needed:
@@ -151,17 +153,18 @@ Add below snippet to `KeePass.config.xml` to revert to windows builtin smartcard
 ```
 
 # Known Issues & Limitations
-1. ~~Currently only RSA smartcards are supported.~~ Other PKCS & windows compatible smartcards should work now as well (starting with v1.1) - untested, though!
+1. Currently only RSA smartcards are supported.
 2. Non-Local databases have not been tested, but might work as well.
 3. KeePass builtin synchronization won't synchronize changes related to the encrypted key file (e.g. access granted to additional smartcard).
 
 
-[1]: https://csrc.nist.gov/publications/detail/sp/800-73/4/final
+[1]: https://csrc.nist.gov/pubs/sp/800/73/pt1/5/final
 [2]: https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.pkcs.envelopedcms.encrypt?view=netframework-4.8
 [3]: https://tools.ietf.org/html/rfc5652
-[4]: https://www.yubico.com/products/services-software/download/smart-card-drivers-tools/
-[5]: https://developers.yubico.com/yubikey-piv-manager/PIN_and_Management_Key.html
+[4]: https://www.yubico.com/products/yubico-authenticator/
+[5]: https://docs.yubico.com/yesdk/users-manual/application-piv/pin-puk-mgmt-key.html
 [6]: https://developers.yubico.com/PIV/Introduction/Certificate_slots.html
-[7]: https://www.yubico.com/wp-content/uploads/2016/05/Yubico_PIV_Tool_Command_Line_Guide_en.pdf
+[7]: https://docs.yubico.com/software/yubikey/tools/pivtool/webdocs.pdf
 [8]: https://github.com/Yubico/yubico-piv-tool
-[9]: https://keepass.info/help/v2_dev/plg_index.html#plgx
+[9]: https://www.yubico.com/support/download/smart-card-drivers-tools/
+[10]: https://keepass.info/help/v2_dev/plg_index.html#plgx
