@@ -51,6 +51,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Crypto\Asn1Util.cs" />
     <Compile Include="Crypto\DecryptedKeyFile.cs" />
     <Compile Include="Crypto\EncryptedKeyFile.cs" />
     <Compile Include="Crypto\Exceptions\CryptoExceptionFactory.cs" />
