@@ -64,6 +64,8 @@
     <Compile Include="Crypto\KeyEncryptionRequest.cs" />
     <Compile Include="Crypto\IKeyPair.cs" />
     <Compile Include="Crypto\KeyInfo.cs" />
+    <Compile Include="Crypto\AlgorithmClass.cs" />
+    <Compile Include="Crypto\KnownOids.cs" />
     <Compile Include="Crypto\LimitedAccessKeyFile.cs" />
     <Compile Include="Crypto\RandomKeyGenerator.cs" />
     <Compile Include="Crypto\RSASmartcardKeyPairs.cs" />
@@ -76,10 +78,19 @@
     <Compile Include="Crypto\Windows\NativeCapi.cert.pinvoke.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.crypt.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.crypt.pinvoke.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
     <Compile Include="Crypto\Windows\NativeCapi.cryptmsg.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
     <Compile Include="Crypto\Windows\NativeCapi.cryptmsg.pinvoke.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.cryptmsg.types.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
     <Compile Include="Crypto\Windows\NativeCapi.cs" />
@@ -99,6 +110,7 @@
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
     <Compile Include="Crypto\Windows\WindowsKeyPair.cs" />
+    <Compile Include="Crypto\X509CertificateExtensions.cs" />
     <Compile Include="Keys\LiveKeyDataStore.cs" />
     <Compile Include="Keys\IKeyDataStore.cs" />
     <Compile Include="Keys\ImportedKeyDataStore.cs" />
@@ -133,6 +145,7 @@
     </Compile>
     <Compile Include="UI\Windows\NativeForms.cs" />
     <Compile Include="Unblocker\EpiSource.Unblocker\**\*.cs" Exclude="Unblocker\EpiSource.Unblocker\Properties\*" />
+    <Compile Include="Util\EnumerableExtensions.cs" />
     <Compile Include="Util\HGlobalHandle.cs" />
     <Compile Include="Util\MarshaledStructureHandleCollection.cs" />
     <Compile Include="Util\PinvokeUtil.cs" />

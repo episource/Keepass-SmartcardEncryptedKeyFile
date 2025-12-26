@@ -35,8 +35,13 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             public uint dwMaxLength;
             public uint dwIncrement;
         }
+
+        private abstract class BCryptHandle : SafeHandleMinusOneIsInvalid {
+            
+            public BCryptHandle(bool owner) : base(owner) { }
+        }
         
-        private sealed class BCryptAlgorithmHandle : SafeHandleZeroOrMinusOneIsInvalid {
+        private sealed class BCryptAlgorithmHandle : BCryptHandle {
             public BCryptAlgorithmHandle() : base(true) { }
 
             protected override bool ReleaseHandle() {
@@ -44,7 +49,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
         
-        private sealed class BCryptKeyHandle : SafeHandleZeroOrMinusOneIsInvalid {
+        private sealed class BCryptKeyHandle : BCryptHandle {
             public BCryptKeyHandle() : base(true) { }
 
             protected override bool ReleaseHandle() {
@@ -57,16 +62,20 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             [DllImport("bcrypt.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
             public static extern NTStatusUtil.NTStatus BCryptCloseAlgorithmProvider(IntPtr hAlgorithm, int dwFlagsMustBeZero = 0);
             
-            [DllImport("bcrypt.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
-            public static extern NTStatusUtil.NTStatus BCryptDecrypt(BCryptKeyHandle hKey, HGlobalHandle pbInput, int cbInput, ref BcryptAuthenticatedCipherModeInfo pPaddingInfo,
+            [DllImport("bcrypt.dll", EntryPoint = "BCryptDecrypt", CharSet = CharSet.Unicode, ExactSpelling = true)]
+            public static extern NTStatusUtil.NTStatus BCryptDecryptAuthenticatedCipher(BCryptKeyHandle hKey, HGlobalHandle pbInput, int cbInput, ref BcryptAuthenticatedCipherModeInfo pPaddingInfo,
                 HGlobalHandle pbIV, int cbIV, HGlobalHandle pbOutput, int cbOutput, out int pcbResult, int dwFlagsZeroForAesGcm=0);
             
             /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptdestroykey
             [DllImport("bcrypt.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
             public static extern NTStatusUtil.NTStatus BCryptDestroyKey(IntPtr hKey);
             
-            [DllImport("bcrypt.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
-            public static extern NTStatusUtil.NTStatus BCryptEncrypt(BCryptKeyHandle hKey, HGlobalHandle pbInput, int cbInput, ref BcryptAuthenticatedCipherModeInfo pPaddingInfo,
+            [DllImport("bcrypt.dll", EntryPoint = "BCryptEncrypt", CharSet = CharSet.Unicode, ExactSpelling = true)]
+            public static extern NTStatusUtil.NTStatus BCryptEncrypt(BCryptKeyHandle hKey, HGlobalHandle pbInput, int cbInput, IntPtr pPaddingInfo,
+                HGlobalHandle pbIV, int cbIV, HGlobalHandle pbOutput, int cbOutput, out int pcbResult, int dwFlags=0);
+            
+            [DllImport("bcrypt.dll", EntryPoint = "BCryptEncrypt", CharSet = CharSet.Unicode, ExactSpelling = true)]
+            public static extern NTStatusUtil.NTStatus BCryptEncryptAuthenticatedCipher(BCryptKeyHandle hKey, HGlobalHandle pbInput, int cbInput, ref BcryptAuthenticatedCipherModeInfo pPaddingInfo,
                 HGlobalHandle pbIV, int cbIV, HGlobalHandle pbOutput, int cbOutput, out int pcbResult, int dwFlagsZeroForAesGcm=0);
             
             /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptgeneratesymmetrickey
@@ -74,8 +83,13 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             public static extern NTStatusUtil.NTStatus BCryptGenerateSymmetricKey(BCryptAlgorithmHandle hAlgorithm, out BCryptKeyHandle phKey, IntPtr pbKeyObject, int cbKeyObject, PortableProtectedBinaryHandle pbSecret, int cbSecret, uint dwFlagsMustBeZero = 0);
             
             /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptgetproperty
-            [DllImport("bcrypt.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
-            public static extern NTStatusUtil.NTStatus BCryptGetProperty(BCryptAlgorithmHandle hObject, [In] string pszProperty, out BcryptKeyLengthsStruct pbOutput, int cbOutput, out int pcbResult, int dwFlagsMustBeZero = 0);
+            [DllImport("bcrypt.dll", EntryPoint = "BCryptGetProperty", CharSet = CharSet.Unicode, ExactSpelling = true)]
+            public static extern NTStatusUtil.NTStatus BCryptGetPropertyKeyLengthStruct(BCryptHandle hObject, [In] string pszProperty, out BcryptKeyLengthsStruct pbOutput, int cbOutput, out int pcbResult, int dwFlagsMustBeZero = 0);
+            
+            /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptgetproperty
+            [DllImport("bcrypt.dll", EntryPoint = "BCryptGetProperty", CharSet = CharSet.Unicode, ExactSpelling = true)]
+            public static extern NTStatusUtil.NTStatus BCryptGetPropertyInt32(BCryptHandle hObject, [In] string pszProperty, out int pbOutput, int cbOutput, out int pcbResult, int dwFlagsMustBeZero = 0);
+
             
             /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptopenalgorithmprovider
             [DllImport("bcrypt.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]

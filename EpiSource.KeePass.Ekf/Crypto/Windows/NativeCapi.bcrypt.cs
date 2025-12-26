@@ -41,7 +41,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
                 BcryptKeyLengthsStruct tagSizeInfo;
                 int ignored;
-                NativeBCryptPinvoke.BCryptGetProperty(
+                NativeBCryptPinvoke.BCryptGetPropertyKeyLengthStruct(
                     cryptoAlgorithm, "AuthTagLength", out tagSizeInfo,
                     Marshal.SizeOf<BcryptKeyLengthsStruct>(), out ignored).EnsureSuccess();
 
@@ -83,8 +83,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
                     try {
                         (decrypt
-                                ? NativeBCryptPinvoke.BCryptDecrypt(keyHandle, inputHandle, inputHandle.Size, ref cryptoData, nonceHandle, nonceHandle.Size, outputHandle, outputHandle.Size, out ignored)
-                                : NativeBCryptPinvoke.BCryptEncrypt(keyHandle, inputHandle, inputHandle.Size, ref cryptoData, nonceHandle, nonceHandle.Size, outputHandle, outputHandle.Size, out ignored)
+                                ? NativeBCryptPinvoke.BCryptDecryptAuthenticatedCipher(keyHandle, inputHandle, inputHandle.Size, ref cryptoData, nonceHandle, nonceHandle.Size, outputHandle, outputHandle.Size, out ignored)
+                                : NativeBCryptPinvoke.BCryptEncryptAuthenticatedCipher(keyHandle, inputHandle, inputHandle.Size, ref cryptoData, nonceHandle, nonceHandle.Size, outputHandle, outputHandle.Size, out ignored)
                             ).EnsureSuccess();
                         output = outputHandle.ReadProtected();
 
