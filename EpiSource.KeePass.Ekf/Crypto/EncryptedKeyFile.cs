@@ -38,25 +38,8 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                 throw new ArgumentNullException("plaintext");
             }
 
-            var content = new ContentInfo(oidContentData, plaintext.PlaintextKey.ReadUnprotected());
-            try {
-                var store = new EnvelopedCms(content, algorithmAes256Cbc);
-                var recipients = new CmsRecipientCollection();
-
-                foreach (var keyPair in plaintext.Authorization) {
-                    // embed  list of authorized certificates as originator info
-                    // doing so permits re-encryption without having all certificates installed locally
-                    store.Certificates.Add(keyPair.Certificate);
-
-                    // recipient list controls which certificates can decrypt the ekf
-                    recipients.Add(new CmsRecipient(keyPair.Certificate));
-                }
-
-                store.Encrypt(recipients);
-                this.encryptedKeyStore = store.Encode();
-            } finally {
-                Array.Clear(content.Content, 0, content.Content.Length);
-            }
+            this.encryptedKeyStore = NativeCapi.EncryptEnvelopedCms(
+                plaintext.PlaintextKey, plaintext.Authorization.Select(kp => kp.Certificate));
         }
 
         private EncryptedKeyFile(IEnumerable<IKeyPair> authorization, byte[] encryptedKeyStore) 

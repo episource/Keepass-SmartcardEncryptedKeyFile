@@ -3,17 +3,19 @@ namespace EpiSource.KeePass.Ekf.Crypto {
 
         private readonly bool canDecrypt;
         private readonly bool canExport;
+        private readonly bool canKeyAgree;
         private readonly bool canSign;
         private readonly bool isHardware;
         private readonly bool isRemovable;
 
-        public KeyInfo() : this(false, false, false, false, false) {
+        public KeyInfo() : this(false, false, false, false, false, false) {
             
         }
 
-        public KeyInfo(bool canDecrypt, bool canExport, bool canSign, bool isHardware, bool isRemovable) {
+        public KeyInfo(bool canDecrypt, bool canExport, bool canKeyAgree, bool canSign, bool isHardware, bool isRemovable) {
             this.canDecrypt = canDecrypt;
             this.canExport = canExport;
+            this.canKeyAgree = canKeyAgree;
             this.canSign = canSign;
             this.isHardware = isHardware;
             this.isRemovable = isRemovable;
@@ -28,6 +30,12 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         public bool CanExport {
             get {
                 return this.canExport;
+            }
+        }
+
+        public bool CanKeyAgree {
+            get {
+                return this.canKeyAgree;
             }
         }
 

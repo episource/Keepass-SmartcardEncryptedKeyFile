@@ -47,7 +47,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
 
         private static IList<IKeyPair> ListEncryptionCardsAsList(IEnumerable<IKeyPair> unfilteredKeyPairs) {
             return unfilteredKeyPairs
-                   .Where(c => c != null && c.IsSmartcard.GetValueOrDefault(false) && c.CanEncrypt && c.CanDecrypt)
+                   .Where(c => c != null && c.IsSmartcard.GetValueOrDefault(false) && ( (c.CanEncrypt && c.CanDecrypt) || c.CanKeyAgree))
                    .ToList().AsReadOnly();
         }
     }

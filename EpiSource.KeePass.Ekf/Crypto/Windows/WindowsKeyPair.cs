@@ -137,6 +137,12 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
 
+        public bool CanKeyAgree {
+            get {
+                return this.PrivateKeyInfo != null && this.PrivateKeyInfo.CanKeyAgree;
+            }
+        }
+
         public bool CanSign {
             get {
                 return this.PrivateKeyInfo != null && this.PrivateKeyInfo.CanSign;

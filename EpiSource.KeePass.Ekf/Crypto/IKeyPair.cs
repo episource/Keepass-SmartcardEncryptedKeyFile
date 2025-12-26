@@ -96,6 +96,11 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <code>true</code> if encryption is eventually possible with this key pair, otherwise <code>false</code>
         /// </returns>
         bool CanEncrypt { get; }
+
+        /// <summary>
+        /// Retrieves whether this key can be used or key agreement.
+        /// </summary>
+        bool CanKeyAgree { get; }
         
         /// <summary>
         /// Retrieves whether in principle the sign operation is supported by this key pair.
