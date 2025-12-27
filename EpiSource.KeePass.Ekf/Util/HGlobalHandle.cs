@@ -17,9 +17,13 @@ namespace EpiSource.KeePass.Ekf.Util {
             this.size = size;
             this.SetHandle(Marshal.AllocHGlobal(size));
         }
+        
+        public HGlobalHandle(IEnumerable<byte> data) 
+            : this((data as byte[]) ?? data.ToArray()) {
+        }
 
-        public HGlobalHandle(IList<byte> data) : this(data.Count) {
-            Marshal.Copy((data as byte[]) ?? data.ToArray(), 0, this.handle, data.Count);
+        public HGlobalHandle(byte[] data) : this(data.Length) {
+            Marshal.Copy(data, 0, this.handle, data.Length);
         }
             
         public int Size { get { return this.size;  } }
