@@ -49,7 +49,7 @@ namespace EpiSource.KeePass.Ekf.Util {
             }
             
             var numBlocks = count / BlockSize;
-            if (numBlocks * BlockSize < count) numBlocks++;
+            if (numBlocks * BlockSize < count || numBlocks == 0) numBlocks++;
             
             var protectedData = new byte[numBlocks * BlockSize];
             for (int i = 0; i < count; i++) {
