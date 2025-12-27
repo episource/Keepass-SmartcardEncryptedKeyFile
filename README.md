@@ -1,12 +1,13 @@
 # Smartcard Encrypted Key File Provider Plugin for KeePass
-This plugin adds support for using (multiple) smartcards as second factor to unlock KeePass databases. This is implemented in a manner, that is fully compatibly with built-in key files: An existing or newly created key file is encrypted using public keys of one or many rsa smartcards. The encrypted key file is saved next to the database file, while the user is given the possibility to save the corresponding plaintext key file in a safe location. When unlocking a database using the  `Smartcard Encrypted Key File Provider`, the user is asked to insert/connect and unlock an authorized smartcard. As alternative, the user can also unlock the database using the plaintext key file without need for the corresponding plugin to be installed. Hence, access to the database is granted reliably, even if this plugin should not available.
+This plugin adds support for using (multiple) smartcards as second factor to unlock KeePass databases. This is implemented in a manner, that is fully compatible with built-in key files: An existing or newly created key file is encrypted using public keys of one or many smartcards. The encrypted key file is saved next to the database file, while the user is given the possibility to save the corresponding plaintext key file in a safe location. When unlocking a database using the  `Smartcard Encrypted Key File Provider`, the user is asked to insert/connect and unlock an authorized smartcard. As alternative, the user can also unlock the database using the plaintext key file without need for the corresponding plugin to be installed. Hence, access to the database is granted reliably, even if this plugin should not available.
 
 ## Supported smartcards
 In theory, this plugin supports any [PIV (Personal Identity Verification) compatible smartcard][1]. YubiKey 5 series has been tested successfully. Other smartcards have not been tested yet.
 
 ## Is this safe?
-This plugin uses the [EnvelopedCms][2] .net framework class for encrypting the plaintext KeePass key file content. [EnvelopedCms][2] is the framework provided implementation of [RFC 5652 Cryptographic Message Syntax (CMS)][3]: It permits encryption of arbitrary content to be decrypted by any authorized recipient. A random content encryption key is used to protect the enveloped data (here: KeePass plaintext key). The single content encryption key is again encrypted using the public keys belonging to the list of authorized smartcards (recipients). Thus any authorized smartcard can decrypt the content encryption key and in turn permits decryption of the plaintext KeePass key. This plugin selects AES-256-CBC as content encryption algorithm to be used by [EnvelopedCms][2]. The intermediate encryption of the payload using a random content encryption is generally needed to support arbitrary length content. It's not strictly needed for the purpose of this plugin, but assuming [EnvelopedCms][2] was properly implemented by Microsoft, it should be of no harm. Most smartcards implement weaker asymmetric encryption (used to encrypt the content encryption key) compared with the intermediate encryption using AES-256-CBC. Thus the weakest point of the chain will usually be on the smartcard side and not the intermediate symmetric encryption.
+This plugin uses the native Win32 API* behind [EnvelopedCms][2] .Net framework class for encrypting the plaintext KeePass key file content. [EnvelopedCms][2] and its native counterparts are implementations of [RFC 5652 Cryptographic Message Syntax (CMS)][3]: It permits encryption of arbitrary content to be decrypted by any authorized recipient. A random content encryption key is used to protect the enveloped data (here: KeePass plaintext key). The single content encryption key is again encrypted using the public keys belonging to the list of authorized smartcards (recipients). Thus any authorized smartcard can decrypt the content encryption key and in turn permits decryption of the plaintext KeePass key. This plugin selects AES-256-CBC as content encryption algorithm. The intermediate encryption of the payload using a random content encryption is generally needed to support arbitrary length content. It's not strictly needed for the purpose of this plugin, but assuming [EnvelopedCms][2] and its native counterparts were properly implemented by Microsoft, it should be of no harm. Most smartcards implement weaker asymmetric encryption (used to encrypt the content encryption key) compared with the intermediate encryption using AES-256-CBC. Thus the weakest point of the chain will usually be on the smartcard side and not the intermediate symmetric encryption.
 
+*) The [EnvelopedCms][2] class of .Net Framework does not support advanced features like silent operation and ECC Key Agree encryption scheme. Therefore, starting with v0.3.0 of this plugin, native Win32 API is used for decoding enveloped data. Starting with v1.2 of this plugin, also encoding is done using Win32 API, in order to support ECC Key Agree scheme.
 # Usage
 ## Installation
 Just copy the pre-built `plgx` file into the KeePass plugin folder. Downloads available as github release.
@@ -81,14 +82,14 @@ Note: If the current database already uses a plaintext key file in addition to t
 # YubiKey 5 PIV setup
 
 ## Activate PIV interface of YubiKey 5 series tokens
-**Prerequisites:** single YubiKey connected to your computer; [Yubico Authenticator (graphical interface)][4]; no need to install YubiKey Smart Card Minidriver (only required for ECC certificates, but these are not yet supported by this plugin)
+**Prerequisites:** single YubiKey connected to your computer; [Yubico Authenticator (graphical interface)][4]; no need to install YubiKey Smart Card Minidriver (only required for ECC certificates)
 1. Start YubiKey Authenticator application
 2. Select `Toggle Applications` in right sidebar
 3. Tick `PIV` for either USB, NFC or both interfaces
 4. Click `Save`
 
 ## Basic setup using graphical tools
-**Prerequisites:** single YubiKey connected to your computer; PIV interface has been activated ([see above](#activate-piv-interface-of-yubikey-5-series-tokens)); [Yubico Authenticator (graphical interface)][4]; no need to install YubiKey Smart Card Minidriver (only required for ECC certificates, but these are not yet supported by this plugin)
+**Prerequisites:** single YubiKey connected to your computer; PIV interface has been activated ([see above](#activate-piv-interface-of-yubikey-5-series-tokens)); [Yubico Authenticator (graphical interface)][4]; no need to install [YubiKey Smart Card Minidriver][9] (only required for ECC certificates, but these are not yet supported by this plugin)
 
 Basic setup is possible using graphical tools only. Yubico default configuration to unlock the token is used (e.g. PIN for slot 9a; multiple operations only require single pin input).
 
@@ -100,7 +101,7 @@ Basic setup is possible using graphical tools only. Yubico default configuration
 6. Generate self signed certificate or import certificate;
    - The certificate's distinguished name (subject) is used to identify the yubikey within keepass. Select a name, that helps you to identifý the specific YubiKey. Consider including the YubiKey's serial number (optional).
    - Take care of the expiry date!
-   - **Important: currently this plugin only supports RSA encryption! Therefore, choose RSA!**
+   - **Important: when using ECC algorithms, the [Yubikey Smartcard Mini driver][9] is required. RSA works with windows builtin drivers, too!**
 
 ## Advanced setup using command line tools
 **Prerequisites:** single YubiKey connected to your computer; command line [YubiKey PIV Tool][8] ([download][9]); no need to install YubiKey Smart Card Minidriver (only required for ECC certificates, but these are not yet supported by this plugin)
@@ -153,9 +154,8 @@ Add below snippet to `KeePass.config.xml` to revert to windows builtin smartcard
 ```
 
 # Known Issues & Limitations
-1. Currently only RSA smartcards are supported.
-2. Non-Local databases have not been tested, but might work as well.
-3. KeePass builtin synchronization won't synchronize changes related to the encrypted key file (e.g. access granted to additional smartcard).
+1. Non-Local databases have not been tested, but might work as well.
+2. KeePass builtin synchronization won't synchronize changes related to the encrypted key file (e.g. access granted to additional smartcard).
 
 
 [1]: https://csrc.nist.gov/pubs/sp/800/73/pt1/5/final
