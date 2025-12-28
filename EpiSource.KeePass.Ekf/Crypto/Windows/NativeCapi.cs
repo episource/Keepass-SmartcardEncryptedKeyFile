@@ -152,9 +152,9 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 throw new CryptographicException(errorMsg);
             }
             if (exceptions.Count == 1) {
-                throw new CryptographicException(errorMsg, exceptions[0]);
+                throw exceptions[0];
             }
-            throw new CryptographicException(errorMsg, new AggregateException("Decryption failed.", exceptions));
+            throw new AggregateException(errorMsg, exceptions);
         }
 
         public static PortableProtectedBinary DecryptEnvelopedCms(byte[] encodedEnvelopedCms, IKeyPair recipient, bool alwaysSilent=false, string contextDescription=null, IntPtr uiOwner=new IntPtr(), PortableProtectedString pin=null) {
@@ -181,6 +181,13 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             foreach (var recipient in recipients) {
                 try {
                     return DecryptEnvelopedCmsImpl(cryptMsgHandle, recipient, alwaysSilent, contextDescription, uiOwner, pin);
+                } catch (CryptographicException ex) {
+                    if (IsInputRequiredException(ex) || IsPinBlockedException(ex) || IsWrongPinException(ex)) {
+                        throw;
+                    }
+                    
+                    exceptions.Add(ex);
+                    // continue trying next one
                 } catch (Exception ex) {
                     exceptions.Add(ex);
                     // continue trying next one
@@ -191,11 +198,10 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 throw new CryptographicException("Recipient not authorized or invalid.");
             }
             
-            const string errorMsg = "Decryption failed using given recipient certificate.";
             if (exceptions.Count == 1) {
-                throw new CryptographicException(errorMsg, exceptions[0]);
+                throw exceptions[0];
             }
-            throw new CryptographicException(errorMsg, new AggregateException("Decryption failed.", exceptions));
+            throw new AggregateException("Decryption failed using given recipient certificate.", exceptions);
         }
 
         public static byte[] EncryptEnvelopedCms(PortableProtectedBinary plaintextContent, CmsRecipientCollection recipients, string contentEncryptionOid = KnownOids.AlgAesCbc256, string contentTypeOid = KnownOids.GenericCmsData, CryptographicAttributeObjectCollection unprotectedAttributes = null) {
