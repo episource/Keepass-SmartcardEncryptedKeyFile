@@ -35,6 +35,9 @@
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <ItemGroup>
+    <RunDependency Include="..\ThirdParty\KeePass\KeePass.config.enforced.xml" /> 
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="KeePass">
       <HintPath>..\ThirdParty\KeePass\KeePass.exe</HintPath>
     </Reference>
@@ -192,8 +195,10 @@
          Other similar extension points exist, see Microsoft.Common.targets.
     <Target Name="BeforeBuild">
     </Target>-->
-  <Target Name="AfterBuild" Condition="$(DefineConstants.Contains(PLGX))">
+  <Target Name="AfterBuild" >
+    <Copy SourceFiles="@(RunDependency)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="false" ContinueOnError="false"/>
+    
     <!-- Keepass fails if there's more than one csproj in the project directory. -->
-    <Exec Command="powershell.exe -executionpolicy bypass -File &quot;$(ProjectDir)/build-plgx-project.ps1&quot; -csproj &quot;$(ProjectPath)&quot; -outdir &quot;$(OutDir)\Plugins&quot; -objdir &quot;obj\$(Configuration)&quot; -plgxArgs &quot;--plgx-prereq-kp:2.57,--plgx-prereq-net:4.8,--plgx-prereq-os:Windows&quot;" ConsoleToMSBuild="true" LogStandardErrorAsError="true" ContinueOnError="true" />
+    <Exec Condition="$(DefineConstants.Contains(PLGX))" Command="powershell.exe -executionpolicy bypass -File &quot;$(ProjectDir)/build-plgx-project.ps1&quot; -csproj &quot;$(ProjectPath)&quot; -outdir &quot;$(OutDir)\Plugins&quot; -objdir &quot;obj\$(Configuration)&quot; -plgxArgs &quot;--plgx-prereq-kp:2.57,--plgx-prereq-net:4.8,--plgx-prereq-os:Windows&quot;" ConsoleToMSBuild="true" LogStandardErrorAsError="true" ContinueOnError="true" />
   </Target>
 </Project>
