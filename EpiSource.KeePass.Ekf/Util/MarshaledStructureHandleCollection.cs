@@ -16,6 +16,11 @@ namespace EpiSource.KeePass.Ekf.Util {
 
 
         public void Dispose() {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected void Dispose(bool disposing) {
             if (this.marshaledStructures == null) {
                 return;
             }
@@ -24,7 +29,12 @@ namespace EpiSource.KeePass.Ekf.Util {
                 Marshal.DestroyStructure(item.Value, item.Key);
             }
 
+            this.marshaledStructures.Clear();
             this.marshaledStructures = null;
+        }
+        
+        ~MarshaledStructureHandleCollection() {
+            this.Dispose(false);
         }
     }
 }

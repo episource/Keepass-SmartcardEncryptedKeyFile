@@ -46,7 +46,11 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
             
             protected override bool ReleaseHandle() {
-                return NativeNCryptPinvoke.NCryptFreeObject(this.handle) == 0x0;
+                if (NativeNCryptPinvoke.NCryptFreeObject(this.handle) == 0x0) {
+                    this.SetHandleAsInvalid();
+                    return true;
+                }
+                return false;
             }
         }
         

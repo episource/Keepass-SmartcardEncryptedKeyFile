@@ -54,6 +54,7 @@ namespace EpiSource.KeePass.Ekf.Util {
 
         protected override bool ReleaseHandle() {
             Marshal.FreeHGlobal(this.handle);
+            this.SetHandleAsInvalid();
             return true;
         }
     }

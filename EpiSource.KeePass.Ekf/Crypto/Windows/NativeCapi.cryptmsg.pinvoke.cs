@@ -92,7 +92,11 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             public CryptMsgHandle() : base(true) { }
 
             protected override bool ReleaseHandle() {
-                return NativeCryptMsgPinvoke.CryptMsgClose(this.handle);
+                if (NativeCryptMsgPinvoke.CryptMsgClose(this.handle)) {
+                    this.SetHandleAsInvalid();
+                    return true;
+                }
+                return false;
             }
         }
         

@@ -122,6 +122,11 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                     return this.count;
                 }
             }
+
+            protected override bool ReleaseHandle() {
+                this.itemHandles.Dispose();
+                return base.ReleaseHandle();
+            }
         }
         
         /// https://github.com/mingw-w64/mingw-w64/blob/master/mingw-w64-headers/include/wincrypt.h
@@ -261,6 +266,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             protected override bool ReleaseHandle() {
                 Marshal.DestroyStructure<CryptPublicKeyInfo>(this.handle);
                 Marshal.FreeHGlobal(this.handle);
+                this.SetHandleAsInvalid();
                 
                 return true;
             }

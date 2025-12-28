@@ -53,7 +53,11 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             public BCryptKeyHandle() : base(true) { }
 
             protected override bool ReleaseHandle() {
-                return NativeBCryptPinvoke.BCryptDestroyKey(this.handle).EnsureSuccess();
+                if (NativeBCryptPinvoke.BCryptDestroyKey(this.handle).EnsureSuccess()) {
+                    this.SetHandleAsInvalid();
+                    return true;
+                }
+                return false;
             }
         }
         

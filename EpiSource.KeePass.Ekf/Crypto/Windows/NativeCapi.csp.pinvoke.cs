@@ -129,7 +129,11 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
 
             protected override bool ReleaseHandle() {
-                return NativeLegacyCapiPinvoke.CryptReleaseContext(this.handle);
+                if (NativeLegacyCapiPinvoke.CryptReleaseContext(this.handle)) {
+                    this.SetHandleAsInvalid();
+                    return true;
+                }
+                return false;
             }
         }
 

@@ -513,6 +513,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 Marshal.DestroyStructure<CmsgEnvelopedEncodeInfo>(this.handle);
                 Marshal.FreeHGlobal(this.handle);
                 
+                this.SetHandleAsInvalid();
                 return true;
             }
         }
