@@ -156,6 +156,7 @@ Add below snippet to `KeePass.config.xml` to revert to windows builtin smartcard
 # Known Issues & Limitations
 1. Non-Local databases have not been tested, but might work as well.
 2. KeePass builtin synchronization won't synchronize changes related to the encrypted key file (e.g. access granted to additional smartcard).
+3. Smart Card operations / unlocking an encrypted key file fails (with Exception dialog) if YubiKey Authenticator is running in parallel (note: only when using windows builtin smartcard driver, issue does not occur if YubiKey minidriver is installed)
 
 
 [1]: https://csrc.nist.gov/pubs/sp/800/73/pt1/5/final
