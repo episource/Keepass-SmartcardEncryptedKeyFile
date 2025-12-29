@@ -483,7 +483,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 var machineStoreCerts = machineStore.Certificates.Cast<X509Certificate2>();
 
                 return additionalCerts.Concat(userStoreCerts).Concat(machineStoreCerts)
-                                      .DistinctBy(c => c.Handle)
+                                      .DistinctBy(c => c.Thumbprint)
                                       .ToList().AsReadOnly();
             }
         }
