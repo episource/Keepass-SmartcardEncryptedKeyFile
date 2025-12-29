@@ -7,7 +7,7 @@ using EpiSource.KeePass.Ekf.Util;
 
 namespace EpiSource.KeePass.Ekf.Crypto {
     // ReSharper disable once InconsistentNaming
-    public static class RSASmartcardKeyPairs {       
+    public static class SmartcardKeyPairs {       
         /// <summary>
         /// Gets all encryption key pairs backed by smartcards implementing the PIV (personal identity verification)
         /// standard. Basic support for these smartcards is provided by windows without additional drivers.

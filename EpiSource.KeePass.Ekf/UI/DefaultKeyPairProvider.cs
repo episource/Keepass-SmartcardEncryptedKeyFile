@@ -84,7 +84,7 @@ namespace EpiSource.KeePass.Ekf.UI {
         /// </remarks>
         public bool Refresh() {
             return this.RefreshImpl(
-                RSASmartcardKeyPairs.GetAllPivKeyPairs() // NOTE: blocks if busy HW involved
+                SmartcardKeyPairs.GetAllPivKeyPairs() // NOTE: blocks if busy HW involved
                      .Select(k => new KeyPairWithProvider {KeyPair = k, Provider = KeyPairModel.KeyProvider.Piv}));
         }
 

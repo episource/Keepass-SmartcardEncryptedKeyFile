@@ -71,7 +71,7 @@
     <Compile Include="Crypto\KnownOids.cs" />
     <Compile Include="Crypto\LimitedAccessKeyFile.cs" />
     <Compile Include="Crypto\RandomKeyGenerator.cs" />
-    <Compile Include="Crypto\RSASmartcardKeyPairs.cs" />
+    <Compile Include="Crypto\SmartcardKeyPairs.cs" />
     <Compile Include="Crypto\Windows\NativeCapi.bcrypt.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
