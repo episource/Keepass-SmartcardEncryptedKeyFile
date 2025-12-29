@@ -8,6 +8,7 @@ using EpiSource.KeePass.Ekf.Crypto;
 
 using Episource.KeePass.EKF.Resources;
 
+using EpiSource.KeePass.Ekf.Util;
 using EpiSource.KeePass.Ekf.Util.Windows;
 
 using KeePass.UI;
@@ -344,8 +345,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 ListViewItem firstAvailItem = null;
                 var availItemCount = 0;
                 foreach (var kpm in this.keyPairProvider.GetAuthorizedKeyPairs()
-                                      .GroupBy(kp => kp.KeyPair.Certificate.Thumbprint)
-                                      .Select(g => g.First())) {
+                                      .DistinctBy(kp => kp.KeyPair.Certificate.Thumbprint)) {
 
                     var cert = kpm.KeyPair.Certificate;
                     var stateText = stateNotConnected;

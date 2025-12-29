@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 using EpiSource.KeePass.Ekf.Crypto.Windows;
+using EpiSource.KeePass.Ekf.Util;
 
 namespace EpiSource.KeePass.Ekf.Crypto {
     // ReSharper disable once InconsistentNaming
@@ -29,10 +30,8 @@ namespace EpiSource.KeePass.Ekf.Crypto {
 
                 var certs =
                     userStoreCerts.Union(machineStoreCerts)
-                                  .GroupBy(c => c.Thumbprint)
-                                  .Select(cGroup =>
-                                      (IKeyPair) WindowsKeyPair.FromX509CertificateOrNull(
-                                          cGroup.First()));
+                                  .DistinctBy(c => c.Thumbprint)
+                                  .Select(c => (IKeyPair) WindowsKeyPair.FromX509CertificateOrNull(c));
 
                 return ListEncryptionCardsAsList(certs);
             }
@@ -47,7 +46,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
 
         private static IList<IKeyPair> ListEncryptionCardsAsList(IEnumerable<IKeyPair> unfilteredKeyPairs) {
             return unfilteredKeyPairs
-                   .Where(c => c != null && c.IsSmartcard.GetValueOrDefault(false) && c.CanEncryptCms && c.CanDecryptCms)
+                   .Where(kp => kp != null && kp.IsSmartcard.GetValueOrDefault(false) && kp.CanEncryptCms && kp.CanDecryptCms)
                    .ToList().AsReadOnly();
         }
     }
