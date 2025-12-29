@@ -4,8 +4,6 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Security.Cryptography;
 
-using KeePassLib.Security;
-
 namespace EpiSource.KeePass.Ekf.Util {
     [Serializable]
     public sealed class PortableProtectedBinary : ISerializable {

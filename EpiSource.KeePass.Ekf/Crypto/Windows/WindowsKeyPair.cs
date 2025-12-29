@@ -4,8 +4,6 @@ using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-using EpiSource.KeePass.Ekf.Crypto.Windows;
-
 namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     /// <summary>
     /// Gives access to PKCS smart cards that are compatible with the windows CNG or CSP framework.

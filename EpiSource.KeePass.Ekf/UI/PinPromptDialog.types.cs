@@ -2,8 +2,6 @@ using System;
 
 using EpiSource.KeePass.Ekf.Util;
 
-using KeePassLib.Security;
-
 namespace EpiSource.KeePass.Ekf.UI {
     public sealed partial class PinPromptDialog {
         

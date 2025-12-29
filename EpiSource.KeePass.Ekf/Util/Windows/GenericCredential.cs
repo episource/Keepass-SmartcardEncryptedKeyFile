@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-
-using EpiSource.KeePass.Ekf.Util;
 
 namespace EpiSource.KeePass.Ekf.Util.Windows {
     public sealed class GenericCredential {

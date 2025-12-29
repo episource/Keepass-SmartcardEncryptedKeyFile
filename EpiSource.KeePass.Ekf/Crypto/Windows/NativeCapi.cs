@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography.Xml;
 using System.Text;
 
 using EpiSource.KeePass.Ekf.Crypto.Exceptions;
@@ -175,7 +173,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 throw new ArgumentNullException("recipientCert");
             }
             
-            var cryptMsgHandle = NativeCapi.DecodeEnvelopedCmsImpl(encodedEnvelopedCms);
+            var cryptMsgHandle = DecodeEnvelopedCmsImpl(encodedEnvelopedCms);
             var recipients = GetRecipientsDangerous(cryptMsgHandle, withoutCerts:true)
                              .Where(r => r.RecipientCertId.IsMatchingCert(recipientCert))
                              .Select(r => r.SetRecipientCert(recipientCert));
@@ -351,7 +349,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             //  - https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers
             //  - https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptgetprovparam
             
-            var cspParams = NativeCapi.GetParameters(cert);
+            var cspParams = GetParameters(cert);
             if (cspParams == null) {
                 return new KeyInfo();
             }

@@ -1,14 +1,7 @@
 using System;
-using System.Runtime.CompilerServices;
 
 using EpiSource.KeePass.Ekf.Crypto.Windows;
-using EpiSource.KeePass.Ekf.Util;
 using EpiSource.KeePass.Ekf.Util.Windows;
-
-using KeePass.Plugins;
-
-using KeePassLib.Cryptography;
-using KeePassLib.Utility;
 
 namespace EpiSource.KeePass.Ekf.Util {
     public sealed class ProtectedWinCred {

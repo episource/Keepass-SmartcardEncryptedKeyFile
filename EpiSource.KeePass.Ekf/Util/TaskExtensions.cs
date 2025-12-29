@@ -1,7 +1,6 @@
 using System;
-using System.ComponentModel;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 using EpiSource.Unblocker.Hosting;
 
@@ -29,11 +28,11 @@ namespace EpiSource.KeePass.Ekf.Util {
         /// <exception cref="Exception">Task specific exceptions.</exception>
         /// <exception cref="AggregateException">If multiple exceptions occured.</exception>
         public static T AwaitWithMessagePump<T>(this Task<T> task) {
-            var dispatcherFrame = new System.Windows.Threading.DispatcherFrame();
+            var dispatcherFrame = new DispatcherFrame();
 
             task.ContinueWith(t => dispatcherFrame.Continue = false,
                 TaskContinuationOptions.ExecuteSynchronously);
-            System.Windows.Threading.Dispatcher.PushFrame(dispatcherFrame);
+            Dispatcher.PushFrame(dispatcherFrame);
 
             try {
                 return task.Result;

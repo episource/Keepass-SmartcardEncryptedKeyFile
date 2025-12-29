@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Text;
 
 using Microsoft.Win32.SafeHandles;

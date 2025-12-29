@@ -26,7 +26,7 @@ using KeePassLib.Utility;
 
 namespace EpiSource.KeePass.Ekf.Plugin {
     
-    public class SmartcardEncryptedKeyProvider : KeePassLib.Keys.KeyProvider {
+    public class SmartcardEncryptedKeyProvider : KeyProvider {
         
         public const string ProviderName = "Smartcard Encrypted Key File Provider";
         private const string configKeyUseNativePinDialog = "EpiSource.KeePass.Ekf.UseNativePinDialog";

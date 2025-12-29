@@ -11,7 +11,6 @@ using EpiSource.KeePass.Ekf.Crypto.Exceptions;
 using EpiSource.KeePass.Ekf.Crypto.Windows;
 using EpiSource.KeePass.Ekf.Crypto.Windows.Exceptions;
 using EpiSource.KeePass.Ekf.Util;
-using EpiSource.KeePass.Ekf.Util.Windows;
 
 using KeePassLib.Utility;
 

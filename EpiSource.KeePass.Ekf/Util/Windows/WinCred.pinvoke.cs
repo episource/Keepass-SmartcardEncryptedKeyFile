@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-using EpiSource.KeePass.Ekf.Util;
-
 using Microsoft.Win32.SafeHandles;
+
+using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
 
 namespace EpiSource.KeePass.Ekf.Util.Windows {
     public partial class WinCred {
@@ -77,7 +77,7 @@ namespace EpiSource.KeePass.Ekf.Util.Windows {
             public string TargetName;
             [MarshalAs(UnmanagedType.LPWStr)]
             public string Comment;
-            public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
+            public FILETIME LastWritten;
             public int CredentialBlobSize;
             public IntPtr CredentialBlob;
             public CredentialPersistence Persist;

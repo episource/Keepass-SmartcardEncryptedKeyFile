@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -10,9 +8,6 @@ using System.Security.Cryptography.X509Certificates;
 
 using EpiSource.KeePass.Ekf.Crypto.Exceptions;
 using EpiSource.KeePass.Ekf.Util;
-using EpiSource.Unblocker.Util;
-
-using KeePassLib.Utility;
 
 using Microsoft.Win32.SafeHandles;
 

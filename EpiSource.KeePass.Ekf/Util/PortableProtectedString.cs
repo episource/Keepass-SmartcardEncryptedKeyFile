@@ -1,8 +1,6 @@
 using System;
 using System.Text;
 
-using KeePassLib.Security;
-
 namespace EpiSource.KeePass.Ekf.Util {
     
     [Serializable]

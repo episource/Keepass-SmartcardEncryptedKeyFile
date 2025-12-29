@@ -5,10 +5,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 
-using EpiSource.KeePass.Ekf.Util;
-
-using Microsoft.Win32.SafeHandles;
-
 namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
 

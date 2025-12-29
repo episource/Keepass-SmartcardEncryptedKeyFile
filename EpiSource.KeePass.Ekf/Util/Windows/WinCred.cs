@@ -1,9 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-
-using EpiSource.KeePass.Ekf.Util;
 
 namespace EpiSource.KeePass.Ekf.Util.Windows {
     public partial class WinCred {
