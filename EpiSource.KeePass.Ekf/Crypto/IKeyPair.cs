@@ -38,6 +38,15 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         bool IsReadyForDecrypt { get; }
         
         /// <summary>
+        /// Retrieves whether the decrypt CMS operation is likely to succeed now. Some hardware devices might require
+        /// confirmation for this operation to succeed.
+        /// </summary>
+        /// <returns>
+        /// <code>true</code> if decryption is likely to succeed, otherwise <code>false</code>.
+        /// </returns>
+        bool IsReadyForDecryptCms { get; }
+        
+        /// <summary>
         /// Retrieves whether the encrypt operation is likely to succeed now. Some hardware devices might require
         /// confirmation for this operation to succeed.
         /// </summary>
@@ -45,6 +54,15 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <code>true</code> if encryption is likely to succeed, otherwise <code>false</code>.
         /// </returns>
         bool IsReadyForEncrypt { get; }
+        
+        /// <summary>
+        /// Retrieves whether the encrypt CMS operation is likely to succeed now. Some hardware devices might require
+        /// confirmation for this operation to succeed.
+        /// </summary>
+        /// <returns>
+        /// <code>true</code> if encryption is likely to succeed, otherwise <code>false</code>.
+        /// </returns>
+        bool IsReadyForEncryptCms { get; }
         
         /// <summary>
         /// Retrieves whether the sign operation is likely to succeed now. Some hardware devices might require
@@ -90,12 +108,28 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         bool CanDecrypt { get; }
         
         /// <summary>
+        /// Retrieves whether in principle the decrypt CMS operation is supported by this key pair.
+        /// </summary>
+        /// <returns>
+        /// <code>true</code> if decryption is eventually possible with this key pair, otherwise <code>false</code>
+        /// </returns>
+        bool CanDecryptCms { get; }
+        
+        /// <summary>
         /// Retrieves whether in principle the encrypt operation is supported by this key pair.
         /// </summary>
         /// <returns>
         /// <code>true</code> if encryption is eventually possible with this key pair, otherwise <code>false</code>
         /// </returns>
         bool CanEncrypt { get; }
+        
+        /// <summary>
+        /// Retrieves whether in principle the encrypt operation is supported by this key pair.
+        /// </summary>
+        /// <returns>
+        /// <code>true</code> if encryption is eventually possible with this key pair, otherwise <code>false</code>
+        /// </returns>
+        bool CanEncryptCms { get; }
 
         /// <summary>
         /// Retrieves whether this key can be used or key agreement.

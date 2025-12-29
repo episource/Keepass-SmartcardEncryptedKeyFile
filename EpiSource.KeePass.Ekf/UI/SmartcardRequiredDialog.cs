@@ -43,7 +43,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 return null;
             }
 
-            var readyKeyPair = candidates.FirstOrDefault(kp => kp.KeyPair.IsReadyForDecrypt);
+            var readyKeyPair = candidates.FirstOrDefault(kp => kp.KeyPair.IsReadyForDecryptCms);
             if (readyKeyPair != null) {
                 return readyKeyPair.KeyPair;
             }
@@ -181,7 +181,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             var keyListViewScrollDetectionReferenceLocation = Point.Empty;
             this.keyListView.DrawItem += (sender, args) => {
                 var tag = args.Item.Tag as KeyPairModel;
-                var enabled = tag != null && tag.KeyPair.IsReadyForDecrypt;
+                var enabled = tag != null && tag.KeyPair.IsReadyForDecryptCms;
                 
                 args.DrawBackground();
 
@@ -274,7 +274,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             this.keyListView.ItemCheck += (sender, args) => {
                 if (args.NewValue == CheckState.Checked) {
                     var model = this.keyListView.Items[args.Index].Tag as KeyPairModel;
-                    if (model == null || !model.KeyPair.IsReadyForDecrypt) {
+                    if (model == null || !model.KeyPair.IsReadyForDecryptCms) {
                         args.NewValue = args.CurrentValue;
                         return;
                     }
@@ -324,7 +324,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             var prevCheckedItems = new HashSet<string>();
             try {
                 if (this.loaded) {
-                    // note: result == false does not imply IsReadyForDecrypt to be unchanged!
+                    // note: result == false does not imply IsReadyForDecryptCms to be unchanged!
                     // => replace list independent of result
                     // NOTE: Refresh blocks if busy HW is involved -> unblocker
                     var refreshResult = SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
@@ -349,7 +349,7 @@ namespace EpiSource.KeePass.Ekf.UI {
 
                     var cert = kpm.KeyPair.Certificate;
                     var stateText = stateNotConnected;
-                    if (kpm.KeyPair.IsReadyForDecrypt) {
+                    if (kpm.KeyPair.IsReadyForDecryptCms) {
                         stateText = stateConnected;
                     }
 
@@ -363,7 +363,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                     item.ToolTipText = string.Format(Strings.Culture, Strings.SmartcardRequiredDialog_LabelThumbprint, cert.Thumbprint);
                     this.keyListView.Items.Add(item);
 
-                    if (kpm.KeyPair.IsReadyForDecrypt) {
+                    if (kpm.KeyPair.IsReadyForDecryptCms) {
                         item.Checked = prevCheckedItems.Contains(cert.Thumbprint);
                         firstAvailItem = firstAvailItem ?? item;
                         availItemCount++;

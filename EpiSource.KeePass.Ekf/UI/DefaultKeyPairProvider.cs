@@ -143,9 +143,11 @@ namespace EpiSource.KeePass.Ekf.UI {
                    || l.CurrentAuthorization      != r.CurrentAuthorization
                    || l.KeyPair.IsAccessible      != r.KeyPair.IsAccessible
                    || l.KeyPair.CanDecrypt        != r.KeyPair.CanDecrypt
+                   || l.KeyPair.CanDecryptCms     != r.KeyPair.CanDecryptCms
                    || l.KeyPair.CanKeyAgree       != r.KeyPair.CanKeyAgree
                    || l.KeyPair.IsReadyForDecrypt != r.KeyPair.IsReadyForDecrypt
-                   || l.KeyPair.CanEncrypt        != r.KeyPair.CanDecrypt
+                   || l.KeyPair.CanEncrypt        != r.KeyPair.CanEncrypt
+                   || l.KeyPair.CanEncryptCms     != r.KeyPair.CanEncryptCms
                    || l.KeyPair.IsReadyForEncrypt != r.KeyPair.IsReadyForEncrypt;
         }
 

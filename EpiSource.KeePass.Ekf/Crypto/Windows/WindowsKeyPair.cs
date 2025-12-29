@@ -130,10 +130,22 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 return this.PrivateKeyInfo != null && this.cert.HasPrivateKey && this.PrivateKeyInfo.CanDecrypt;
             }
         }
-        
+
+        public bool CanDecryptCms {
+            get {
+                return this.CanDecrypt || this.CanKeyAgree;
+            }
+        }
+
         public bool CanEncrypt {
             get {
                 return this.CanDecrypt;
+            }
+        }
+        
+        public bool CanEncryptCms {
+            get {
+                return this.CanEncrypt || this.CanKeyAgree;
             }
         }
 
@@ -153,8 +165,16 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             get { return this.CanDecrypt && this.IsAccessible; }
         }
         
+        public bool IsReadyForDecryptCms {
+            get { return this.CanDecryptCms && this.IsAccessible; }
+        }
+        
         public bool IsReadyForEncrypt {
             get { return this.CanEncrypt && this.IsAccessible; }
+        }
+        
+        public bool IsReadyForEncryptCms {
+            get { return this.CanEncryptCms && this.IsAccessible; }
         }
         
         public bool IsReadyForSign {
