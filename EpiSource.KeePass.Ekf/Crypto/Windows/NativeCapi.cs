@@ -23,7 +23,10 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
         
         private static readonly Func<PinvokeUtil.PinvokeResult<bool>, bool> isSuccessOrMissingKeyPredicate = r =>
-            r.Result || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEYSET)
+            r.Result || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_NO_KEY)
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.CRYPT_E_NO_KEY_PROPERTY)
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEY)
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEYSET)
                      || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_SMARTCARD)
                      || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_READERS_AVAILABLE);
 
@@ -354,8 +357,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
             
             
-            bool isHardware = false;
-            bool isRemovable = false;
+            bool? isHardware = null;
+            bool? isRemovable = null;
             bool canExport = false;
             bool canKeyAgree = false;
             
@@ -382,7 +385,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 byte[] providerImplementation = getNcryptOrCspProperty(providerHandle, "Impl Type", CryptGetProvParamType.PP_IMPTYPE, true);
                 isHardware = providerImplementation.Length > 0 && (providerImplementation[0] & 0x1) == 0x1;
                 isRemovable = providerImplementation.Length > 0 && (providerImplementation[0] & 0x8) == 0x8;
-                canExport = !isHardware;
+                canExport = isHardware.Value;
             }
             
             
@@ -409,7 +412,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 if (keyImplementation.Length > 0) {
                     isHardware = keyImplementation.Length > 0 && (keyImplementation[0] & 0x1) == 0x1;
                     isRemovable = keyImplementation.Length > 0 && (keyImplementation[0] & 0x8) == 0x8;
-                    canExport = !isHardware;
+                    canExport = isHardware.Value;
                 }
 
                 var ncryptKeyHandle = keyHandle as NCryptContextHandle;
