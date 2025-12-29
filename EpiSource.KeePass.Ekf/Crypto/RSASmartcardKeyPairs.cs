@@ -31,7 +31,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                 var certs =
                     userStoreCerts.Union(machineStoreCerts)
                                   .DistinctBy(c => c.Thumbprint)
-                                  .Select(c => (IKeyPair) WindowsKeyPair.FromX509CertificateOrNull(c));
+                                  .Select(c => (IKeyPair) WindowsKeyPair.FromX509Certificate(c));
 
                 return ListEncryptionCardsAsList(certs);
             }

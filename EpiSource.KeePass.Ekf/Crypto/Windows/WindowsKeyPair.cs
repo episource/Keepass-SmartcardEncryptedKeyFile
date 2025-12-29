@@ -20,19 +20,20 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
         private X509Certificate2 cert;
         
-        [NonSerialized]
         private KeyInfo privKeyInfo;
 
-        private KeyInfo PrivateKeyInfo {
-            get { return this.privKeyInfo ?? (this.privKeyInfo = NativeCapi.QueryCertificatePrivateKey(this.cert)); }
-        }
+        private bool isAccessible;
         
         public void GetObjectData(SerializationInfo info, StreamingContext context) {
             info.AddValue("cert", this.cert);
+            info.AddValue("isAccessible", this.isAccessible);
+            info.AddValue("privKeyInfo", this.privKeyInfo);
         }
 
         private WindowsKeyPair(SerializationInfo info, StreamingContext context) {
             var preliminaryCert = (X509Certificate2)info.GetValue("cert", typeof(X509Certificate2));
+            this.privKeyInfo = (KeyInfo)info.GetValue("privKeyInfo", typeof(KeyInfo));
+            this.isAccessible =  info.GetBoolean("isAccessible");
             
             using (var userStore = new X509Store(StoreName.My, StoreLocation.CurrentUser))
             using (var machineStore = new X509Store(StoreName.My, StoreLocation.LocalMachine)) {
@@ -49,49 +50,24 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
         
-        private WindowsKeyPair(X509Certificate2 cert, KeyInfo privKeyInfo) {
+        private WindowsKeyPair(X509Certificate2 cert) {
             this.cert = cert;
-            this.privKeyInfo = privKeyInfo;
         }
 
         public static WindowsKeyPair FromX509Certificate(X509Certificate2 cert) {
-            return FromX509CertificateInternal(cert, false, false);  
-        }
-        
-        public static WindowsKeyPair FromX509CertificateOrNull(X509Certificate2 cert) {
-            return FromX509CertificateInternal(cert, false, true);
-        }
-
-        public static WindowsKeyPair FromX509CertificateAssumeCspOrNull(X509Certificate2 cert) {
-            return FromX509CertificateInternal(cert, true, true);
-        }
-
-        private static WindowsKeyPair FromX509CertificateInternal(X509Certificate2 cert,
-            bool permitLazyKeyInfo, bool nullOnError) {
-            
             if (cert == null) {
-                if (nullOnError) {
-                    return null;
-                }
                 throw new ArgumentNullException("cert");
             }
 
-            var privateKeyInfo = NativeCapi.QueryCertificatePrivateKey(cert);
-            if (permitLazyKeyInfo || privateKeyInfo != null) {
-                return new WindowsKeyPair(cert, privateKeyInfo);
-            } 
-            
-            if (nullOnError) {
-                return null;
-            }
-            throw new ArgumentException("Certificate not backed by valid CNG or CSP provider.",
-                "cert"); 
+            var kp = new WindowsKeyPair(cert);
+            kp.Refresh();
+            return kp;
         }
 
         public bool? IsSmartcard {
             get {
                 try {
-                    return this.PrivateKeyInfo == null ? (bool?) null : this.PrivateKeyInfo.IsHardware;
+                    return this.privKeyInfo == null ? (bool?) null : this.privKeyInfo.IsHardware;
                 } catch (CryptographicException) {
                     return null;
                 } 
@@ -99,7 +75,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         }
         
         public bool IsAccessible {
-            get { return NativeCapi.IsCertificatePrivateKeyAccessible(this.cert); }
+            get { return this.isAccessible; }
         }
         public bool? CanExportPrivateKey {
             get {
@@ -118,7 +94,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         public bool? IsRemovable {
             get {
                 try {
-                    return this.privKeyInfo == null ? (bool?) null : this.PrivateKeyInfo.IsRemovable;
+                    return this.privKeyInfo == null ? (bool?) null : this.privKeyInfo.IsRemovable;
                 } catch (CryptographicException) {
                     return null;
                 }
@@ -127,7 +103,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         
         public bool CanDecrypt {
             get {
-                return this.PrivateKeyInfo != null && this.cert.HasPrivateKey && this.PrivateKeyInfo.CanDecrypt;
+                return this.privKeyInfo != null && this.cert.HasPrivateKey && this.privKeyInfo.CanDecrypt;
             }
         }
 
@@ -151,13 +127,13 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
         public bool CanKeyAgree {
             get {
-                return this.PrivateKeyInfo != null && this.PrivateKeyInfo.CanKeyAgree;
+                return this.privKeyInfo != null && this.privKeyInfo.CanKeyAgree;
             }
         }
 
         public bool CanSign {
             get {
-                return this.PrivateKeyInfo != null && this.PrivateKeyInfo.CanSign;
+                return this.privKeyInfo != null && this.privKeyInfo.CanSign;
             }
         }
 
@@ -182,7 +158,21 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         }
 
         public X509Certificate2 Certificate {
-            get { return this.cert;  }
+            get { return this.cert; }
+        }
+        
+        public bool Refresh() {
+            var nextPrivKeyInfo = NativeCapi.QueryCertificatePrivateKey(this.cert);
+            var nextIsAccessible = NativeCapi.IsCertificatePrivateKeyAccessible(this.cert);
+
+            if (nextPrivKeyInfo.Equals(this.privKeyInfo) && nextIsAccessible == this.isAccessible) {
+                return false;
+            }
+            
+            this.privKeyInfo = NativeCapi.QueryCertificatePrivateKey(this.cert);
+            this.isAccessible = NativeCapi.IsCertificatePrivateKeyAccessible(this.cert);
+
+            return true;
         }
     }
 }
