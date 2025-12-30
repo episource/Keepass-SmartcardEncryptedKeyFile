@@ -14,6 +14,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             CERT_KEY_PROV_HANDLE_PROP_ID = 1,
             CERT_KEY_PROV_INFO_PROP_ID = 2,
             CERT_KEY_CONTEXT_PROP_ID = 5,
+            CERT_KEY_SPEC_PROP_ID = 6,
             CERT_SMART_CARD_DATA_PROP_ID = 16,
             CERT_NCRYPT_KEY_HANDLE_PROP_ID = 78,
             CERT_NCRYPT_KEY_HANDLE_TRANSFER_PROP_ID = 99,
@@ -102,10 +103,13 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             /// <returns>If the function succeeds, the function returns TRUE. If the function fails, it returns FALSE. For
             /// extended error information, call GetLastError.
             /// </returns>
-            [DllImport("Crypt32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+            [DllImport("Crypt32.dll", EntryPoint = "CertGetCertificateContextProperty", CharSet = CharSet.Auto, SetLastError = true)]
             public static extern bool CertGetCertificateContextProperty(
-                IntPtr pCertContext, CertContextPropId dwPropId, IntPtr pvData, ref int pcbData
-            );
+                IntPtr pCertContext, CertContextPropId dwPropId, IntPtr pvData, ref int pcbData);
+            [DllImport("Crypt32.dll", EntryPoint = "CertGetCertificateContextProperty", CharSet = CharSet.Auto, SetLastError = true)]
+            public static extern bool CertGetCertificateContextPropertyDword(
+                IntPtr pCertContext, CertContextPropId dwPropId, ref uint pvDataDword, ref int pcbDataSize);
+            
             /// https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certsetcertificatecontextproperty
             [DllImport("Crypt32.dll", CharSet = CharSet.Auto, SetLastError = true)]
             public static extern bool CertSetCertificateContextProperty(IntPtr pCertContext, CertContextPropId propertyId, uint dwFlags, IntPtr pvData);

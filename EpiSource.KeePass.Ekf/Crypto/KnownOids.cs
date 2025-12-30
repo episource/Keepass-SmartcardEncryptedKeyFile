@@ -12,6 +12,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         public const string AlgDhRsa = "1.2.840.113549.1.3.1";
         public const string AlgEsdhSmimeRsa = "1.2.840.113549.1.9.16.3.5";
         public const string AlgEsdhX942 = "1.2.840.10046.2.1";
+        public const string AlgGroupEcc = "1.2.840.10045.2.1";
         public const string AlgKeyAgreeDhSinglePassStdParamsSha256 = "1.3.132.1.11.1";
         public const string AlgKeyAgreeDhSinglePassStdParamsSha384 = "1.3.132.1.11.2";
         public const string AlgKeyAgreeDhSinglePassStdParamsSha512 = "1.3.132.1.11.3";

@@ -321,6 +321,54 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 return keyLengthBits;
             }
         }
+        
+        public static bool IsKeyAgreeSupported(X509Certificate2 cert) {
+            BCryptKeyHandle pubKeyHandle;
+            if (!NativeCryptPinvoke.CryptImportPublicKeyInfoEx2(
+                CryptEncodingTypeFlags.X509_ASN_ENCODING | CryptEncodingTypeFlags.PKCS_7_ASN_ENCODING,
+                new CryptPublicKeyInfoHandle(cert), CryptFindOIDInfoKeyTypeFlag.CRYPT_OID_INFO_PUBKEY_ENCRYPT_KEY_FLAG, IntPtr.Zero, out pubKeyHandle)) {
+                return false;
+            }
+
+            using (pubKeyHandle) {
+                int keyLength;
+                int outputDataSize;
+                if (NTStatusUtil.NTStatus.STATUS_SUCCESS != NativeBCryptPinvoke.BCryptGetPropertyInt32(
+                    pubKeyHandle, "KeyLength", out keyLength, 4, out outputDataSize, 0)) {
+                    if (NTStatusUtil.NTStatus.STATUS_SUCCESS != NativeBCryptPinvoke.BCryptGetPropertyInt32(
+                        pubKeyHandle, "KeyStrength", out keyLength, 4, out outputDataSize, 0)) {
+                        return false;
+                    }
+                }
+
+                IntPtr algorithmProviderNativeHandle;
+                if (NTStatusUtil.NTStatus.STATUS_SUCCESS != NativeBCryptPinvoke.BCryptGetPropertyIntPtr(
+                    pubKeyHandle, "ProviderHandle", out algorithmProviderNativeHandle, IntPtr.Size, out outputDataSize, 0)) {
+                    return false;
+                }
+
+                BCryptKeyHandle keyPairHandle;
+                if (NTStatusUtil.NTStatus.STATUS_SUCCESS != NativeBCryptPinvoke.BCryptGenerateKeyPair(
+                    new BCryptAlgorithmHandle(algorithmProviderNativeHandle, false), out keyPairHandle, keyLength, 0)) {
+                    return false;
+                }
+
+                using (keyPairHandle) {
+                    if (NTStatusUtil.NTStatus.STATUS_SUCCESS != NativeBCryptPinvoke.BCryptFinalizeKeyPair(keyPairHandle, 0)) {
+                        return false;
+                    }
+
+                    BCryptSecretHandle secretHandle;
+                    if (NTStatusUtil.NTStatus.STATUS_SUCCESS == NativeBCryptPinvoke.BCryptSecretAgreement(
+                        keyPairHandle, pubKeyHandle, out secretHandle, 0)) {
+                        secretHandle.Dispose();
+                        return true;
+                    }
+
+                    return false;
+                }
+            }
+        }
 
         public static bool IsEncryptionSupported(X509Certificate2 cert) {
             BCryptKeyHandle keyHandle;
