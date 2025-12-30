@@ -32,18 +32,11 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                                   .DistinctBy(c => c.Thumbprint)
                                   .Select(c => (IKeyPair) WindowsKeyPair.FromX509Certificate(c));
 
-                return ListEncryptionCardsAsList(certs);
+                return ListCmsEncryptionCardsAsList(certs);
             }
         }
 
-        /// <remarks>
-        /// Blocks if a busy hardware device is involved.
-        /// </remarks>
-        public static IList<IKeyPair> GetAllKeyPairs() {
-            return GetAllPivKeyPairs();
-        }
-
-        private static IList<IKeyPair> ListEncryptionCardsAsList(IEnumerable<IKeyPair> unfilteredKeyPairs) {
+        private static IList<IKeyPair> ListCmsEncryptionCardsAsList(IEnumerable<IKeyPair> unfilteredKeyPairs) {
             return unfilteredKeyPairs
                    .Where(kp => kp != null && kp.IsSmartcard.GetValueOrDefault(false) && kp.CanEncryptCms && kp.CanDecryptCms)
                    .ToList().AsReadOnly();

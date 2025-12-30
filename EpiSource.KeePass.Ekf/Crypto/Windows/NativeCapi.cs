@@ -392,26 +392,27 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
         
-        public static KeyInfo QueryCertificatePrivateKey(X509Certificate cert) {
+        public static KeyInfo QueryCertificatePrivateKey(X509Certificate2 cert) {
             // see also:
             //  - https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers
             //  - https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptgetprovparam
             
             var cspParams = GetParameters(cert);
             if (cspParams == null) {
-                return new KeyInfo();
+                return null;
             }
-            
+
+            var pubKeyInfo = QueryCertificatePublicKey(cert);
             
             bool? isHardware = null;
             bool? isRemovable = null;
             bool canExport = false;
-            bool canKeyAgree = false;
+            bool canKeyAgree = pubKeyInfo.CanKeyAgree;
             
             // 0: Ncrypt Key Provider (no indication) - let's assume CanDecrypt until we've got more information
             // 1: We can decrypt, the key is of type Exchange
-            bool canDecrypt = cspParams.KeyNumber == 0 || cspParams.KeyNumber == (int)KeyNumber.Exchange;
-            bool canSign = canDecrypt || cspParams.KeyNumber == (int)KeyNumber.Signature;
+            bool canKeyTransfer = cspParams.KeyNumber == (int)KeyNumber.Exchange || (cspParams.KeyNumber == 0 && pubKeyInfo.CanKeyTransfer);
+            bool canSign = cspParams.KeyNumber == (int)KeyNumber.Signature || (cspParams.KeyNumber == 0 && pubKeyInfo.CanSign);
 
 
             NcryptOrContextHandle providerHandle = null;
@@ -423,12 +424,12 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 providerHandle = ncryptProviderHandle;
             } else {
                 CryptContextHandle cspHandle = null;
-                NativeLegacyCapiPinvoke.CryptAcquireContext(out cspHandle, null, cspParams.ProviderName, cspParams.ProviderType, CryptAcquireContextFlags.CRYPT_SILENT | CryptAcquireContextFlags.CRYPT_VERIFYCONTEXT);
+                PinvokeUtil.DoPinvokeWithException(() => NativeLegacyCapiPinvoke.CryptAcquireContext(out cspHandle, null, cspParams.ProviderName, cspParams.ProviderType, CryptAcquireContextFlags.CRYPT_SILENT | CryptAcquireContextFlags.CRYPT_VERIFYCONTEXT));
                 providerHandle = cspHandle;
             }
 
             using (providerHandle) {
-                byte[] providerImplementation = getNcryptOrCspProperty(providerHandle, "Impl Type", CryptGetProvParamType.PP_IMPTYPE, true);
+                byte[] providerImplementation = GetNcryptOrCspProperty(providerHandle, "Impl Type", CryptGetProvParamType.PP_IMPTYPE, true);
                 isHardware = providerImplementation.Length > 0 && (providerImplementation[0] & 0x1) == 0x1;
                 isRemovable = providerImplementation.Length > 0 && (providerImplementation[0] & 0x8) == 0x8;
                 canExport = isHardware.Value;
@@ -451,10 +452,10 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
             using (NcryptOrContextHandle keyHandle = NcryptOrContextHandle.of(keyHandleRaw, mustFreeHandle, keySpec)) {
                 if (keyHandle.IsInvalid) {
-                    return new KeyInfo(canDecrypt, canExport, canKeyAgree, canSign, isHardware, isRemovable);
+                    return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, isHardware, isRemovable);
                 }
                 
-                byte[] keyImplementation = getNcryptOrCspProperty(keyHandle, "Impl Type", CryptGetProvParamType.PP_IMPTYPE, true);
+                byte[] keyImplementation = GetNcryptOrCspProperty(keyHandle, "Impl Type", CryptGetProvParamType.PP_IMPTYPE, true);
                 if (keyImplementation.Length > 0) {
                     isHardware = keyImplementation.Length > 0 && (keyImplementation[0] & 0x1) == 0x1;
                     isRemovable = keyImplementation.Length > 0 && (keyImplementation[0] & 0x8) == 0x8;
@@ -467,13 +468,19 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                     canExport = exportPolicy.Length == 0 ? canExport : (exportPolicy[0] & 0x1) == 0x1; 
                     
                     byte[] keyUsagePolicy = GetNcryptProperty(ncryptKeyHandle, "Key Usage", NCryptGetPropertyFlags.NCRYPT_SILENT_FLAG);
-                    canDecrypt = keyUsagePolicy.Length == 0 ? canDecrypt : (keyUsagePolicy[0] & 0x1) == 0x1;
+                    canKeyTransfer = keyUsagePolicy.Length == 0 ? canKeyTransfer : (keyUsagePolicy[0] & 0x1) == 0x1;
                     canKeyAgree = keyUsagePolicy.Length == 0 ? canKeyAgree : (keyUsagePolicy[0] & 0x4) == 0x4;
                     canSign = keyUsagePolicy.Length    == 0 ? canSign : (keyUsagePolicy[0]    & 0x2) == 0x2;
                 }
             }
             
-            return new KeyInfo(canDecrypt, canExport, canKeyAgree, canSign, isHardware, isRemovable);
+            return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, isHardware, isRemovable);
+        }
+
+        public static KeyInfo QueryCertificatePublicKey(X509Certificate2 cert) {
+            return new KeyInfo(
+                IsKeyAgreeSupported(cert), IsEncryptionSupported(cert), false /*tbd*/,
+                true, false, false);
         }
 
         private static PortableProtectedBinary DecryptEnvelopedCmsImpl(CryptMsgHandle cryptMsgHandle, CryptMsgRecipient recipient, bool alwaysSilent, string optContextDescription, IntPtr optOwner, PortableProtectedString optPin
@@ -498,7 +505,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle));
  
             using (var keyHandle = NcryptOrContextHandle.of(keyHandleRaw, mustFreeHandle, keySpec)) {
-                if (optPin != null) setNcryptOrCspPropertyUA(
+                if (optPin != null) SetNcryptOrCspPropertyUA(
                     keyHandle, "SmartCardPin",
                     keyHandle.KeySpec == CryptPrivateKeySpec.AT_KEYEXCHANGE ? CryptSetProvParamType.PP_KEYEXCHANGE_PIN : CryptSetProvParamType.PP_SIGNATURE_PIN,
                     silent, optPin);
@@ -538,20 +545,20 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         }
 
         private static void SetNcryptOrCspPropertyU(NcryptOrContextHandle handle, string ncryptProperty, CryptSetProvParamType cspParam,  bool silent, string value) {
-            setNcryptOrCspProperty(handle, ncryptProperty, cspParam, silent, Encoding.Unicode.GetBytes(value + "\0"));
+            SetNcryptOrCspProperty(handle, ncryptProperty, cspParam, silent, Encoding.Unicode.GetBytes(value + "\0"));
         }
         
-        private static void setNcryptOrCspPropertyUA(NcryptOrContextHandle handle, string ncryptProperty, CryptSetProvParamType cspParam,  bool silent, PortableProtectedString value) {
+        private static void SetNcryptOrCspPropertyUA(NcryptOrContextHandle handle, string ncryptProperty, CryptSetProvParamType cspParam,  bool silent, PortableProtectedString value) {
             var valueBytes = handle is NCryptContextHandle ? value.ReadUnprotectedUtf16NullTerminated() : value.ReadUnprotectedAsciiNullTerminated();
             
             try {
-                setNcryptOrCspProperty(handle, ncryptProperty, cspParam, silent, valueBytes);
+                SetNcryptOrCspProperty(handle, ncryptProperty, cspParam, silent, valueBytes);
             } finally {
                 Array.Clear(valueBytes, 0, valueBytes.Length);
             }
         }
         
-        private static void setNcryptOrCspProperty(NcryptOrContextHandle handle, string ncryptProperty, CryptSetProvParamType cspParam, bool silent, byte[] value) {
+        private static void SetNcryptOrCspProperty(NcryptOrContextHandle handle, string ncryptProperty, CryptSetProvParamType cspParam, bool silent, byte[] value) {
             if (handle is NCryptContextHandle) {
                 SetNcryptProperty((NCryptContextHandle)handle, ncryptProperty, value, silent ? NCryptSetPropertyFlags.NCRYPT_SILENT_FLAG : NCryptSetPropertyFlags.None);
             } else {
@@ -559,7 +566,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
 
-        private static byte[] getNcryptOrCspProperty(NcryptOrContextHandle handle, string ncryptProperty, CryptGetProvParamType cspParam, bool silent) {
+        private static byte[] GetNcryptOrCspProperty(NcryptOrContextHandle handle, string ncryptProperty, CryptGetProvParamType cspParam, bool silent) {
             if (handle is NCryptContextHandle) {
                 return GetNcryptProperty((NCryptContextHandle)handle, ncryptProperty, silent ? NCryptGetPropertyFlags.NCRYPT_SILENT_FLAG : NCryptGetPropertyFlags.None);
             } else {

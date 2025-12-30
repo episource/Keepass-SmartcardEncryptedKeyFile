@@ -23,15 +23,6 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         bool IsAccessible { get; }
         
         /// <summary>
-        /// Retrieves whether the decrypt operation is likely to succeed now. Some hardware devices might require
-        /// confirmation for this operation to succeed.
-        /// </summary>
-        /// <returns>
-        /// <code>true</code> if decryption is likely to succeed, otherwise <code>false</code>.
-        /// </returns>
-        bool IsReadyForDecrypt { get; }
-        
-        /// <summary>
         /// Retrieves whether the decrypt CMS operation is likely to succeed now. Some hardware devices might require
         /// confirmation for this operation to succeed.
         /// </summary>
@@ -41,15 +32,6 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         bool IsReadyForDecryptCms { get; }
         
         /// <summary>
-        /// Retrieves whether the encrypt operation is likely to succeed now. Some hardware devices might require
-        /// confirmation for this operation to succeed.
-        /// </summary>
-        /// <returns>
-        /// <code>true</code> if encryption is likely to succeed, otherwise <code>false</code>.
-        /// </returns>
-        bool IsReadyForEncrypt { get; }
-        
-        /// <summary>
         /// Retrieves whether the encrypt CMS operation is likely to succeed now. Some hardware devices might require
         /// confirmation for this operation to succeed.
         /// </summary>
@@ -57,15 +39,6 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <code>true</code> if encryption is likely to succeed, otherwise <code>false</code>.
         /// </returns>
         bool IsReadyForEncryptCms { get; }
-        
-        /// <summary>
-        /// Retrieves whether the sign operation is likely to succeed now. Some hardware devices might require
-        /// confirmation for this operation to succeed.
-        /// </summary>
-        /// <returns>
-        /// <code>true</code> if signing is likely to succeed, otherwise <code>false</code>.
-        /// </returns>
-        bool IsReadyForSign { get; }
         
         /// <summary>
         /// Retrieves whether the private key can be exported from the smartcard. A smartcard is only safe if the
@@ -88,14 +61,6 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         bool? IsRemovable { get; }
         
         /// <summary>
-        /// Retrieves whether in principle the decrypt operation is supported by this key pair.
-        /// </summary>
-        /// <returns>
-        /// <code>true</code> if decryption is eventually possible with this key pair, otherwise <code>false</code>
-        /// </returns>
-        bool CanDecrypt { get; }
-        
-        /// <summary>
         /// Retrieves whether in principle the decrypt CMS operation is supported by this key pair.
         /// </summary>
         /// <returns>
@@ -109,20 +74,17 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// <returns>
         /// <code>true</code> if encryption is eventually possible with this key pair, otherwise <code>false</code>
         /// </returns>
-        bool CanEncrypt { get; }
-        
-        /// <summary>
-        /// Retrieves whether in principle the encrypt operation is supported by this key pair.
-        /// </summary>
-        /// <returns>
-        /// <code>true</code> if encryption is eventually possible with this key pair, otherwise <code>false</code>
-        /// </returns>
         bool CanEncryptCms { get; }
 
         /// <summary>
-        /// Retrieves whether this key can be used or key agreement.
+        /// Retrieves whether this key can be used for key agreement.
         /// </summary>
         bool CanKeyAgree { get; }
+        
+        /// <summary>
+        /// Retrieves whether this key can be used for key transfer.
+        /// </summary>
+        bool CanKeyTransfer { get; }
         
         /// <summary>
         /// Retrieves whether in principle the sign operation is supported by this key pair.

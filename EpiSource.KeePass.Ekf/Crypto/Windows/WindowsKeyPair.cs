@@ -20,18 +20,22 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         
         private KeyInfo privKeyInfo;
 
-        private bool isAccessible;
+        private KeyInfo pubKeyInfo;
+
+        private bool isPrivKeyAccessible;
         
         public void GetObjectData(SerializationInfo info, StreamingContext context) {
             info.AddValue("cert", this.cert);
-            info.AddValue("isAccessible", this.isAccessible);
+            info.AddValue("isPrivKeyAccessible", this.isPrivKeyAccessible);
             info.AddValue("privKeyInfo", this.privKeyInfo);
+            info.AddValue("pubKeyInfo", this.pubKeyInfo);
         }
 
         private WindowsKeyPair(SerializationInfo info, StreamingContext context) {
             var preliminaryCert = (X509Certificate2)info.GetValue("cert", typeof(X509Certificate2));
+            this.isPrivKeyAccessible =  info.GetBoolean("isPrivKeyAccessible");
             this.privKeyInfo = (KeyInfo)info.GetValue("privKeyInfo", typeof(KeyInfo));
-            this.isAccessible =  info.GetBoolean("isAccessible");
+            this.pubKeyInfo = (KeyInfo)info.GetValue("pubKeyInfo", typeof(KeyInfo));
             
             using (var userStore = new X509Store(StoreName.My, StoreLocation.CurrentUser))
             using (var machineStore = new X509Store(StoreName.My, StoreLocation.LocalMachine)) {
@@ -57,6 +61,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 throw new ArgumentNullException("cert");
             }
 
+            Console.WriteLine("c: " + cert.Subject);
             var kp = new WindowsKeyPair(cert);
             kp.Refresh();
             return kp;
@@ -73,8 +78,9 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         }
         
         public bool IsAccessible {
-            get { return this.isAccessible; }
+            get { return this.isPrivKeyAccessible; }
         }
+        
         public bool? CanExportPrivateKey {
             get {
                 var info = this.privKeyInfo;
@@ -98,57 +104,43 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 }
             }
         }
-        
-        public bool CanDecrypt {
-            get {
-                return this.privKeyInfo != null && this.cert.HasPrivateKey && this.privKeyInfo.CanDecrypt;
-            }
-        }
 
         public bool CanDecryptCms {
             get {
-                return this.CanDecrypt || this.CanKeyAgree;
-            }
-        }
-
-        public bool CanEncrypt {
-            get {
-                return this.CanDecrypt;
+                return this.CanKeyAgree || this.CanKeyTransfer;
             }
         }
         
         public bool CanEncryptCms {
             get {
-                return this.CanEncrypt || this.CanKeyAgree;
+                return this.pubKeyInfo.CanKeyTransfer || this.pubKeyInfo.CanKeyAgree;
             }
         }
 
         public bool CanKeyAgree {
             get {
-                return this.privKeyInfo != null && this.privKeyInfo.CanKeyAgree;
+                return this.pubKeyInfo.CanKeyAgree && (this.privKeyInfo == null || this.privKeyInfo.CanKeyAgree);
+            }
+        }
+
+        public bool CanKeyTransfer {
+            get {
+                return this.pubKeyInfo.CanKeyTransfer && (this.privKeyInfo == null || this.privKeyInfo.CanKeyTransfer);
             }
         }
 
         public bool CanSign {
             get {
-                return this.privKeyInfo != null && this.privKeyInfo.CanSign;
+                return this.pubKeyInfo.CanSign && (this.privKeyInfo == null || this.privKeyInfo.CanSign);
             }
-        }
-
-        public bool IsReadyForDecrypt {
-            get { return this.CanDecrypt && this.IsAccessible; }
         }
         
         public bool IsReadyForDecryptCms {
             get { return this.CanDecryptCms && this.IsAccessible; }
         }
         
-        public bool IsReadyForEncrypt {
-            get { return this.CanEncrypt && this.IsAccessible; }
-        }
-        
         public bool IsReadyForEncryptCms {
-            get { return this.CanEncryptCms && this.IsAccessible; }
+            get { return this.CanEncryptCms; }
         }
         
         public bool IsReadyForSign {
@@ -161,14 +153,17 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         
         public bool Refresh() {
             var nextPrivKeyInfo = NativeCapi.QueryCertificatePrivateKey(this.cert);
+            var nextPubKeyInfo = NativeCapi.QueryCertificatePublicKey(this.cert);
             var nextIsAccessible = NativeCapi.IsCertificatePrivateKeyAccessible(this.cert);
 
-            if (nextPrivKeyInfo.Equals(this.privKeyInfo) && nextIsAccessible == this.isAccessible) {
+            if ((nextPrivKeyInfo == null && this.privKeyInfo == null || (nextPrivKeyInfo != null && nextPrivKeyInfo.Equals(this.privKeyInfo)))
+                && nextPubKeyInfo.Equals(this.pubKeyInfo) && nextIsAccessible == this.isPrivKeyAccessible) {
                 return false;
             }
             
-            this.privKeyInfo = NativeCapi.QueryCertificatePrivateKey(this.cert);
-            this.isAccessible = NativeCapi.IsCertificatePrivateKeyAccessible(this.cert);
+            this.privKeyInfo = nextPrivKeyInfo;
+            this.pubKeyInfo = nextPubKeyInfo;
+            this.isPrivKeyAccessible = nextIsAccessible;
 
             return true;
         }

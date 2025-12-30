@@ -139,16 +139,14 @@ namespace EpiSource.KeePass.Ekf.UI {
         }
 
         private static bool IsSignificantlyDifferent(KeyPairModel l, KeyPairModel r) {
-            return l.Provider                     != r.Provider
-                   || l.CurrentAuthorization      != r.CurrentAuthorization
-                   || l.KeyPair.IsAccessible      != r.KeyPair.IsAccessible
-                   || l.KeyPair.CanDecrypt        != r.KeyPair.CanDecrypt
-                   || l.KeyPair.CanDecryptCms     != r.KeyPair.CanDecryptCms
-                   || l.KeyPair.CanKeyAgree       != r.KeyPair.CanKeyAgree
-                   || l.KeyPair.IsReadyForDecrypt != r.KeyPair.IsReadyForDecrypt
-                   || l.KeyPair.CanEncrypt        != r.KeyPair.CanEncrypt
-                   || l.KeyPair.CanEncryptCms     != r.KeyPair.CanEncryptCms
-                   || l.KeyPair.IsReadyForEncrypt != r.KeyPair.IsReadyForEncrypt;
+            return l.Provider                        != r.Provider
+                   || l.CurrentAuthorization         != r.CurrentAuthorization
+                   || l.KeyPair.IsAccessible         != r.KeyPair.IsAccessible
+                   || l.KeyPair.CanDecryptCms        != r.KeyPair.CanDecryptCms
+                   || l.KeyPair.CanKeyAgree          != r.KeyPair.CanKeyAgree
+                   || l.KeyPair.IsReadyForDecryptCms != r.KeyPair.IsReadyForDecryptCms
+                   || l.KeyPair.CanEncryptCms        != r.KeyPair.CanEncryptCms
+                   || l.KeyPair.IsReadyForEncryptCms != r.KeyPair.IsReadyForEncryptCms;
         }
 
     }

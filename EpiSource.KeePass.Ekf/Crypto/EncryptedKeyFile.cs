@@ -58,7 +58,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             store.Decode(encryptedKeyStore);
 
             // note: GetAllKeyPairs blocks if busy HW is involved.
-            var localKeyPairs = SmartcardKeyPairs.GetAllKeyPairs().ToDictionary(c => c.Certificate.Thumbprint);
+            var localKeyPairs = SmartcardKeyPairs.GetAllPivKeyPairs().ToDictionary(c => c.Certificate.Thumbprint);
             var authorization = store.Certificates
                                      .Cast<X509Certificate2>()
                                      .Select(c => // ReSharper disable once AssignNullToNotNullAttribute
