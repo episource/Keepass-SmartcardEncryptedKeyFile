@@ -290,10 +290,6 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
         private static class NativeCryptPinvoke {
             
-            // return value is pointer to CryptOidInfo structure, must not be freed
-            [DllImport("crypt32.dll", SetLastError=true)]
-            public static extern IntPtr CryptFindOIDInfo(CryptFindOIDInfoKeyTypeFlag dwKeyType, [MarshalAs(UnmanagedType.LPStr)] string szOID, CryptFindOIDInfoGroupId dwGroupId);
-            
             [DllImport("crypt32.dll", SetLastError = true)]
             public static extern bool CryptImportPublicKeyInfoEx2(CryptEncodingTypeFlags dwCertEncodingType,
                 CryptPublicKeyInfoHandle pInfo, CryptFindOIDInfoKeyTypeFlag dwFlags, IntPtr pvAuxInfo, out BCryptKeyHandle phKey);

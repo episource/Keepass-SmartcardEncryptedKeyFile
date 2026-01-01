@@ -6,7 +6,6 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Windows.Forms;
 
 using EpiSource.KeePass.Ekf.Crypto.Exceptions;
 using EpiSource.KeePass.Ekf.Crypto.Windows.Exceptions;
@@ -277,31 +276,6 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             
             EncryptOrDecryptAesGcm(plaintext, out ciphertext, key, nonce, tag, false);
             return new AesGcmCryptoCipherResult(ciphertext.ReadUnprotected(), nonce, tag);
-        }
-        
-        public static AlgorithmClass QueryKeyOid(string oid) {
-            // returned pointer must not be freed!
-            var oidInfoPtr = NativeCryptPinvoke.CryptFindOIDInfo(CryptFindOIDInfoKeyTypeFlag.CRYPT_OID_INFO_OID_KEY, oid, 0);
-            var oidInfo = Marshal.PtrToStructure<CryptOidInfo>(oidInfoPtr);
-
-            var algClass = (oidInfo.AlgId & (int) CryptAlgClassId.ALG_CLASS_ALL);
-            
-            if (algClass == (int)CryptAlgClassId.ALG_CLASS_KEY_EXCHANGE) {
-                return AlgorithmClass.KeyExchange;
-            } 
-            if (algClass == (int)CryptAlgClassId.ALG_CLASS_SIGNATURE) {
-                return AlgorithmClass.Signature;
-            }
-            if (algClass == (int)CryptAlgClassId.ALG_CLASS_DATA_ENCRYPT) {
-                return AlgorithmClass.DataEncrypt;
-            } 
-            if (algClass == (int)CryptAlgClassId.ALG_CLASS_MSG_ENCRYPT) {
-                return AlgorithmClass.MsgEncrypt;
-            } 
-            if (algClass == (int)CryptAlgClassId.ALG_CLASS_HASH) {
-                return AlgorithmClass.Hash;
-            } 
-            return AlgorithmClass.Unknown;
         }
         
         public static int GetPublicKeyLengthBits(X509Certificate2 cert) {
