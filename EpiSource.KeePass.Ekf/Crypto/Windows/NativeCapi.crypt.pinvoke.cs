@@ -10,6 +10,24 @@ using Microsoft.Win32.SafeHandles;
 
 namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public partial class NativeCapi {
+        
+        /// https://learn.microsoft.com/en-us/windows/win32/seccng/cng-interface-identifiers
+        /// https://github.com/mingw-w64/mingw-w64/blob/master/mingw-w64-headers/include/bcrypt.h
+        /// https://github.com/mingw-w64/mingw-w64/blob/master/mingw-w64-tools/widl/include/ncrypt.h
+        private enum CngInterfaceIdentifier {
+            BCRYPT_CIPHER_INTERFACE = 0x00000001,
+            BCRYPT_HASH_INTERFACE = 0x00000002,
+            BCRYPT_ASYMMETRIC_ENCRYPTION_INTERFACE = 0x00000003,
+            BCRYPT_SECRET_AGREEMENT_INTERFACE = 0x00000004,
+            BCRYPT_SIGNATURE_INTERFACE = 0x00000005,
+            BCRYPT_RNG_INTERFACE = 0x00000006,
+            BCRYPT_KEY_DERIVATION_INTERFACE = 0x00000007,
+            
+            NCRYPT_KEY_STORAGE_INTERFACE = 0x00010001,
+            NCRYPT_SCHANNEL_INTERFACE = 0x00010002,
+            NCRYPT_SCHANNEL_SIGNATURE_INTERFACE = 0x00010003,
+            NCRYPT_KEY_PROTECTION_INTERFACE = 0x00010004
+        }
 
         /// https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-crypt_oid_info
         /// https://github.com/mingw-w64/mingw-w64/blob/master/mingw-w64-headers/include/wincrypt.h

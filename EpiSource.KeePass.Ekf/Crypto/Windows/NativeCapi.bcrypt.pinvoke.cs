@@ -9,7 +9,29 @@ using Microsoft.Win32.SafeHandles;
 namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     
     public static partial class NativeCapi {
+
+        /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptenumalgorithms
+        /// https://github.com/mingw-w64/mingw-w64/blob/master/mingw-w64-headers/include/bcrypt.h
+        [Flags]
+        private enum BcryptOperations {
+            BCRYPT_CIPHER_OPERATION = 0x00000001,
+            BCRYPT_HASH_OPERATION = 0x00000002,
+            BCRYPT_ASYMMETRIC_ENCRYPTION_OPERATION = 0x00000004,
+            BCRYPT_SECRET_AGREEMENT_OPERATION = 0x00000008,
+            BCRYPT_SIGNATURE_OPERATION = 0x00000010,
+            BCRYPT_RNG_OPERATION = 0x00000020,
+            BCRYPT_KEY_DERIVATION_OPERATION = 0x00000040
+        }
+
+        /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/ns-bcrypt-bcrypt_algorithm_identifier
+        private struct BcryptAlgorithmIdentifier {
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszName;
+            public CngInterfaceIdentifier dwClass;
+            public int dwFlags;
+        }
         
+        /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/ns-bcrypt-bcrypt_authenticated_cipher_mode_info
         [StructLayout(LayoutKind.Sequential)]
         private struct BcryptAuthenticatedCipherModeInfo
         {
@@ -28,6 +50,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             public int dwFlags;
         }
         
+        /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/ns-bcrypt-bcrypt_key_lengths_struct
         [StructLayout(LayoutKind.Sequential)]
         private struct BcryptKeyLengthsStruct
         {
@@ -102,9 +125,17 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             public static extern NTStatusUtil.NTStatus BCryptEncryptAuthenticatedCipher(BCryptKeyHandle hKey, HGlobalHandle pbInput, int cbInput, ref BcryptAuthenticatedCipherModeInfo pPaddingInfo,
                 HGlobalHandle pbIV, int cbIV, HGlobalHandle pbOutput, int cbOutput, out int pcbResult, int dwFlagsZeroForAesGcm=0);
             
+            /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptenumalgorithms
+            [DllImport("bcrypt.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+            public static extern NTStatusUtil.NTStatus BCryptEnumAlgorithms(BcryptOperations dwAlgOperations, out int pAlgCount, ref IntPtr ppAlgList, int dwFlags=0);
+            
             /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptfinalizekeypair
             [DllImport("bcrypt.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
             public static extern NTStatusUtil.NTStatus BCryptFinalizeKeyPair(BCryptKeyHandle phKey, int dwFlags=0);
+            
+            /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptfreebuffer
+            [DllImport("bcrypt.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+            public static extern void BCryptFreeBuffer(IntPtr pvBuffer);
             
             /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptgeneratekeypair
             [DllImport("bcrypt.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
@@ -124,6 +155,9 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptgetproperty
             [DllImport("bcrypt.dll", EntryPoint = "BCryptGetProperty", CharSet = CharSet.Unicode, ExactSpelling = true)]
             public static extern NTStatusUtil.NTStatus BCryptGetPropertyIntPtr(BCryptHandle hObject, [In] string pszProperty, out IntPtr pbOutput, int cbOutput, out int pcbResult, int dwFlagsMustBeZero = 0);
+            /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptgetproperty
+            [DllImport("bcrypt.dll", EntryPoint = "BCryptGetProperty", CharSet = CharSet.Unicode, ExactSpelling = true)]
+            public static extern NTStatusUtil.NTStatus BCryptGetPropertyBinary(BCryptHandle hObject, [In] string pszProperty, byte[] pbOutput, int cbOutput, out int pcbResult, int dwFlagsMustBeZero = 0);
 
             
             /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptopenalgorithmprovider

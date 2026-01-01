@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Windows.Forms;
 
 using EpiSource.KeePass.Ekf.Crypto.Exceptions;
 using EpiSource.KeePass.Ekf.Crypto.Windows.Exceptions;
@@ -278,7 +279,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             return new AesGcmCryptoCipherResult(ciphertext.ReadUnprotected(), nonce, tag);
         }
         
-        public static AlgorithmClass GetAlgorithmClassForOid(string oid) {
+        public static AlgorithmClass QueryKeyOid(string oid) {
             // returned pointer must not be freed!
             var oidInfoPtr = NativeCryptPinvoke.CryptFindOIDInfo(CryptFindOIDInfoKeyTypeFlag.CRYPT_OID_INFO_OID_KEY, oid, 0);
             var oidInfo = Marshal.PtrToStructure<CryptOidInfo>(oidInfoPtr);
@@ -302,6 +303,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             } 
             return AlgorithmClass.Unknown;
         }
+        
         public static int GetPublicKeyLengthBits(X509Certificate2 cert) {
             BCryptKeyHandle keyHandle;
             if (!NativeCryptPinvoke.CryptImportPublicKeyInfoEx2(
@@ -323,14 +325,17 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         }
         
         public static bool IsKeyAgreeSupported(X509Certificate2 cert) {
-            BCryptKeyHandle pubKeyHandle;
-            if (!NativeCryptPinvoke.CryptImportPublicKeyInfoEx2(
-                CryptEncodingTypeFlags.X509_ASN_ENCODING | CryptEncodingTypeFlags.PKCS_7_ASN_ENCODING,
-                new CryptPublicKeyInfoHandle(cert), CryptFindOIDInfoKeyTypeFlag.CRYPT_OID_INFO_PUBKEY_ENCRYPT_KEY_FLAG, IntPtr.Zero, out pubKeyHandle)) {
+            var pubKey = ImportPublicKey(cert);
+            if (pubKey.KeyHandle.IsInvalid) {
                 return false;
             }
 
-            using (pubKeyHandle) {
+            using (var pubKeyHandle = pubKey.KeyHandle) {
+                CngInterfaceIdentifier cngInterfaceType;
+                if (AvailableCngAlgorithms.TryGetValue(pubKey.CngAlgorithmName, out cngInterfaceType)) {
+                    return cngInterfaceType == CngInterfaceIdentifier.BCRYPT_SECRET_AGREEMENT_INTERFACE;
+                }
+                
                 int keyLength;
                 int outputDataSize;
                 if (NTStatusUtil.NTStatus.STATUS_SUCCESS != NativeBCryptPinvoke.BCryptGetPropertyInt32(
@@ -354,6 +359,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 }
 
                 using (keyPairHandle) {
+                    // Very slow - invocation time increases dramatically, after a bunch of invocations: Maybe waiting for entropy?
                     if (NTStatusUtil.NTStatus.STATUS_SUCCESS != NativeBCryptPinvoke.BCryptFinalizeKeyPair(keyPairHandle, 0)) {
                         return false;
                     }
@@ -369,16 +375,21 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 }
             }
         }
+        
 
         public static bool IsEncryptionSupported(X509Certificate2 cert) {
-            BCryptKeyHandle keyHandle;
-            if (!NativeCryptPinvoke.CryptImportPublicKeyInfoEx2(
-                CryptEncodingTypeFlags.X509_ASN_ENCODING | CryptEncodingTypeFlags.PKCS_7_ASN_ENCODING,
-                    new CryptPublicKeyInfoHandle(cert), CryptFindOIDInfoKeyTypeFlag.CRYPT_OID_INFO_PUBKEY_ENCRYPT_KEY_FLAG, IntPtr.Zero, out keyHandle)) {
+            var pubKey = ImportPublicKey(cert);
+            if (pubKey.KeyHandle.IsInvalid) {
                 return false;
             }
 
-            using (keyHandle) {
+            using (var keyHandle = pubKey.KeyHandle) {
+                CngInterfaceIdentifier cngInterfaceType;
+                if (AvailableCngAlgorithms.TryGetValue(pubKey.CngAlgorithmName, out cngInterfaceType)) {
+                    return cngInterfaceType == CngInterfaceIdentifier.BCRYPT_CIPHER_INTERFACE 
+                           || cngInterfaceType == CngInterfaceIdentifier.BCRYPT_ASYMMETRIC_ENCRYPTION_INTERFACE;
+                }
+                
                 int blocksize;
                 int outputDataSize;
                 if (NTStatusUtil.NTStatus.STATUS_SUCCESS != NativeBCryptPinvoke.BCryptGetPropertyInt32(

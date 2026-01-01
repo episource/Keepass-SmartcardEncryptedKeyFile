@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 using EpiSource.KeePass.Ekf.Crypto.Exceptions;
@@ -14,6 +16,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
 
         public const int AesGcmNonceSize = 12;
+        private static readonly IReadOnlyDictionary<string, CngInterfaceIdentifier> AvailableCngAlgorithms = EnumerateCngAlgorithms();
+        
         
         private static void EncryptOrDecryptAesGcm(PortableProtectedBinary input, out PortableProtectedBinary output, PortableProtectedBinary key, IList<byte> nonce, IList<byte> tag, bool decrypt) {
             if (key.Length != 16 && key.Length != 32) {
@@ -99,6 +103,54 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                     }
                 }
             }
+        }
+
+        private static IReadOnlyDictionary<string, CngInterfaceIdentifier> EnumerateCngAlgorithms() {
+            int numAlgs;
+            IntPtr algInfoBufferPtr = IntPtr.Zero;
+            NativeBCryptPinvoke.BCryptEnumAlgorithms((BcryptOperations) 0xff, out numAlgs, ref algInfoBufferPtr).EnsureSuccess();
+
+            try {
+                var algorithms = new Dictionary<string, CngInterfaceIdentifier>(numAlgs);
+                
+
+                for (int i = 0; i < numAlgs; i++) {
+                    var algInfoPtr = algInfoBufferPtr + i * Marshal.SizeOf<BcryptAlgorithmIdentifier>();
+                    var algInfo = Marshal.PtrToStructure<BcryptAlgorithmIdentifier>(algInfoPtr);
+                    algorithms.Add(algInfo.pszName, algInfo.dwClass);
+                }
+                
+                return new ReadOnlyDictionary<string, CngInterfaceIdentifier>(algorithms);
+            } finally {
+                NativeBCryptPinvoke.BCryptFreeBuffer(algInfoBufferPtr);
+            }
+        }
+        
+        private static BcryptPublicKey ImportPublicKey(X509Certificate2 cert) {
+            BCryptKeyHandle keyHandle;
+            if (!NativeCryptPinvoke.CryptImportPublicKeyInfoEx2(
+                CryptEncodingTypeFlags.X509_ASN_ENCODING | CryptEncodingTypeFlags.PKCS_7_ASN_ENCODING,
+                new CryptPublicKeyInfoHandle(cert), CryptFindOIDInfoKeyTypeFlag.CRYPT_OID_INFO_PUBKEY_ENCRYPT_KEY_FLAG, IntPtr.Zero, out keyHandle)) {
+                return new BcryptPublicKey();
+            }
+
+            const string propAlgorithmName = "AlgorithmName";
+            
+            var cngAlgNameBuffer = Array.Empty<byte>();
+            int cngAlgNameSize;
+            if (NTStatusUtil.NTStatus.STATUS_BUFFER_TOO_SMALL != NativeBCryptPinvoke.BCryptGetPropertyBinary(
+                keyHandle, propAlgorithmName, cngAlgNameBuffer, cngAlgNameBuffer.Length, out cngAlgNameSize, 0)) {
+                return new BcryptPublicKey() {KeyHandle =  keyHandle, CngAlgorithmName = ""};
+            }
+            
+            cngAlgNameBuffer = new byte[cngAlgNameSize];
+
+            NativeBCryptPinvoke.BCryptGetPropertyBinary(
+                    keyHandle, propAlgorithmName, cngAlgNameBuffer, cngAlgNameBuffer.Length, out cngAlgNameSize, 0)
+                            .EnsureSuccess();
+            
+            var cngAlgorithmName = Encoding.Unicode.GetString(cngAlgNameBuffer, 0, Math.Max(0, cngAlgNameSize - 2));
+            return new BcryptPublicKey() {KeyHandle =  keyHandle, CngAlgorithmName = cngAlgorithmName};
         }
     }
 }

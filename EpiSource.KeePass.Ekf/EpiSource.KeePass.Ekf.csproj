@@ -78,6 +78,9 @@
     <Compile Include="Crypto\Windows\NativeCapi.bcrypt.pinvoke.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
+    <Compile Include="Crypto\Windows\NativeCapi.bcrypt.types.cs">
+      <DependentUpon>NativeCapi.cs</DependentUpon>
+    </Compile>
     <Compile Include="Crypto\Windows\NativeCapi.cert.pinvoke.cs">
       <DependentUpon>NativeCapi.cs</DependentUpon>
     </Compile>
