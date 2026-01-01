@@ -45,7 +45,7 @@ namespace EpiSource.KeePass.Ekf.Util {
             }
             
             var nonce = credential.Attributes[NonceAttributeName];
-            if (nonce.Count != this.key.Length) {
+            if (nonce.Count != NativeCapi.AesGcmNonceSize && nonce.Count != this.key.Length) {
                 return false;
             }
             
