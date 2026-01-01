@@ -20,7 +20,7 @@ namespace EpiSource.KeePass.Ekf.Util {
             GC.SuppressFinalize(this);
         }
 
-        protected void Dispose(bool disposing) {
+        private void Dispose(bool disposing) {
             if (this.marshaledStructures == null) {
                 return;
             }

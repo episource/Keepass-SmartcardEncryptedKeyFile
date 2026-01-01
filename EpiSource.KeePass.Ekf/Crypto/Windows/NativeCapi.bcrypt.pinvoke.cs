@@ -24,12 +24,14 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         }
 
         /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/ns-bcrypt-bcrypt_algorithm_identifier
+        #pragma warning disable CS0649
         private struct BcryptAlgorithmIdentifier {
             [MarshalAs(UnmanagedType.LPWStr)]
             public string pszName;
             public CngInterfaceIdentifier dwClass;
             public int dwFlags;
         }
+        #pragma warning restore CS0649
         
         /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/ns-bcrypt-bcrypt_authenticated_cipher_mode_info
         [StructLayout(LayoutKind.Sequential)]

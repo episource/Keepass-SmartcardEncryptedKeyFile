@@ -211,7 +211,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                     }
                     
                     return decryptedKeyFile.PlaintextKey;
-                } catch (TaskCanceledException e) {
+                } catch (TaskCanceledException) {
                     // cancelled by user
                     return null;
                 } catch (CryptographicException ex) {
