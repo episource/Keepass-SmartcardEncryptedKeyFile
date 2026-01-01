@@ -44,9 +44,11 @@ namespace EpiSource.KeePass.Ekf.UI {
                 return null;
             }
 
-            var readyKeyPair = candidates.FirstOrDefault(kp => kp.KeyPair.IsReadyForDecryptCms);
-            if (readyKeyPair != null) {
-                return readyKeyPair.KeyPair;
+            var readyKeyPairs = candidates
+                                .Where(kp => kp.KeyPair.IsReadyForDecryptCms)
+                                .ToList();
+            if (readyKeyPairs.Count == 1) {
+                return readyKeyPairs.First().KeyPair;
             }
 
             var dialog = new SmartcardRequiredDialog(owner, keyProvider);
