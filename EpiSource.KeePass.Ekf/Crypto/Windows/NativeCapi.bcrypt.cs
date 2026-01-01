@@ -108,7 +108,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         private static IReadOnlyDictionary<string, CngInterfaceIdentifier> EnumerateCngAlgorithms() {
             int numAlgs;
             IntPtr algInfoBufferPtr = IntPtr.Zero;
-            NativeBCryptPinvoke.BCryptEnumAlgorithms((BcryptOperations) 0xff, out numAlgs, ref algInfoBufferPtr).EnsureSuccess();
+            NativeBCryptPinvoke.BCryptEnumAlgorithms(BcryptOperations.ALL, out numAlgs, ref algInfoBufferPtr).EnsureSuccess();
 
             try {
                 var algorithms = new Dictionary<string, CngInterfaceIdentifier>(numAlgs);

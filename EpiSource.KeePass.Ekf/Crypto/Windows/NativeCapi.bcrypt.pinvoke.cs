@@ -20,7 +20,9 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             BCRYPT_SECRET_AGREEMENT_OPERATION = 0x00000008,
             BCRYPT_SIGNATURE_OPERATION = 0x00000010,
             BCRYPT_RNG_OPERATION = 0x00000020,
-            BCRYPT_KEY_DERIVATION_OPERATION = 0x00000040
+            BCRYPT_KEY_DERIVATION_OPERATION = 0x00000040,
+            
+            ALL = 0x7f
         }
 
         /// https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/ns-bcrypt-bcrypt_algorithm_identifier
