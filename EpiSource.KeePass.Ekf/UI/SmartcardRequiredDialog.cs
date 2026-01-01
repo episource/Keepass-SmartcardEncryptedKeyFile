@@ -332,6 +332,12 @@ namespace EpiSource.KeePass.Ekf.UI {
                     // NOTE: Refresh blocks if busy HW is involved -> unblocker
                     var refreshResult = SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
                         this.keyPairProvider, (ct, _) => _.Refresh());
+
+                    // closing dialog was requested while waiting for Refresh - skip update
+                    if (this.DialogResult != DialogResult.None) {
+                        return;
+                    }
+                    
                     this.keyPairProvider.Refresh(refreshResult.PostInvocationTarget);
                     
                     prevCheckedItems = this.keyListView.CheckedItems.Cast<ListViewItem>()
