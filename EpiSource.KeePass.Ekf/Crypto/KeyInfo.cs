@@ -20,6 +20,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             this.canKeyTransfer = canKeyTransfer;
             this.canKeyAgree = canKeyAgree;
             this.canSign = canSign;
+            this.canExport = canExport;
             this.isHardware = isHardware;
             this.isRemovable = isRemovable;
         }
