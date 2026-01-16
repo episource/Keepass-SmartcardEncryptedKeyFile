@@ -216,10 +216,10 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         public static byte[] EncryptEnvelopedCms(PortableProtectedBinary plaintextContent, IEnumerable<CmsRecipient> recipients, string contentEncryptionOid=KnownOids.AlgAesCbc256, string contentTypeOid=KnownOids.GenericCmsData, CryptographicAttributeObjectCollection unprotectedAttributes=null) {
             var recipientsCollection = recipients as IReadOnlyCollection<CmsRecipient> ?? recipients.ToList();
             using (var encodeInfoHandle = new CmsgEnvelopedEncodeInfoHandle(recipientsCollection, contentEncryptionOid, unprotectedAttributes)) {
-                using (var cmsgHandle = NativeCryptMsgPinvoke.CryptMsgOpenToEncode(
+                using (var cmsgHandle = PinvokeUtil.DoPinvokeWithException(() => NativeCryptMsgPinvoke.CryptMsgOpenToEncode(
                     CryptEncodingTypeFlags.PKCS_7_ASN_ENCODING | CryptEncodingTypeFlags.X509_ASN_ENCODING,
                     CryptMsgFlags.None, CryptMsgType.CMSG_ENVELOPED, encodeInfoHandle,
-                    contentTypeOid, IntPtr.Zero)) {
+                    contentTypeOid, IntPtr.Zero), h => !h.Result.IsInvalid)) {
 
                     
                     var encodedInputData = Array.Empty<byte>();
