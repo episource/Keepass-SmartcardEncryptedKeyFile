@@ -61,7 +61,6 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 throw new ArgumentNullException("cert");
             }
 
-            Console.WriteLine("c: " + cert.Subject);
             var kp = new WindowsKeyPair(cert);
             kp.Refresh();
             return kp;
