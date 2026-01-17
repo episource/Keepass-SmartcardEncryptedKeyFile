@@ -16,6 +16,7 @@ using EpiSource.KeePass.Ekf.Util.Windows;
 using EpiSource.Unblocker.Hosting;
 using EpiSource.Unblocker.Util;
 
+using KeePass.App;
 using KeePass.Plugins;
 using KeePass.UI;
 
@@ -78,6 +79,15 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                 MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
                     ProviderName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return null;
+            } catch (Exception ex) {
+                // strip InnerException if debug mode is disabled and messages are identical
+                // => prevent duplicate text in error message
+                if (ex.InnerException != null 
+                        && ex.InnerException.Message == ex.Message
+                        && !Environment.GetCommandLineArgs().Any(a => a.ToLowerInvariant().TrimStart('-') == AppDefs.CommandLineOptions.Debug)) {
+                    throw new ApplicationException(ex.Message);
+                }
+                throw;
             }
 
             if (plainKey == null) {
