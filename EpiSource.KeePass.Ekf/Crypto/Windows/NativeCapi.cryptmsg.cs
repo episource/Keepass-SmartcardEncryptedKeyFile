@@ -195,9 +195,9 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             private readonly int count;
             public CmsgRecipientEncodeInfoCollectionHandle() : base() {}
 
-            public CmsgRecipientEncodeInfoCollectionHandle(IReadOnlyCollection<CmsRecipient> collection) : this(asCmsRecipientCollectionInfo(collection)) { }
+            public CmsgRecipientEncodeInfoCollectionHandle(IReadOnlyCollection<CmsRecipient> collection, bool strictRfc5753=true) : this(asCmsRecipientCollectionInfo(collection), strictRfc5753) { }
             
-            public CmsgRecipientEncodeInfoCollectionHandle(CmsRecipientCollectionInfo collection) 
+            public CmsgRecipientEncodeInfoCollectionHandle(CmsRecipientCollectionInfo collection, bool strictRfc5753=true) 
                 : base(collection.NativeSize) {
                 this.count = collection.Recipients.Count;
                 this.itemHandles = new MarshaledStructureHandleCollection();
@@ -329,7 +329,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                         var keyAgreeEncoding = new CmsgKeyAgreeRecipientEncodeInfo() {
                             cbSize = (uint)Marshal.SizeOf<CmsgKeyAgreeRecipientEncodeInfo>(),
                             keyEncryptionAlgorithm = {
-                                pszObjId = determineKeyAgreeKeyEncryptionAlgorithm(recipient.Certificate),
+                                pszObjId = determineKeyAgreeKeyEncryptionAlgorithm(recipient.Certificate, strictRfc5753),
                                 Parameters = {
                                     cbData = 0,
                                     pbData = IntPtr.Zero
@@ -384,11 +384,11 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 return base.ReleaseHandle();
             }
 
-            private static string determineKeyAgreeKeyEncryptionAlgorithm(X509Certificate2 certificate) {
+            private static string determineKeyAgreeKeyEncryptionAlgorithm(X509Certificate2 certificate, bool strictRfc5753=true) {
                 var publicKeyTypeName = certificate.PublicKey.Oid.FriendlyName.ToLowerInvariant();
                 if (publicKeyTypeName.Contains("ecc")) { // RFC5753                                          
                     var keyBits = GetPublicKeyLengthBits(certificate);
-                    return KnownOids.GetAlgKeyAgreeDhSinglePassStdParamsSha(keyBits);
+                    return KnownOids.GetAlgKeyAgreeDhSinglePassStdParamsSha(keyBits, !strictRfc5753);
                 }
                 if (publicKeyTypeName.Contains("rsa")) { //RFC3370, section 4.1.1
                     return KnownOids.AlgEsdhSmimeRsa;
@@ -458,10 +458,10 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             
             public CmsgEnvelopedEncodeInfoHandle() : base(true) {}
             
-            public CmsgEnvelopedEncodeInfoHandle(CmsRecipientCollection recipients, string contentEncryptionOid, CryptographicAttributeObjectCollection unprotectedAttributes) 
-                : this(recipients.Cast<CmsRecipient>().ToList(), contentEncryptionOid, unprotectedAttributes) {}
+            public CmsgEnvelopedEncodeInfoHandle(CmsRecipientCollection recipients, string contentEncryptionOid, CryptographicAttributeObjectCollection unprotectedAttributes, bool strictRfc5753=true) 
+                : this(recipients.Cast<CmsRecipient>().ToList(), contentEncryptionOid, unprotectedAttributes, strictRfc5753) {}
 
-            public CmsgEnvelopedEncodeInfoHandle(IEnumerable<CmsRecipient> recipients, string contentEncryptionOid, CryptographicAttributeObjectCollection unprotectedAttributes)
+            public CmsgEnvelopedEncodeInfoHandle(IEnumerable<CmsRecipient> recipients, string contentEncryptionOid, CryptographicAttributeObjectCollection unprotectedAttributes, bool strictRfc5753=true)
                 : base(true) {
 
                 if (unprotectedAttributes != null && unprotectedAttributes.Count != 0) {
@@ -469,7 +469,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 }
                 
                 var recipientsCollection = recipients as IReadOnlyCollection<CmsRecipient> ?? recipients.ToList();
-                this.recipientsHandle = new CmsgRecipientEncodeInfoCollectionHandle(recipientsCollection);
+                this.recipientsHandle = new CmsgRecipientEncodeInfoCollectionHandle(recipientsCollection, strictRfc5753);
                 this.certificatesHandle = new CryptDataBlobListHandle(recipientsCollection
                           .Select(r => r.Certificate.Export(X509ContentType.Cert))
                           .DistinctByStructure()

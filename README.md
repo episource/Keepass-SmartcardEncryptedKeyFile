@@ -158,6 +158,27 @@ Add below snippet to `KeePass.config.xml` to revert to windows builtin smartcard
     </Custom>
 </Configuration>
 ```
+## Require strict RFC5753 (ECC) parameters
+[RFC5753](https://datatracker.ietf.org/doc/rfc5753/) recommends parameters for key agree scheme based on ECC encryption.
+Setting below option configures the plugin to strictly adhere to these recommendations.
+
+With this disabled (the default) the following variations are allowed:
+ - Using SHA384 based key derivation function for ECC521 curves (instead of recommended SHA512) - this is required for 
+   compatibility with all known windows builds. Otherwise, authorizing a smart card using ECC521 curves will fail with
+   an invalid parameter error. See also #3.
+
+Add below snippet to `KeePass.config.xml` to strictly follow RFC5753 parameters.
+
+```xml
+<Configuration>
+    <Custom>
+       <Item>
+          <Key>EpiSource.KeePass.Ekf.StrictRfc5753</Key>
+          <Value>true</Value>
+       </Item>
+    </Custom>
+</Configuration>
+```
 
 # Known Issues & Limitations
 1. Non-Local databases have not been tested, but might work as well.

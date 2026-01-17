@@ -30,8 +30,8 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             get { return this.protectedPlaintextKey; }
         }
 
-        public EncryptedKeyFile Encrypt() {
-            return new EncryptedKeyFile(this);
+        public EncryptedKeyFile Encrypt(bool strictRfc5753=true) {
+            return new EncryptedKeyFile(this, strictRfc5753);
         }
     }
 }

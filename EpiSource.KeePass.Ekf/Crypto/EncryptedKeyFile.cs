@@ -31,14 +31,14 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         // invariant: always encrypted!
         private readonly byte[] encryptedKeyStore;
 
-        public EncryptedKeyFile(DecryptedKeyFile plaintext)
+        public EncryptedKeyFile(DecryptedKeyFile plaintext, bool strictRfc5753=true)
             : base(plaintext.Authorization) {
             if (plaintext == null) {
                 throw new ArgumentNullException("plaintext");
             }
 
             this.encryptedKeyStore = NativeCapi.EncryptEnvelopedCms(
-                plaintext.PlaintextKey, plaintext.Authorization.Select(kp => kp.Certificate));
+                plaintext.PlaintextKey, plaintext.Authorization.Select(kp => kp.Certificate), strictRfc5753:strictRfc5753);
         }
 
         private EncryptedKeyFile(IEnumerable<IKeyPair> authorization, byte[] encryptedKeyStore) 

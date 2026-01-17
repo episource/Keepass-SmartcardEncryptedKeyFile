@@ -205,17 +205,17 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             throw new AggregateException("Decryption failed using given recipient certificate.", exceptions);
         }
 
-        public static byte[] EncryptEnvelopedCms(PortableProtectedBinary plaintextContent, CmsRecipientCollection recipients, string contentEncryptionOid = KnownOids.AlgAesCbc256, string contentTypeOid = KnownOids.GenericCmsData, CryptographicAttributeObjectCollection unprotectedAttributes = null) {
-            return EncryptEnvelopedCms(plaintextContent, recipients.Cast<CmsRecipient>().ToList(), contentEncryptionOid, contentTypeOid, unprotectedAttributes);
+        public static byte[] EncryptEnvelopedCms(PortableProtectedBinary plaintextContent, CmsRecipientCollection recipients, string contentEncryptionOid = KnownOids.AlgAesCbc256, string contentTypeOid = KnownOids.GenericCmsData, CryptographicAttributeObjectCollection unprotectedAttributes = null, bool strictRfc5753=true) {
+            return EncryptEnvelopedCms(plaintextContent, recipients.Cast<CmsRecipient>().ToList(), contentEncryptionOid, contentTypeOid, unprotectedAttributes, strictRfc5753);
         }
         
-        public static byte[] EncryptEnvelopedCms(PortableProtectedBinary plaintextContent, IEnumerable<X509Certificate2> recipients, string contentEncryptionOid = KnownOids.AlgAesCbc256, string contentTypeOid = KnownOids.GenericCmsData, CryptographicAttributeObjectCollection unprotectedAttributes = null) {
-            return EncryptEnvelopedCms(plaintextContent, recipients.Select(c => new CmsRecipient(SubjectIdentifierType.SubjectKeyIdentifier, c)).ToList(), contentEncryptionOid, contentTypeOid, unprotectedAttributes);
+        public static byte[] EncryptEnvelopedCms(PortableProtectedBinary plaintextContent, IEnumerable<X509Certificate2> recipients, string contentEncryptionOid = KnownOids.AlgAesCbc256, string contentTypeOid = KnownOids.GenericCmsData, CryptographicAttributeObjectCollection unprotectedAttributes = null, bool strictRfc5753=true) {
+            return EncryptEnvelopedCms(plaintextContent, recipients.Select(c => new CmsRecipient(SubjectIdentifierType.SubjectKeyIdentifier, c)).ToList(), contentEncryptionOid, contentTypeOid, unprotectedAttributes, strictRfc5753);
         }
 
-        public static byte[] EncryptEnvelopedCms(PortableProtectedBinary plaintextContent, IEnumerable<CmsRecipient> recipients, string contentEncryptionOid=KnownOids.AlgAesCbc256, string contentTypeOid=KnownOids.GenericCmsData, CryptographicAttributeObjectCollection unprotectedAttributes=null) {
+        public static byte[] EncryptEnvelopedCms(PortableProtectedBinary plaintextContent, IEnumerable<CmsRecipient> recipients, string contentEncryptionOid=KnownOids.AlgAesCbc256, string contentTypeOid=KnownOids.GenericCmsData, CryptographicAttributeObjectCollection unprotectedAttributes=null, bool strictRfc5753=true) {
             var recipientsCollection = recipients as IReadOnlyCollection<CmsRecipient> ?? recipients.ToList();
-            using (var encodeInfoHandle = new CmsgEnvelopedEncodeInfoHandle(recipientsCollection, contentEncryptionOid, unprotectedAttributes)) {
+            using (var encodeInfoHandle = new CmsgEnvelopedEncodeInfoHandle(recipientsCollection, contentEncryptionOid, unprotectedAttributes, strictRfc5753)) {
                 using (var cmsgHandle = PinvokeUtil.DoPinvokeWithException(() => NativeCryptMsgPinvoke.CryptMsgOpenToEncode(
                     CryptEncodingTypeFlags.PKCS_7_ASN_ENCODING | CryptEncodingTypeFlags.X509_ASN_ENCODING,
                     CryptMsgFlags.None, CryptMsgType.CMSG_ENVELOPED, encodeInfoHandle,

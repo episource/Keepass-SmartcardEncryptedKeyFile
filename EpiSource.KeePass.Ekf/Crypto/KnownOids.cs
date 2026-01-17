@@ -21,11 +21,22 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         /// ASN Octet String encoded data
         public const string GenericCmsData = "1.2.840.113549.1.7.1";
 
-        public static string GetAlgKeyAgreeDhSinglePassStdParamsSha(int bits) {
+        /// Select key derivation function (hash) wrt. RFC 5753 recommendations (page 31).
+        ///
+        /// SHA512 can be disabled for compatibility with default windows CMS implementation
+        /// by setting <c>noSha512=true</c>. This is a deviation from RFC 5753 recommendations.
+        /// 
+        /// Default Windows CMS implementation (at least up to Win 11 25H2) without custom
+        /// PFN_CMSG_EXPORT_KEY_AGREE hook does not support SHA512 key derivation. The only
+        /// supported KDF variants implemented by default implementation
+        /// Crypt32.dll: are 1.3.133.16.840.63.0.2 (SHA-1), 1.3.132.1.11.1 (SHA-256) and
+        /// 1.3.132.1.11.2 (SHA-384) - 1.3.132.1.11.3 (SHA-512) is handled with
+        /// LastError= ERROR_INVALID_PARAMETER.
+        public static string GetAlgKeyAgreeDhSinglePassStdParamsSha(int bits, bool noSha512=false) {
             if (bits <= 256) {
                 return AlgKeyAgreeDhSinglePassStdParamsSha256;
             }
-            if (bits <= 384) {
+            if (bits <= 384 || noSha512) {
                 return AlgKeyAgreeDhSinglePassStdParamsSha384;
             }
             return AlgKeyAgreeDhSinglePassStdParamsSha512;

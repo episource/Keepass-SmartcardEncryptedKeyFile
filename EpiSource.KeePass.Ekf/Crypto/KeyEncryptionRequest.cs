@@ -43,8 +43,8 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             get { return this.authorizedKeyPairs; }
         }
 
-        public void WriteEncryptedKeyFile() {
-            var encrypted = new DecryptedKeyFile(this.AuthorizedKeyPairs, this.PlaintextKey).Encrypt();
+        public void WriteEncryptedKeyFile(bool strictRfc5753) {
+            var encrypted = new DecryptedKeyFile(this.AuthorizedKeyPairs, this.PlaintextKey).Encrypt(strictRfc5753);
             using (var stream = IOConnection.OpenWrite(this.EncryptedKeyFilePath)) {
                 encrypted.Write(stream);
             }

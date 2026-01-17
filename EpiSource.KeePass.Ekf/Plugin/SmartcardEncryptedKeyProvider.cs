@@ -29,13 +29,16 @@ namespace EpiSource.KeePass.Ekf.Plugin {
     public class SmartcardEncryptedKeyProvider : KeyProvider {
         
         public const string ProviderName = "Smartcard Encrypted Key File Provider";
-        private const string configKeyUseNativePinDialog = "EpiSource.KeePass.Ekf.UseNativePinDialog";
+        
         private const string configKeyPinStoreKey = "EpiSource.KeePass.Ekf.RememberedPinStoreKey";
         private const string configKeyPinStoreKeyId = "EpiSource.KeePass.Ekf.RememberedPinStoreKeyId";
+        private const string configKeyStrictRfc5753 = "EpiSource.KeePass.Ekf.StrictRfc5753";
+        private const string configKeyUseNativePinDialog = "EpiSource.KeePass.Ekf.UseNativePinDialog";
 
         private readonly IPluginHost pluginHost;
         private readonly string rememberedSmartcardPinStoreKeyId;
         private readonly ProtectedWinCred rememberedSmartcardPinStore;
+        private readonly bool strictRfc5753;
         private readonly bool useNativePinDialog;
 
         public SmartcardEncryptedKeyProvider(IPluginHost pluginHost) {
@@ -50,6 +53,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             this.rememberedSmartcardPinStore = new ProtectedWinCred(rememberedSmartcardPinStoreKey);
             
             this.useNativePinDialog = this.pluginHost.CustomConfig.GetBool(configKeyUseNativePinDialog, false);
+            this.strictRfc5753 = this.pluginHost.CustomConfig.GetBool(configKeyStrictRfc5753, false);
             
             var editMenu = new ToolStripMenuItem(Strings.SmartcardEncryptedKeyProvider_ButtonEditKeyFile);
             editMenu.Enabled = false;
@@ -118,7 +122,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                     var encryptionRequest = EditEncryptedKeyFileDialog.AskForSettings(
                         this.pluginHost.Database.IOConnectionInfo, this.GetActiveEkfKey());
                     if (encryptionRequest != null) {
-                        encryptionRequest.WriteEncryptedKeyFile();
+                        encryptionRequest.WriteEncryptedKeyFile(this.strictRfc5753);
                     }
                 } catch (DeniedByVirusScannerFalsePositive e) {
                     var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
@@ -151,7 +155,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                 return null;
             }
 
-            encryptionRequest.WriteEncryptedKeyFile();
+            encryptionRequest.WriteEncryptedKeyFile(this.strictRfc5753);
             return encryptionRequest.PlaintextKey;
         }
 
