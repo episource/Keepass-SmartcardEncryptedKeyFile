@@ -7,9 +7,11 @@ In theory, this plugin supports any [PIV (Personal Identity Verification) compat
 I'm recommending YubiKey 5 series. These are easy to setup (see below) and I'm intensively using them with this plugin.
 
 The following smartcards have been tested:
- - YubiKey 5 Series (recommended, YubiKey 5 NFC is what I'm using daily)
- - Thales SafeNet eToken 5300 Series ([SafeNet minidriver](https://supportportal.thalesgroup.com/csm?id=kb_article_view&sysparm_article=KB0016030) required)
+ - [YubiKey 5 Series](https://www.yubico.com/products/yubikey-5-overview/) (recommended, YubiKey 5 NFC is what I'm using daily)
+ - [Thales SafeNet eToken 5300 Series](https://www.thalestct.com/identity-access-management/etoken-5300/) ([SafeNet minidriver](https://supportportal.thalesgroup.com/csm?id=kb_article_view&sysparm_article=KB0016030) required)
    * if connected, slows down querying key parameters of certificates backed by non-SafeNet tokens/cards. This noticeably increases time required for unlocking KeePass and modifying encrypted key file authorization when tokens from different vendors are known to the host.
+ - [Feitian ePass FIDO-NFC Plus](https://www.ftsafe.com/Products/FIDO/NFC) - only RSA
+   * ECC fails with `One or more of the supplied parameters could not be properly interpreted` when decrypting
 
 ## Is this safe? How does it work?
 This plugin uses the native Win32 API* behind [EnvelopedCms][2] .Net framework class for encrypting the plaintext KeePass key file content. [EnvelopedCms][2] and its native counterparts are implementations of [RFC 5652 Cryptographic Message Syntax (CMS)][3]: It permits encryption of arbitrary content to be decrypted by any authorized recipient. A random content encryption key is used to protect the enveloped data (here: KeePass plaintext key). The single content encryption key is again encrypted using the public keys belonging to the list of authorized smartcards (recipients). Thus any authorized smartcard can decrypt the content encryption key and in turn permits decryption of the plaintext KeePass key. This plugin selects AES-256-CBC as content encryption algorithm. The intermediate encryption of the payload using a random content encryption is generally needed to support arbitrary length content. It's not strictly needed for the purpose of this plugin, but assuming [EnvelopedCms][2] and its native counterparts were properly implemented by Microsoft, it should be of no harm. Most smartcards implement weaker asymmetric encryption (used to encrypt the content encryption key) compared with the intermediate encryption using AES-256-CBC. Thus the weakest point of the chain will usually be on the smartcard side and not the intermediate symmetric encryption.
