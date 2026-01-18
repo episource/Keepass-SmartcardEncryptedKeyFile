@@ -32,31 +32,6 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         public static bool IsCancelledByUserException(CryptographicException ex) {
             return ex is CryptoOperationCancelledException || unchecked((CryptoResult)ex.HResult) == CryptoResult.SCARD_W_CANCELLED_BY_USER;
         }
-        
-        /// <summary>
-        /// Silently checks if private key is accessible. The alternatives implemented in .Net framework may show UI to ask for missing Smart Card etc.
-        /// </summary>
-        /// <param name="cert"></param>
-        /// <returns></returns>
-        public static bool IsCertificatePrivateKeyAccessible(X509Certificate2 cert) {
-            var optOwner = IntPtr.Zero;
-            var keyHandleRaw = IntPtr.Zero;
-            var keySpec = CryptPrivateKeySpec.UNDEFINED;
-            var mustFreeHandle = false;
-
-            var directAcquireResult = PinvokeUtil.DoPinvokeWithException(() => NativeCertPinvoke.CryptAcquireCertificatePrivateKey(cert.Handle,
-                    CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
-                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_USE_PROV_INFO_FLAG
-                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_NO_HEALING
-                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
-                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
-                    ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle),
-                isSuccessOrMissingKeyPredicate);
-
-            using (NcryptOrContextHandle.of(keyHandleRaw, mustFreeHandle, keySpec)) {
-                return directAcquireResult;
-            }
-        }
 
         public static bool IsInputRequiredException(CryptographicException ex) {
             return ex is InputRequiredException || unchecked((CryptoResult)ex.HResult) == CryptoResult.NTE_SILENT_CONTEXT;
@@ -420,7 +395,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 byte[] providerImplementation = GetNcryptOrCspProperty(providerHandle, "Impl Type", CryptGetProvParamType.PP_IMPTYPE, true);
                 isHardware = providerImplementation.Length > 0 && (providerImplementation[0] & 0x1) == 0x1;
                 isRemovable = providerImplementation.Length > 0 && (providerImplementation[0] & 0x8) == 0x8;
-                canExport = isHardware.Value;
+                canExport = !isHardware.Value;
             }
             
             
@@ -440,14 +415,14 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
             using (NcryptOrContextHandle keyHandle = NcryptOrContextHandle.of(keyHandleRaw, mustFreeHandle, keySpec)) {
                 if (keyHandle.IsInvalid) {
-                    return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, isHardware, isRemovable);
+                    return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, false, isHardware, isRemovable);
                 }
                 
                 byte[] keyImplementation = GetNcryptOrCspProperty(keyHandle, "Impl Type", CryptGetProvParamType.PP_IMPTYPE, true);
                 if (keyImplementation.Length > 0) {
                     isHardware = keyImplementation.Length > 0 && (keyImplementation[0] & 0x1) == 0x1;
                     isRemovable = keyImplementation.Length > 0 && (keyImplementation[0] & 0x8) == 0x8;
-                    canExport = isHardware.Value;
+                    canExport = !isHardware.Value;
                 }
 
                 var ncryptKeyHandle = keyHandle as NCryptContextHandle;
@@ -462,13 +437,13 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 }
             }
             
-            return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, isHardware, isRemovable);
+            return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, true, isHardware, isRemovable);
         }
 
         public static KeyInfo QueryCertificatePublicKey(X509Certificate2 cert) {
             return new KeyInfo(
                 IsKeyAgreeSupported(cert), IsEncryptionSupported(cert), false /*tbd*/,
-                true, false, false);
+                true, true, false, false);
         }
 
         private static PortableProtectedBinary DecryptEnvelopedCmsImpl(CryptMsgHandle cryptMsgHandle, CryptMsgRecipient recipient, bool alwaysSilent, string optContextDescription, IntPtr optOwner, PortableProtectedString optPin
@@ -487,6 +462,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             var mustFreeHandle = false;
             PinvokeUtil.DoPinvokeWithException(() => NativeCertPinvoke.CryptAcquireCertificatePrivateKey(recipient.RecipientCert.Handle,
                 CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
+                | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_USE_PROV_INFO_FLAG
                 | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                 | (optOwner != IntPtr.Zero && ! silent ? CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_WINDOW_HANDLE_FLAG : 0) 
                 | (silent ? CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG : 0), 

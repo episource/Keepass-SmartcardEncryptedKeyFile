@@ -22,18 +22,14 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
         private KeyInfo pubKeyInfo;
 
-        private bool isPrivKeyAccessible;
-        
         public void GetObjectData(SerializationInfo info, StreamingContext context) {
             info.AddValue("cert", this.cert);
-            info.AddValue("isPrivKeyAccessible", this.isPrivKeyAccessible);
             info.AddValue("privKeyInfo", this.privKeyInfo);
             info.AddValue("pubKeyInfo", this.pubKeyInfo);
         }
 
         private WindowsKeyPair(SerializationInfo info, StreamingContext context) {
             var preliminaryCert = (X509Certificate2)info.GetValue("cert", typeof(X509Certificate2));
-            this.isPrivKeyAccessible =  info.GetBoolean("isPrivKeyAccessible");
             this.privKeyInfo = (KeyInfo)info.GetValue("privKeyInfo", typeof(KeyInfo));
             this.pubKeyInfo = (KeyInfo)info.GetValue("pubKeyInfo", typeof(KeyInfo));
             
@@ -77,7 +73,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         }
         
         public bool IsAccessible {
-            get { return this.isPrivKeyAccessible; }
+            get { return this.privKeyInfo != null && this.privKeyInfo.IsAccessible && this.pubKeyInfo != null && this.pubKeyInfo.IsAccessible; }
         }
         
         public bool? CanExportPrivateKey {
@@ -153,16 +149,14 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         public bool Refresh() {
             var nextPrivKeyInfo = NativeCapi.QueryCertificatePrivateKey(this.cert);
             var nextPubKeyInfo = NativeCapi.QueryCertificatePublicKey(this.cert);
-            var nextIsAccessible = NativeCapi.IsCertificatePrivateKeyAccessible(this.cert);
 
             if ((nextPrivKeyInfo == null && this.privKeyInfo == null || (nextPrivKeyInfo != null && nextPrivKeyInfo.Equals(this.privKeyInfo)))
-                && nextPubKeyInfo.Equals(this.pubKeyInfo) && nextIsAccessible == this.isPrivKeyAccessible) {
+                && nextPubKeyInfo.Equals(this.pubKeyInfo)) {
                 return false;
             }
             
             this.privKeyInfo = nextPrivKeyInfo;
             this.pubKeyInfo = nextPubKeyInfo;
-            this.isPrivKeyAccessible = nextIsAccessible;
 
             return true;
         }
