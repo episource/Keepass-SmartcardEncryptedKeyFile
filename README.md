@@ -8,8 +8,10 @@ I'm recommending YubiKey 5 series. These are easy to setup (see below) and I'm i
 
 The following smartcards have been tested:
  - [YubiKey 5 Series](https://www.yubico.com/products/yubikey-5-overview/) (recommended, YubiKey 5 NFC is what I'm using daily)
- - [Thales SafeNet eToken 5300 Series](https://www.thalestct.com/identity-access-management/etoken-5300/) ([SafeNet minidriver](https://supportportal.thalesgroup.com/csm?id=kb_article_view&sysparm_article=KB0016030) required)
-   * if connected, slows down querying key parameters of certificates backed by non-SafeNet tokens/cards. This noticeably increases time required for unlocking KeePass and modifying encrypted key file authorization when tokens from different vendors are known to the host.
+ - [Thales SafeNet eToken 5300 Series](https://www.thalestct.com/identity-access-management/etoken-5300/) & [Thales SafeNet IdPrime 930](https://cpl.thalesgroup.com/de/access-management/idprime-md-pki-smart-cards) ([SafeNet minidriver](https://supportportal.thalesgroup.com/csm?id=kb_article_view&sysparm_article=KB0016030) required)
+   * If connected, slows down querying key parameters of certificates backed by non-SafeNet tokens/cards. This noticeably increases time required for unlocking KeePass and modifying encrypted key file authorization when tokens from different vendors are known to the host.
+   * ECC521 requires plugin version 1.2.1 or newer
+   * IdPrime tested using ReinerSCT CyberJack RFID standard reader.
  - [Feitian ePass FIDO-NFC Plus](https://www.ftsafe.com/Products/FIDO/NFC) - only RSA
    * ECC fails with `One or more of the supplied parameters could not be properly interpreted` when decrypting
 
