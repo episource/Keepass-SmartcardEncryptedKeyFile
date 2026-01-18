@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
@@ -131,7 +132,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 throw new CryptographicException(errorMsg);
             }
             if (exceptions.Count == 1) {
-                throw exceptions[0];
+                ExceptionDispatchInfo.Capture(exceptions[0]).Throw();
             }
             throw new AggregateException(errorMsg, exceptions);
         }
@@ -178,7 +179,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
             
             if (exceptions.Count == 1) {
-                throw exceptions[0];
+                ExceptionDispatchInfo.Capture(exceptions[0]).Throw();
             }
             throw new AggregateException("Decryption failed using given recipient certificate.", exceptions);
         }
