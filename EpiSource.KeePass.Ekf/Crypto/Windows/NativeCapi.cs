@@ -22,6 +22,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         
         private static readonly Func<PinvokeUtil.PinvokeResult<bool>, bool> isSuccessOrMissingKeyPredicate = r =>
             r.Result || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_NO_KEY)
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.CRYPT_E_NOT_FOUND)
                      || r.Win32ErrorCode == unchecked((int) CryptoResult.CRYPT_E_NO_KEY_PROPERTY)
                      || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEY)
                      || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEYSET)
@@ -45,6 +46,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
             var directAcquireResult = PinvokeUtil.DoPinvokeWithException(() => NativeCertPinvoke.CryptAcquireCertificatePrivateKey(cert.Handle,
                     CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
+                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_USE_PROV_INFO_FLAG
+                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_NO_HEALING
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
                     ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle),
@@ -428,8 +431,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
             PinvokeUtil.DoPinvokeWithException(() => NativeCertPinvoke.CryptAcquireCertificatePrivateKey(cert.Handle,
                     CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
-                    // attempt to access cached key information if smart card is not connected!
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_USE_PROV_INFO_FLAG
+                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_NO_HEALING
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
                     ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle),
