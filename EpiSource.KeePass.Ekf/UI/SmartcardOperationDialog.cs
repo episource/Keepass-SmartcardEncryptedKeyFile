@@ -145,10 +145,12 @@ namespace EpiSource.KeePass.Ekf.UI {
             InvocationRequest<TTarget, TReturn> cryptoOperationRequest, CancellationToken ct, TimeSpan? showDialogDelay
         ) {
             // on request: disable unblocker (background process) to simplify debugging
+            #pragma warning disable CS0162
             if (debugWithoutUnblocker) {
                 var synchronousResult = cryptoOperationRequest.Invoke(ct);
                 return new InvocationResult<TTarget, TReturn>(cryptoOperationRequest.Target, synchronousResult, true);
             }
+            #pragma warning restore CS0162
             
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             
