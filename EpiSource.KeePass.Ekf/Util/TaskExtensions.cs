@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 
@@ -38,7 +39,7 @@ namespace EpiSource.KeePass.Ekf.Util {
                 return task.Result;
             } catch (AggregateException e) {
                 if (e.InnerExceptions.Count == 1 && e.InnerException != null) {
-                    throw e.InnerException;
+                    ExceptionDispatchInfo.Capture(e.InnerException).Throw();
                 }
 
                 throw;

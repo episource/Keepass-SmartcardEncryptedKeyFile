@@ -19,6 +19,14 @@ namespace EpiSource.KeePass.Ekf.UI {
         public static readonly TimeSpan UsuallyShortTaskRecommendedDialogDelay = TimeSpan.FromSeconds(1);
 
         private const int gracefulAbortTimeoutMs = 100;
+
+        /// disable unblocker (background process) to simplify debugging
+        private const bool debugWithoutUnblocker = 
+            #if NO_UNBLOCKER
+            true;
+            #else
+            false;
+            #endif
         
         // A dedicated worker process pool is used:
         // - smartcard operations involve native code without support for cancellation; hence the process needs
@@ -136,6 +144,12 @@ namespace EpiSource.KeePass.Ekf.UI {
         private static async Task<IFunctionInvocationResult<TTarget, TReturn>> DoCryptoImpl<TTarget, TReturn>(
             InvocationRequest<TTarget, TReturn> cryptoOperationRequest, CancellationToken ct, TimeSpan? showDialogDelay
         ) {
+            // on request: disable unblocker (background process) to simplify debugging
+            if (debugWithoutUnblocker) {
+                var synchronousResult = cryptoOperationRequest.Invoke(ct);
+                return new InvocationResult<TTarget, TReturn>(cryptoOperationRequest.Target, synchronousResult, true);
+            }
+            
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             
             // Important: Retrieve active form before creating the SmartcardOperationDialog!

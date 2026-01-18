@@ -13,13 +13,14 @@
     <FileAlignment>512</FileAlignment>
     <LangVersion>5</LangVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' Or '$(Configuration)|$(Platform)' == 'DebugNoUnblocker|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE;</DefineConstants>
+    <DefineConstants Condition="'$(Configuration)' == 'Debug'">DEBUG;TRACE;</DefineConstants>
+    <DefineConstants Condition="'$(Configuration)' == 'DebugNoUnblocker'">DEBUG;TRACE;NO_UNBLOCKER</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
