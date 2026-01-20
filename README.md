@@ -15,7 +15,7 @@ The following smartcards have been tested:
    * IdPrime tested using ReinerSCT CyberJack RFID standard reader.
  - [SwissBit iShield Key 2 Pro](https://www.swissbit.com/de/produkte/security-produkte/ishield-key/) - effectively RSA only
    * Discovery of ECC certificates requires [SwissBit OpenSC minidriver](https://www.swissbit.com/de/produkte/security-produkte/ishield-key/#tool)
-   * (2025-01) The SwissBit OpenSC minidriver [doesn't support necessary Key Agree/Key Derive operation for PIV slot 9A](https://github.com/swissbit-eis/OpenSC/blob/0.26.3-swissbit-piv/src/libopensc/pkcs15-piv.c#L426-L452)
+   * (2025-01) The SwissBit OpenSC minidriver [doesn't support necessary ECC Key Agree/Key Derive operation for PIV slot 9A](https://github.com/swissbit-eis/OpenSC/blob/0.26.3-swissbit-piv/src/libopensc/pkcs15-piv.c#L426-L452)
    * (2025-01) Both the interactive iShield management tool as well as the command line pendant `ikmcli` fail to initialize slots other than 9A with ECC keys
  - [Feitian ePass FIDO-NFC Plus](https://www.ftsafe.com/Products/FIDO/NFC) - RSA only
    * ECC fails with `One or more of the supplied parameters could not be properly interpreted` when decrypting - I assume Key Agree / Key Derive usage of ECC keys is not supported by this device or mini driver
