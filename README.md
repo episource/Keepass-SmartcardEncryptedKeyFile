@@ -13,6 +13,9 @@ The following smartcards have been tested:
    * If connected, slows down querying key parameters of certificates backed by non-SafeNet tokens/cards. This noticeably increases time required for unlocking KeePass and modifying encrypted key file authorization when other brand tokens are known to the host.
    * ECC521 requires plugin version 1.2.1 or newer
    * IdPrime tested using ReinerSCT CyberJack RFID standard reader.
+ - [Token2 Pin+ R3.3 series](https://www.token2.com/shop/category/pin-release3-series) ([Token2 minidriver](https://www.token2.com/site/page/piv-management-tools-minidriver) required) - RSA & ECC
+   * [Token2 minidriver](https://www.token2.com/site/page/piv-management-tools-minidriver) strictly required - even RSA won't work without
+   * no touch policy available for PIV
  - [SwissBit iShield Key 2 Pro](https://www.swissbit.com/de/produkte/security-produkte/ishield-key/) - effectively RSA only
    * Discovery of ECC certificates requires [SwissBit OpenSC minidriver](https://www.swissbit.com/de/produkte/security-produkte/ishield-key/#tool)
    * (2025-01) The SwissBit OpenSC minidriver [doesn't support necessary ECC Key Agree/Key Derive operation for PIV slot 9A](https://github.com/swissbit-eis/OpenSC/blob/0.26.3-swissbit-piv/src/libopensc/pkcs15-piv.c#L426-L452)
