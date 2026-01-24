@@ -7,6 +7,7 @@ Global
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 		DebugNoUnblocker|Any CPU = DebugNoUnblocker|Any CPU
+		ReleaseUnblockerInstallUtil|Any CPU = ReleaseUnblockerInstallUtil|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{A21A2A47-507F-47DB-B8BC-C1BE133B8632}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -15,5 +16,7 @@ Global
 		{A21A2A47-507F-47DB-B8BC-C1BE133B8632}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A21A2A47-507F-47DB-B8BC-C1BE133B8632}.DebugNoUnblocker|Any CPU.ActiveCfg = DebugNoUnblocker|Any CPU
 		{A21A2A47-507F-47DB-B8BC-C1BE133B8632}.DebugNoUnblocker|Any CPU.Build.0 = DebugNoUnblocker|Any CPU
+		{A21A2A47-507F-47DB-B8BC-C1BE133B8632}.ReleaseUnblockerInstallUtil|Any CPU.ActiveCfg = ReleaseUnblockerInstallUtil|Any CPU
+		{A21A2A47-507F-47DB-B8BC-C1BE133B8632}.ReleaseUnblockerInstallUtil|Any CPU.Build.0 = ReleaseUnblockerInstallUtil|Any CPU
 	EndGlobalSection
 EndGlobal
