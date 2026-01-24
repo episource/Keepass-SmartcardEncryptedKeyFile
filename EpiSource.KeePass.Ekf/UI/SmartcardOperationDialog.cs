@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq.Expressions;
 using System.Threading;
@@ -38,7 +39,8 @@ namespace EpiSource.KeePass.Ekf.UI {
         // explicit lazy initialization
         // ReSharper disable once RedundantArgumentDefaultValue
         private static readonly UnblockerHost smartcardWorker = new UnblockerHost(
-            standbyDelay: TimeSpan.FromSeconds(500000), maxWorkers: 1, debug: DebugMode.None);
+            standbyDelay: TimeSpan.FromSeconds(500000), maxWorkers: 1, 
+            debug: Environment.CommandLine.ToLowerInvariant().Contains("--debug") ? DebugMode.Console : DebugMode.None);
 
         private readonly TableLayoutPanel layout = new TableLayoutPanel();
         private readonly CancellationTokenSource cts;
