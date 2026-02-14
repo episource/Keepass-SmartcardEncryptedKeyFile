@@ -31,13 +31,8 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         
         public const string ProviderName = "Smartcard Encrypted Key File Provider";
         
-        private const string configKeyPinStoreKey = "EpiSource.KeePass.Ekf.RememberedPinStoreKey";
-        private const string configKeyPinStoreKeyId = "EpiSource.KeePass.Ekf.RememberedPinStoreKeyId";
-        private const string configKeyStrictRfc5753 = "EpiSource.KeePass.Ekf.StrictRfc5753";
-        private const string configKeyUseNativePinDialog = "EpiSource.KeePass.Ekf.UseNativePinDialog";
-
         private readonly IPluginHost pluginHost;
-        private readonly string rememberedSmartcardPinStoreKeyId;
+        private readonly PluginConfiguration configuration;
         private readonly ProtectedWinCred rememberedSmartcardPinStore;
         private readonly bool strictRfc5753;
         private readonly bool useNativePinDialog;
@@ -48,13 +43,9 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             }
             
             this.pluginHost = pluginHost;
+            this.configuration = new PluginConfiguration(this.pluginHost.CustomConfig);
 
-            PortableProtectedBinary rememberedSmartcardPinStoreKey;
-            this.GetOrCreatePinStoreKey(out rememberedSmartcardPinStoreKey, out this.rememberedSmartcardPinStoreKeyId);
-            this.rememberedSmartcardPinStore = new ProtectedWinCred(rememberedSmartcardPinStoreKey);
-            
-            this.useNativePinDialog = this.pluginHost.CustomConfig.GetBool(configKeyUseNativePinDialog, false);
-            this.strictRfc5753 = this.pluginHost.CustomConfig.GetBool(configKeyStrictRfc5753, false);
+            this.rememberedSmartcardPinStore = new ProtectedWinCred(this.configuration.PinStoreKey);
             
             var editMenu = new ToolStripMenuItem(Strings.SmartcardEncryptedKeyProvider_ButtonEditKeyFile);
             editMenu.Enabled = false;
@@ -202,7 +193,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                 return null;
             }
 
-            var storedPinTargetName = "KeePass.EKF@" + this.rememberedSmartcardPinStoreKeyId + ".Cert:" + recipient.Certificate.Thumbprint + ":" + recipient.Certificate.Subject;
+            var storedPinTargetName = "KeePass.EKF@" + this.configuration.PinStoreKeyId + ".Cert:" + recipient.Certificate.Thumbprint + ":" + recipient.Certificate.Subject;
             storedPinTargetName = storedPinTargetName.Length > WinCred.MaxTargetNameLength ? storedPinTargetName.Substring(0, WinCred.MaxTargetNameLength) : storedPinTargetName;
             
             // start with remembered pin or null (if not found)
@@ -256,23 +247,6 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             }
             
             return null;
-        }
-
-        private void GetOrCreatePinStoreKey(out PortableProtectedBinary key, out string keyId) {
-            var keyHexString = this.pluginHost.CustomConfig.GetString(configKeyPinStoreKey);
-            
-            var keyBytes = keyHexString == null ? null : MemUtil.HexStringToByteArray(keyHexString);
-            if (keyBytes == null) {
-                keyBytes = CryptoRandom.Instance.GetRandomBytes(32);
-                this.pluginHost.CustomConfig.SetString(configKeyPinStoreKey, MemUtil.ByteArrayToHexString(keyBytes));
-            }
-            key = PortableProtectedBinary.Move(keyBytes);
-            
-            keyId = this.pluginHost.CustomConfig.GetString(configKeyPinStoreKeyId);
-            if (keyId == null) {
-                keyId = string.Format("{0:X8}", BobJenkinsOneAtATimeHash.CalculateHash(DateTime.Now.ToString("yyyyMMddHHmmssfff")));
-                this.pluginHost.CustomConfig.SetString(configKeyPinStoreKeyId, keyId);
-            }
         }
     }
 }

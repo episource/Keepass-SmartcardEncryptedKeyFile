@@ -125,6 +125,7 @@
     <Compile Include="Keys\ImportedKeyDataStore.cs" />
     <Compile Include="Keys\RandomKeyDataStore.cs" />
     <Compile Include="Plugin\KeyFileLocation.cs" />
+    <Compile Include="Plugin\PluginConfiguration.cs" />
     <Compile Include="Plugin\SmartcardEncryptedKeyFileExt.cs" />
     <Compile Include="Plugin\SmartcardEncryptedKeyProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
