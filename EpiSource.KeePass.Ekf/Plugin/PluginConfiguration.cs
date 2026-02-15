@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 
 using EpiSource.KeePass.Ekf.Util;
+using EpiSource.Unblocker.Hosting;
 using EpiSource.Unblocker.Util;
 
 using KeePass.App.Configuration;
@@ -18,8 +19,13 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         private const string configKeyUseNativePinDialog = "EpiSource.KeePass.Ekf.UseNativePinDialog";
 
         public PluginConfiguration(AceCustomConfig keypassCustomConfig) {
+            this.DebugMode = Environment.CommandLine.ToLowerInvariant().Contains("--debug");
+            
             this.StrictRfc5753 = keypassCustomConfig.GetBool(configKeyStrictRfc5753, false);
             this.UseNativePinDialog = keypassCustomConfig.GetBool(configKeyUseNativePinDialog, false);
+
+            // TODO: Add actual configuration option.
+            this.UnblockerBootstrapMode = BootstrapMode.CustomBootstrapper;
             
             var keyId = keypassCustomConfig.GetString(configKeyPinStoreKeyId);
             if (keyId == null) {
@@ -38,6 +44,11 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             this.PinStoreKey = PortableProtectedBinary.Move(keyBytes);
         }
 
+        public bool DebugMode {
+            get;
+            private set;
+        }
+
         public PortableProtectedBinary PinStoreKey {
             get;
             private set;
@@ -49,6 +60,11 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         }
 
         public bool StrictRfc5753 {
+            get;
+            private set;
+        }
+
+        public BootstrapMode UnblockerBootstrapMode {
             get;
             private set;
         }

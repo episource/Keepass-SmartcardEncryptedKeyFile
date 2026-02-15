@@ -20,223 +20,183 @@ using KeePassLib.Keys;
 using KeePassLib.Serialization;
 
 namespace EpiSource.KeePass.Ekf.UI {
-    public partial class EditEncryptedKeyFileDialog {
+    public sealed partial class EditEncryptedKeyFileDialogFactory {
+        private sealed partial class EditEncryptedKeyFileDialog {
 
-        private readonly bool permitNewKey;
-        private readonly IOConnectionInfo dbPath;
-        
-        private readonly LiveKeyDataStore activeDbKey;
-        private IKeyDataStore nextKey;
-        private bool keyWasExported;
-        
-        private EditEncryptedKeyFileDialog(IOConnectionInfo dbPath, IUserKey activeDbKey, IKeyPairProvider authCandidates, bool permitNewKey) {
-            this.dbPath = dbPath;
-            this.activeDbKey = activeDbKey == null ? null : new LiveKeyDataStore(activeDbKey);
-            this.nextKey = (IKeyDataStore) this.activeDbKey ?? new RandomKeyDataStore();
-            this.keyWasExported = false;
-            this.permitNewKey = permitNewKey;
+            private readonly bool permitNewKey;
+            private readonly IOConnectionInfo dbPath;
 
-            this.InitializeUI();
+            private readonly LiveKeyDataStore activeDbKey;
+            private IKeyDataStore nextKey;
+            private bool keyWasExported;
 
-            // AddKeyIfNew requires UI to be initialized!
-            foreach (var keyPair in authCandidates.GetAvailableKeyPairs()) {
-                if (!this.AddKeyIfNew(keyPair)) {
-                    throw new ArgumentException(
-                        @"Duplicated key pair: " + keyPair.KeyPair.Certificate.Thumbprint,
-                        "authCandidates");
+            internal EditEncryptedKeyFileDialog(IOConnectionInfo dbPath, IUserKey activeDbKey, IKeyPairProvider authCandidates, bool permitNewKey) {
+                this.dbPath = dbPath;
+                this.activeDbKey = activeDbKey == null ? null : new LiveKeyDataStore(activeDbKey);
+                this.nextKey = (IKeyDataStore) this.activeDbKey ?? new RandomKeyDataStore();
+                this.keyWasExported = false;
+                this.permitNewKey = permitNewKey;
+
+                this.InitializeUI();
+
+                // AddKeyIfNew requires UI to be initialized!
+                foreach (var keyPair in authCandidates.GetAvailableKeyPairs()) {
+                    if (!this.AddKeyIfNew(keyPair)) {
+                        throw new ArgumentException(
+                            @"Duplicated key pair: " + keyPair.KeyPair.Certificate.Thumbprint,
+                            "authCandidates");
+                    }
                 }
-            }
-            
-            this.ValidateInput();
-        }
-       
-        public static KeyEncryptionRequest AskForNewEncryptedKeyFile(IOConnectionInfo dbPath, IUserKey activeDbKey) {
-            if (dbPath == null) {
-                throw new ArgumentNullException("dbPath");
-            }
-            // activeDbKey is optional - might be new db
 
-            // Note: DefaultKeyPairProvider#FromDbPath constructor blocks if busy HW is involved - unblock
-            var keyPairProvider = SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
-                ct => DefaultKeyPairProvider.FromSystemKeyStore());
-            
-            var dialog = new EditEncryptedKeyFileDialog(dbPath, activeDbKey, keyPairProvider, true);
-            return dialog.ShowDialogAndGenerateEncryptionRequest();
-        }
-        
-        public static KeyEncryptionRequest AskForSettings(IOConnectionInfo dbPath, IUserKey keyFile) {
-            if (dbPath == null) {
-                throw new ArgumentNullException("dbPath");
-            }
-            if (keyFile == null) {
-                throw new ArgumentNullException("keyFile");
-            }
-            if (!CanAskForSettings(keyFile)) { 
-                throw new ArgumentException(@"Unsupported key type.", "keyFile"); 
-            }
-            
-            // IOConnection not serializable - need to read file outside unblocker task
-            var ekfPath = dbPath.ResolveEncryptedKeyFile();
-            var encryptedKeyFileData = IOConnection.OpenRead(ekfPath).ReadAllBinaryAndClose();
-            
-            // Note: DefaultKeyPairProvider#FromDbPath constructor blocks if busy HW is involved - unblock
-            var keyPairProvider = SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
-                ct => DefaultKeyPairProvider.FromEncryptedKeyFileBinary(encryptedKeyFileData));
-            
-            var dialog = new EditEncryptedKeyFileDialog(dbPath, keyFile, keyPairProvider, false);
-            return dialog.ShowDialogAndGenerateEncryptionRequest();
-        }
-
-        public static bool CanAskForSettings(IUserKey keyFile) {
-            return keyFile is KcpKeyFile || keyFile is KcpCustomKey && ((KcpCustomKey) keyFile).Name == SmartcardEncryptedKeyProvider.ProviderName;
-        }
-
-        private void ExportKey() {
-            if (this.nextKey == null) {
-                return;
-            }
-            
-            var saveFileDialog =  UIUtil.CreateSaveFileDialog(KPRes.KeyFileCreate, string.Empty, UIUtil.CreateFileTypeFilter("keyx", KPRes.KeyFiles, true), 1, "key", AppDefs.FileDialogContext.KeyFile);
-            if (saveFileDialog.ShowDialog() != DialogResult.OK) {
-                return;
+                this.ValidateInput();
             }
 
-            try {
-                using (var s = File.Open(saveFileDialog.FileName, FileMode.Create, FileAccess.Write)) {
-                    const ulong v2 = 0x0002000000000000;
-                    KfxFile.Create(v2, this.nextKey.KeyData.ReadData(), null).Save(s);
+            private void ExportKey() {
+                if (this.nextKey == null) {
+                    return;
                 }
-            }
-            catch (IOException e) {
-                MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFailureExportingKey, e, e.Message, saveFileDialog.FileName),
-                    Strings.EditEncryptedKeyFileDialog_DialogTitleFailureExportingKey, 
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            
-            this.keyWasExported = true;
-            this.OnContentChanged();
-        }
 
-        private void ImportKey() {
-            var openFileDialog = UIUtil.CreateOpenFileDialog(KPRes.KeyFileSelect, UIUtil.CreateFileTypeFilter("key|keyx", KPRes.KeyFiles, true), 2, null, false, AppDefs.FileDialogContext.KeyFile);
-            if (openFileDialog.ShowDialog() != DialogResult.OK) {
-                return;
-            }
+                var saveFileDialog = UIUtil.CreateSaveFileDialog(KPRes.KeyFileCreate, string.Empty, UIUtil.CreateFileTypeFilter("keyx", KPRes.KeyFiles, true), 1, "key", AppDefs.FileDialogContext.KeyFile);
+                if (saveFileDialog.ShowDialog() != DialogResult.OK) {
+                    return;
+                }
 
-            if (!File.Exists(openFileDialog.FileName)) {
-                MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFileNotFound, openFileDialog.FileName),
-                    Strings.EditEncryptedKeyFileDialog_DialogTitleFileNotFound,
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                try {
+                    using (var s = File.Open(saveFileDialog.FileName, FileMode.Create, FileAccess.Write)) {
+                        const ulong v2 = 0x0002000000000000;
+                        KfxFile.Create(v2, this.nextKey.KeyData.ReadData(), null).Save(s);
+                    }
+                } catch (IOException e) {
+                    MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFailureExportingKey, e, e.Message, saveFileDialog.FileName),
+                        Strings.EditEncryptedKeyFileDialog_DialogTitleFailureExportingKey,
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                this.keyWasExported = true;
+                this.OnContentChanged();
             }
 
-            var importedKey = ImportedKeyDataStore.FromKfxFile(openFileDialog.FileName);
-            if (importedKey == null) {
-                var result = MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextNoXmlKeyFile, openFileDialog.FileName),
-                    Strings.EditEncryptedKeyFileDialog_DialogTitleNoXmlKeyFile,
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+            private void ImportKey() {
+                var openFileDialog = UIUtil.CreateOpenFileDialog(KPRes.KeyFileSelect, UIUtil.CreateFileTypeFilter("key|keyx", KPRes.KeyFiles, true), 2, null, false, AppDefs.FileDialogContext.KeyFile);
+                if (openFileDialog.ShowDialog() != DialogResult.OK) {
+                    return;
+                }
 
-                if (result == DialogResult.No) return;
-                
-                importedKey = ImportedKeyDataStore.FromPlainKeyFile(openFileDialog.FileName);
-            }
-            if (importedKey == null) {
-                MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextInvalidPlainKeyFile, openFileDialog.FileName),
-                    Strings.EditEncryptedKeyFileDialog_DialogTitleInvalidPlainKeyFile,
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            
-            this.nextKey = importedKey;
-            this.keyWasExported = false;
-            
-            this.OnContentChanged();
-        }
+                if (!File.Exists(openFileDialog.FileName)) {
+                    MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFileNotFound, openFileDialog.FileName),
+                        Strings.EditEncryptedKeyFileDialog_DialogTitleFileNotFound,
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
 
-        private void RevertToActiveKey() {
-            if (this.activeDbKey == null) {
-                return;
-            }
+                var importedKey = ImportedKeyDataStore.FromKfxFile(openFileDialog.FileName);
+                if (importedKey == null) {
+                    var result = MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextNoXmlKeyFile, openFileDialog.FileName),
+                        Strings.EditEncryptedKeyFileDialog_DialogTitleNoXmlKeyFile,
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Information);
 
-            this.nextKey = this.activeDbKey;
-            this.keyWasExported = false;
-            
-            this.OnContentChanged();
-        }
+                    if (result == DialogResult.No) return;
 
-        private void GenerateRandomKey() {
-            var entropyForm = new EntropyForm();
-            var result = entropyForm.ShowDialog(this);
-            if (result != DialogResult.OK) {
-                return;
-            }
-            
-            this.nextKey = new RandomKeyDataStore(entropyForm.GeneratedEntropy);
-            this.keyWasExported = false;
-            
-            this.OnContentChanged();
-        }
+                    importedKey = ImportedKeyDataStore.FromPlainKeyFile(openFileDialog.FileName);
+                }
+                if (importedKey == null) {
+                    MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextInvalidPlainKeyFile, openFileDialog.FileName),
+                        Strings.EditEncryptedKeyFileDialog_DialogTitleInvalidPlainKeyFile,
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
 
-        private KeyEncryptionRequest ShowDialogAndGenerateEncryptionRequest() {
-            this.ShowDialog();
-            if (this.DialogResult != DialogResult.OK) {
-                return null;
+                this.nextKey = importedKey;
+                this.keyWasExported = false;
+
+                this.OnContentChanged();
             }
 
-            var authorizationChanged =
-                this.DialogResult == DialogResult.OK ||
-                this.keyList.Values
-                    .Select(x => x.NextAuthorization != x.CurrentAuthorization)
-                    .FirstOrDefault();
-            if (!authorizationChanged) {
-                return null;
+            private void RevertToActiveKey() {
+                if (this.activeDbKey == null) {
+                    return;
+                }
+
+                this.nextKey = this.activeDbKey;
+                this.keyWasExported = false;
+
+                this.OnContentChanged();
             }
 
-            var selectedKeys =
-                this.keyList.Values
-                    .Where(x => x.NextAuthorization == KeyPairModel.Authorization.Authorized)
-                    .Select(x => x.KeyPair);
-            return new KeyEncryptionRequest(this.dbPath, this.nextKey.KeyData, selectedKeys);
-        }
+            private void GenerateRandomKey() {
+                var entropyForm = new EntropyForm();
+                var result = entropyForm.ShowDialog(this);
+                if (result != DialogResult.OK) {
+                    return;
+                }
 
-        private bool ValidateInput() {
-            if (this.keyList.Count == 0) {
-                this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageNoSmartcard);
-                return false;
+                this.nextKey = new RandomKeyDataStore(entropyForm.GeneratedEntropy);
+                this.keyWasExported = false;
+
+                this.OnContentChanged();
             }
 
-            var requiresExport = this.nextKey is RandomKeyDataStore && !this.keyWasExported;
-            if (requiresExport) {
-                this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageKeyNeedsExport);
-                return false;
+            internal KeyEncryptionRequest ShowDialogAndGenerateEncryptionRequest() {
+                this.ShowDialog();
+                if (this.DialogResult != DialogResult.OK) {
+                    return null;
+                }
+
+                var authorizationChanged =
+                    this.DialogResult == DialogResult.OK ||
+                    this.keyList.Values
+                        .Select(x => x.NextAuthorization != x.CurrentAuthorization)
+                        .FirstOrDefault();
+                if (!authorizationChanged) {
+                    return null;
+                }
+
+                var selectedKeys =
+                    this.keyList.Values
+                        .Where(x => x.NextAuthorization == KeyPairModel.Authorization.Authorized)
+                        .Select(x => x.KeyPair);
+                return new KeyEncryptionRequest(this.dbPath, this.nextKey.KeyData, selectedKeys);
             }
 
-            var anyKeySelected =
-                this.keyList.Any(x => x.Value.NextAuthorization == KeyPairModel.Authorization.Authorized);
-            if (!anyKeySelected) {
-                this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageSelectSmartcard);
-                return false;
+            private bool ValidateInput() {
+                if (this.keyList.Count == 0) {
+                    this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageNoSmartcard);
+                    return false;
+                }
+
+                var requiresExport = this.nextKey is RandomKeyDataStore && !this.keyWasExported;
+                if (requiresExport) {
+                    this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageKeyNeedsExport);
+                    return false;
+                }
+
+                var anyKeySelected =
+                    this.keyList.Any(x => x.Value.NextAuthorization == KeyPairModel.Authorization.Authorized);
+                if (!anyKeySelected) {
+                    this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageSelectSmartcard);
+                    return false;
+                }
+
+                return true;
             }
 
-            return true;
-        }
+            private string DescribeKeySource() {
+                if (this.nextKey == this.activeDbKey) {
+                    return Strings.EditEncryptedKeyFileDialog_KeySourceActiveDb;
+                }
+                if (this.nextKey is RandomKeyDataStore) {
+                    return Strings.EditEncryptedKeyFileDialog_KeySourceRandom;
+                }
 
-        private string DescribeKeySource() {
-            if (this.nextKey == this.activeDbKey) {
-                return Strings.EditEncryptedKeyFileDialog_KeySourceActiveDb;
-            } 
-            if (this.nextKey is RandomKeyDataStore) {
-                return Strings.EditEncryptedKeyFileDialog_KeySourceRandom;
-            }
+                var importedKey = this.nextKey as ImportedKeyDataStore;
+                if (importedKey != null) {
+                    return string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_KeySourceImported,
+                        importedKey.FileName);
+                }
 
-            var importedKey = this.nextKey as ImportedKeyDataStore;
-            if (importedKey != null) {
-                return string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_KeySourceImported,
-                    importedKey.FileName);
+                return Strings.EditEncryptedKeyFileDialog_KeySourceUnknown;
             }
-            
-            return Strings.EditEncryptedKeyFileDialog_KeySourceUnknown;
         }
     }
 }

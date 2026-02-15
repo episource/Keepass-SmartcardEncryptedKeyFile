@@ -34,8 +34,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         private readonly IPluginHost pluginHost;
         private readonly PluginConfiguration configuration;
         private readonly ProtectedWinCred rememberedSmartcardPinStore;
-        private readonly bool strictRfc5753;
-        private readonly bool useNativePinDialog;
+        private readonly UIFactory uiFactory;
 
         public SmartcardEncryptedKeyProvider(IPluginHost pluginHost) {
             if (pluginHost == null) {
@@ -44,6 +43,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             
             this.pluginHost = pluginHost;
             this.configuration = new PluginConfiguration(this.pluginHost.CustomConfig);
+            this.uiFactory = new UIFactory(this.configuration);
 
             this.rememberedSmartcardPinStore = new ProtectedWinCred(this.configuration.PinStoreKey);
             
@@ -53,7 +53,8 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             this.pluginHost.MainWindow.ToolsMenu.DropDownItems.Add(editMenu);
 
             Action updateEditEkfMenuItem = 
-                () => editMenu.Enabled = EditEncryptedKeyFileDialog.CanAskForSettings(this.GetActiveEkfKey());
+                () => editMenu.Enabled = this.uiFactory.EditEncryptedKeyFileDialog
+                                             .CanAskForSettings(this.GetActiveEkfKey());
             this.pluginHost.MainWindow.FileOpened += (sender, args) => updateEditEkfMenuItem();
             this.pluginHost.MainWindow.FileClosed += (sender, args) => updateEditEkfMenuItem();
         }
@@ -101,7 +102,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         }
 
         public override bool SecureDesktopCompatible {
-            get { return !this.useNativePinDialog; }
+            get { return !this.configuration.UseNativePinDialog; }
         }
 
         public override bool DirectKey {
@@ -118,12 +119,12 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             
             // treat missing EKF as empty EKF
             // permit edit as long as key (file) data is available
-            if (EditEncryptedKeyFileDialog.CanAskForSettings(activeKey)) {
+            if (this.uiFactory.EditEncryptedKeyFileDialog.CanAskForSettings(activeKey)) {
                 try {
-                    var encryptionRequest = EditEncryptedKeyFileDialog.AskForSettings(
+                    var encryptionRequest = this.uiFactory.EditEncryptedKeyFileDialog.AskForSettings(
                         this.pluginHost.Database.IOConnectionInfo, this.GetActiveEkfKey());
                     if (encryptionRequest != null) {
-                        encryptionRequest.WriteEncryptedKeyFile(this.strictRfc5753);
+                        encryptionRequest.WriteEncryptedKeyFile(this.configuration.StrictRfc5753);
                     }
                 } catch (DeniedByVirusScannerFalsePositive e) {
                     var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
@@ -151,12 +152,13 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                 activeKey = this.GetActiveEkfKey();
             }
 
-            var encryptionRequest = EditEncryptedKeyFileDialog.AskForNewEncryptedKeyFile(ctx.DatabaseIOInfo, activeKey);
+            var encryptionRequest = this.uiFactory.EditEncryptedKeyFileDialog
+                                        .AskForNewEncryptedKeyFile(ctx.DatabaseIOInfo, activeKey);
             if (encryptionRequest == null) {
                 return null;
             }
 
-            encryptionRequest.WriteEncryptedKeyFile(this.strictRfc5753);
+            encryptionRequest.WriteEncryptedKeyFile(this.configuration.StrictRfc5753);
             return encryptionRequest.PlaintextKey;
         }
 
@@ -166,10 +168,11 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             var encryptedKeyFileData = IOConnection.OpenRead(ekfPath).ReadAllBinaryAndClose();
 
             // EncryptedKeyFile.Read/Decode blocks if busy HW is involved
-            var ekfFile = SmartcardOperationDialog
+            var ekfFile = this.uiFactory.SmartcardOperationDialog
                 .DoCryptoWithMessagePumpShort(ct => EncryptedKeyFile.Decode(encryptedKeyFileData));
 
-            var recipient = SmartcardRequiredDialog.ChooseKeyPairForDecryption(ekfFile, GlobalWindowManager.TopWindow);
+            var recipient = this.uiFactory.SmartcardRequiredDialog
+                .ChooseKeyPairForDecryption(ekfFile, GlobalWindowManager.TopWindow);
             try {
                 return this.DecryptEncryptedKeyFile(ekfFile, recipient);
             } catch (TaskCrashedException) {
@@ -198,8 +201,8 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             
             // start with remembered pin or null (if not found)
             // null: an attempt is made to access the smart card without pin. This works if the card is already unlocked.
-            var pin = this.useNativePinDialog ? null : this.rememberedSmartcardPinStore.ReadProtectedPassword(storedPinTargetName);
-            PinPromptDialog.PinPromptDialogResult pinPromptResult = null;
+            var pin = this.configuration.UseNativePinDialog ? null : this.rememberedSmartcardPinStore.ReadProtectedPassword(storedPinTargetName);
+            PinPromptDialogFactory.PinPromptDialogResult pinPromptResult = null;
             while (pinPromptResult == null || !pinPromptResult.IsCanceled) { // retry on wrong pin
                 if (pinPromptResult != null) {
                     pin = pinPromptResult.Pin;
@@ -209,7 +212,9 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                     var decryptUiOwnerHandle = GlobalWindowManager.TopWindow.Handle;
                     var contextDescription = string.Format(Strings.Culture, Strings.NativeSmartcardUI_ContextTest, recipient.Certificate.SubjectName.Format(true));
 
-                    var decryptedKeyFile = SmartcardOperationDialog.DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription, decryptUiOwnerHandle, !this.useNativePinDialog, pin));
+                    var decryptedKeyFile = this.uiFactory.SmartcardOperationDialog
+                            .DoCryptoWithMessagePump(ct => ekfFile.Decrypt(recipient, contextDescription,
+                                    decryptUiOwnerHandle, !this.configuration.UseNativePinDialog, pin));
 
                     if (pinPromptResult != null && pinPromptResult.RememberPinRequested) {
                         this.rememberedSmartcardPinStore.WriteProtectedPassword(storedPinTargetName, pin);
@@ -230,15 +235,17 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                     }
                     
                     if (NativeCapi.IsInputRequiredException(ex)) {
-                        pinPromptResult = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow, description: recipient.Certificate.Subject);
+                        pinPromptResult = this.uiFactory.PinPromptDialog.ShowDialog(
+                            GlobalWindowManager.TopWindow, description: recipient.Certificate.Subject);
                     } else if (NativeCapi.IsWrongPinException(ex)) {
                         this.rememberedSmartcardPinStore.ClearProtectedPassword(storedPinTargetName);
 
-                        if (this.useNativePinDialog) {
+                        if (this.configuration.UseNativePinDialog) {
                             return null;
                         }
                         
-                        pinPromptResult = PinPromptDialog.ShowDialog(GlobalWindowManager.TopWindow, description: recipient.Certificate.Subject, isRetry: true);
+                        pinPromptResult = this.uiFactory.PinPromptDialog.ShowDialog(
+                            GlobalWindowManager.TopWindow, description: recipient.Certificate.Subject, isRetry: true);
                     } else {
                         throw;
                     }

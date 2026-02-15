@@ -3,8 +3,8 @@ using System;
 using EpiSource.KeePass.Ekf.Util;
 
 namespace EpiSource.KeePass.Ekf.UI {
-    public sealed partial class PinPromptDialog {
-        
+    public partial class PinPromptDialogFactory {
+
         public sealed class PinPromptDialogResult {
 
             public PinPromptDialogResult(PortableProtectedString pin, bool rememberPinRequested) {
@@ -15,7 +15,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             private readonly PortableProtectedString pin;
             private readonly bool rememberPinRequested;
 
-            public bool IsCanceled { get { return pin == null; } }
+            public bool IsCanceled { get { return pin        == null; } }
             public bool PinAvailable { get { return this.pin != null; } }
             public bool RememberPinRequested { get { return this.rememberPinRequested; } }
             public PortableProtectedString Pin {

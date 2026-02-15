@@ -135,20 +135,33 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
-    <Compile Include="UI\PinPromptDialog.cs" />
-    <Compile Include="UI\PinPromptDialog.types.cs">
-      <DependentUpon>PinPromptDialog.cs</DependentUpon>
+    <Compile Include="UI\EditEncryptedKeyFileDialogFactory.cs" />
+    <Compile Include="UI\PinPromptDialog.cs">
+      <DependentUpon>PinPromptDialogFactory.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\SmartcardRequiredDialog.cs" />
+    <Compile Include="UI\PinPromptDialog.types.cs">
+      <DependentUpon>PinPromptDialogFactory.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\PinPromptDialogFactory.cs" />
+    <Compile Include="UI\SmartcardOperationDialogFactory.cs" />
+    <Compile Include="UI\SmartcardRequiredDialog.cs">
+      <DependentUpon>SmartcardRequiredDialogFactory.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\DefaultKeyPairProvider.cs" />
     <Compile Include="UI\EditEncryptedKeyFileDialog.controls.cs">
-      <DependentUpon>EditEncryptedKeyFileDialog.cs</DependentUpon>
+      <DependentUpon>EditEncryptedKeyFileDialogFactory.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\EditEncryptedKeyFileDialog.cs" />
+    <Compile Include="UI\EditEncryptedKeyFileDialog.cs">
+      <DependentUpon>EditEncryptedKeyFileDialogFactory.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\IKeyPairProvider.cs" />
     <Compile Include="UI\KeyPairModel.cs" />
-    <Compile Include="UI\SmartcardOperationDialog.cs" />
+    <Compile Include="UI\SmartcardOperationDialog.cs">
+      <DependentUpon>SmartcardOperationDialogFactory.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\SmartcardRequiredDialogFactory.cs" />
     <Compile Include="UI\UIConstants.cs" />
+    <Compile Include="UI\UIFactory.cs" />
     <Compile Include="UI\Windows\InvalidWindowHandleException.cs" />
     <Compile Include="UI\Windows\NativeForms.pinvoke.cs">
       <DependentUpon>NativeForms.cs</DependentUpon>
