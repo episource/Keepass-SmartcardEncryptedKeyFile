@@ -168,10 +168,12 @@ Add below snippet to `KeePass.config.xml` to revert to windows builtin smartcard
 ```xml
 <Configuration>
     <Custom>
+       ...
        <Item>
           <Key>EpiSource.KeePass.Ekf.UseNativePinDialog</Key>
           <Value>true</Value>
        </Item>
+       ...
     </Custom>
 </Configuration>
 ```
@@ -189,10 +191,59 @@ Add below snippet to `KeePass.config.xml` to strictly follow RFC5753 parameters.
 ```xml
 <Configuration>
     <Custom>
+       ...
        <Item>
           <Key>EpiSource.KeePass.Ekf.StrictRfc5753</Key>
           <Value>true</Value>
        </Item>
+       ...
+    </Custom>
+</Configuration>
+```
+
+## Threat protection interference ("Failed to start unblocker process. Wasn't ready within ...s!") - Non-Default Unblocker Bootstrap mode
+If smartcard operations fail with error "Failed to start unblocker process. Wasn't ready within ...s!", you are likely
+in a company controlled environment and the smartcard worker process is blocked by your threat protection system.
+
+All smartcard operations are executed using an insolated worker process. This is necessary as these (possibly)
+long-running operations could not be canceled when run from the main KeePass process. Refer to [Unblocker][11] for
+technical details. The way the assembly for the smartcard process is created might interfere with your threat
+protection system leading to warnings or malfunctions of this plugin. 
+
+This is especially relevant for company environment. When using a "default" windows installation with builtin in
+Defender, you've run into a different issue and you are welcome to create an issue. Otherwise, continue trying one of
+the tweaks below:
+
+1. `CustomBootstrapper` (default): A bootstrapper assembly is created dynamically for the worker process. 
+   The unblocker component tries to create this assembly in [KeePass plugin cache][12] directory. If that fails,
+   the current user's default temporary directory is used. The assembly is recreated (with changing hash) if KeePass
+   version, the EKF plugin version, the KeePass installation directory or the [KeePass plugin cache][12] directory
+   changes.
+2. `CustomBootstrapperNoSideBySide`: Like previous option, but no attempt is made to create the assembly in the
+   KeePass plugin cache directory.
+3. `InstallUtilTrampoline`: The [.Net framework builtin InstallUtil][13]
+   is used to load the pieces needed for the worker process. A "trampoline" assembly is created dynamically created,
+   that loads all required dependencies from their current (absolute) location. The unblocker component tries to create
+   this assembly in [KeePass plugin cache][12] directory. If that fails, the current user's default temporary directory
+   is used. The assembly is recreated (with changing hash) if KeePass version, the EKF plugin version, the KeePass
+   installation directory or the [KeePass plugin cache][12] directory changes.
+4. `InstallUtilTrampolineNoSideBySide`: Like previous option, but no attempt is made to create the assembly in the
+   KeePass plugin cache directory.
+5. `InstallUtilPlain`: The [.Net framework builtin InstallUtil][13]
+   is used without dynamically created assembly. For this to work, the plugin's `EpisourceKeePassEkf.dll`
+   **must be located in the same directory as the `KeePass.exe`**!
+
+Add below snippet to `KeePass.config.xml` with your preferred option chosen as `Value`.
+
+```xml
+<Configuration>
+    <Custom>
+       ...
+       <Item>
+          <Key>EpiSource.KeePass.Ekf.UnblockerBootstrapMode</Key>
+          <Value>[replace with option described above]</Value>
+       </Item>
+       ...
     </Custom>
 </Configuration>
 ```
@@ -200,7 +251,8 @@ Add below snippet to `KeePass.config.xml` to strictly follow RFC5753 parameters.
 # Known Issues & Limitations
 1. Non-Local databases have not been tested, but might work as well.
 2. KeePass builtin synchronization won't synchronize changes related to the encrypted key file (e.g. access granted to additional smartcard).
-3. Smart Card operations / unlocking an encrypted key file fails (with Exception dialog) if YubiKey Authenticator is running in parallel (note: only when using windows builtin smartcard driver, issue does not occur if YubiKey minidriver is installed)
+3. Smart Card operations / unlocking an encrypted key file fails with message "Failed to start unblocker process. Wasn't ready within ...s!" for some company environments with strict threat protection system. Please refer to custom configuration options above for solutions.
+4. Smart Card operations / unlocking an encrypted key file fails (with Exception dialog) if YubiKey Authenticator is running in parallel (note: only when using windows builtin smartcard driver, issue does not occur if YubiKey minidriver is installed)
 
 
 [1]: https://csrc.nist.gov/pubs/sp/800/73/pt1/5/final
@@ -213,3 +265,6 @@ Add below snippet to `KeePass.config.xml` to strictly follow RFC5753 parameters.
 [8]: https://github.com/Yubico/yubico-piv-tool
 [9]: https://www.yubico.com/support/download/smart-card-drivers-tools/
 [10]: https://keepass.info/help/v2_dev/plg_index.html#plgx
+[11]: https://github.com/episource/unblocker
+[12]: https://keepass.info/help/v2/plugins.html#cache
+[13]: https://learn.microsoft.com/en-us/dotnet/framework/tools/installutil-exe-installer-tool
