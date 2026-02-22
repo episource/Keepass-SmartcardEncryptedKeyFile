@@ -45,6 +45,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 }
 
                 this.keyPairProvider = keyPairProvider;
+                this.uiFactory = uiFactory;
 
                 this.InitializeUI();
                 this.ReplaceList();
