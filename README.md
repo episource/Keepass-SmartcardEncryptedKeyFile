@@ -146,7 +146,7 @@ Below are example commands to replace the certificate in slot 9a with a newly cr
 2. Create self-signed certificate using key pair from step above
    <br/>`$ yubico-piv-tool.exe -s9a -averify-pin -aselfsign-certificate -S"<subject>" --valid-days=<valid-days> --input=c:\temp\yubi_pub.tmp --output=c:\temp\yubi_cert.tmp`
    <br/>`subject` is a distinguished name following x.509 certificate rules. OSF-Syntax (`/` is separator) can be used. E.g.:  `/CN=YourName/DC=domain/DC=example/DC=com/L=Yubikey#42424242/` (replace with apropriate values, such as your name, domain and serial number of your YubiKey)
-   <br/>`valid-days` controls validity of the certificate. E.g. `18250` is roughly equal to 50 years.
+   <br/>`valid-days` controls validity of the certificate. E.g. `18250` is roughly equal to 50 years. The maximum supported value is roughly `24850` as this number is [internally converted to seconds by the piv-tool](https://github.com/Yubico/yubico-piv-tool/blob/yubico-piv-tool-2.7.3/tool/yubico-piv-tool.c#L1376) and the resulting argument to [X509_gmtime_adj](https://docs.openssl.org/3.3/man3/X509_cmp_time/) overflows for larger values resulting in negative offsets.
    <br/>Note: This step must be confirmed by pressing the YubiKey button when it starts blinking!
 3. Import certificate into YubiKey and renew chuid (required for windows to pick up the new certificate)
   <br/>`$ yubico-piv-tool.exe -k -s9a  -aimport-certificate --input=c:\temp\yubi_cert.tmp -aset-chuid -astatus`
