@@ -144,8 +144,8 @@ Below are example commands to replace the certificate in slot 9a with a newly cr
    <br/> - Possible values for `touch-policy` are: `never` (private key operations are always permitted without button press), `cached` (private key operations require the hardware button to be pressed once per session), `always` (any private key operation must be confirmed by a hardware button press)
    <br/> - Any combination of `pin-policy` and `touch-policy` is supported. Piv tool uses builtin default configuration if these parameters are omitted. Built-in configuration depends on the slot chosen and is equal to the one used by the graphical tool.  
 2. Create self-signed certificate using key pair from step above
-   <br/>`$ yubico-piv-tool.exe -s9a -averify -aselfsign-certificate -S"<subject>" --valid-days=<valid-days> --input=c:\temp\yubi_pub.tmp --output=c:\temp\yubi_cert.tmp`
-   <br/>`subject` is a distinguished name following x.509 certificate rules. OSF-Syntax (`/` is separator) can be used. E.g.:  `/CN=YourName/DC=domain/DC=example/DC=com/L=Yubikey#42424242` (replace with apropriate values, such as your name, domain and serial number of your YubiKey)
+   <br/>`$ yubico-piv-tool.exe -s9a -averify-pin -aselfsign-certificate -S"<subject>" --valid-days=<valid-days> --input=c:\temp\yubi_pub.tmp --output=c:\temp\yubi_cert.tmp`
+   <br/>`subject` is a distinguished name following x.509 certificate rules. OSF-Syntax (`/` is separator) can be used. E.g.:  `/CN=YourName/DC=domain/DC=example/DC=com/L=Yubikey#42424242/` (replace with apropriate values, such as your name, domain and serial number of your YubiKey)
    <br/>`valid-days` controls validity of the certificate. E.g. `18250` is roughly equal to 50 years.
    <br/>Note: This step must be confirmed by pressing the YubiKey button when it starts blinking!
 3. Import certificate into YubiKey and renew chuid (required for windows to pick up the new certificate)
