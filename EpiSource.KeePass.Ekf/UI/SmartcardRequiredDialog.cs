@@ -24,6 +24,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             internal readonly CustomListViewEx keyListView = new CustomListViewEx();
             
             private bool loaded = false;
+            private bool refreshSmartcardOperationPending = false;
 
             private readonly TableLayoutPanel layout = new TableLayoutPanel();
             private Button btnOk;
@@ -311,14 +312,16 @@ namespace EpiSource.KeePass.Ekf.UI {
                         // note: result == false does not imply IsReadyForDecryptCms to be unchanged!
                         // => replace list independent of result
                         // NOTE: Refresh blocks if busy HW is involved -> unblocker
-                        
                         IFunctionInvocationResult<IKeyPairProvider, bool> refreshResult;
                         try {
+                            this.refreshSmartcardOperationPending = true;
                             refreshResult = this.uiFactory.SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
                                 this.keyPairProvider, (ct, _) => _.Refresh());
                         } catch (TaskCanceledException e) {
                             // that's fine - skip this refresh
                             return;
+                        } finally {
+                            this.refreshSmartcardOperationPending = false;
                         }
 
                         // closing dialog was requested while waiting for Refresh - skip update
@@ -388,7 +391,12 @@ namespace EpiSource.KeePass.Ekf.UI {
 
             private void OnRefreshRequested(object sender, EventArgs args) {
                 this.refreshDelayTimer.Stop();
-                this.ReplaceList();
+
+                if (this.refreshSmartcardOperationPending) {
+                    RestartFormsTimer(this.refreshDelayTimer);
+                } else {
+                    this.ReplaceList();
+                }
             }
 
             protected override void OnLoad(EventArgs e) {
