@@ -76,7 +76,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                 // => prevent duplicate text in error message
                 if (ex.InnerException != null 
                         && ex.InnerException.Message == ex.Message
-                        && !Environment.GetCommandLineArgs().Any(a => a.ToLowerInvariant().TrimStart('-') == AppDefs.CommandLineOptions.Debug)) {
+                        && Environment.GetCommandLineArgs().All(a => a.ToLowerInvariant().TrimStart('-') != AppDefs.CommandLineOptions.Debug)) {
                     throw new ApplicationException(ex.Message);
                 }
                 throw;

@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-
-using EpiSource.KeePass.Ekf.Crypto;
 
 using Episource.KeePass.EKF.Resources;
 
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.KeePass.Ekf.Util.Windows;
+using EpiSource.Unblocker.Hosting;
 
 using KeePass.UI;
 
@@ -311,8 +311,15 @@ namespace EpiSource.KeePass.Ekf.UI {
                         // note: result == false does not imply IsReadyForDecryptCms to be unchanged!
                         // => replace list independent of result
                         // NOTE: Refresh blocks if busy HW is involved -> unblocker
-                        var refreshResult = this.uiFactory.SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
-                            this.keyPairProvider, (ct, _) => _.Refresh());
+                        
+                        IFunctionInvocationResult<IKeyPairProvider, bool> refreshResult;
+                        try {
+                            refreshResult = this.uiFactory.SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
+                                this.keyPairProvider, (ct, _) => _.Refresh());
+                        } catch (TaskCanceledException e) {
+                            // that's fine - skip this refresh
+                            return;
+                        }
 
                         // closing dialog was requested while waiting for Refresh - skip update
                         if (this.DialogResult != DialogResult.None) {
