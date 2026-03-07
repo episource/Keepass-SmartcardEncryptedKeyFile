@@ -8,7 +8,7 @@ I'm recommending YubiKey 5 series. These are easy to setup (see below) and I'm i
 
 The following smartcards have been tested:
  - [YubiKey 5 Series](https://www.yubico.com/products/yubikey-5-overview/) (recommended, YubiKey 5 NFC is what I'm using daily) - RSA & ECC
-   * ECC requires [YubiKey Smart Card Minidriver][9]
+   * ECC & RSA3072/RSA4096 require [YubiKey Smart Card Minidriver][9]
  - [Thales SafeNet eToken 5300 Series](https://www.thalestct.com/identity-access-management/etoken-5300/) & [Thales SafeNet IdPrime 930](https://cpl.thalesgroup.com/de/access-management/idprime-md-pki-smart-cards) ([SafeNet minidriver](https://supportportal.thalesgroup.com/csm?id=kb_article_view&sysparm_article=KB0016030) required) - RSA & ECC
    * If connected, slows down querying key parameters of certificates backed by non-SafeNet tokens/cards. This noticeably increases time required for unlocking KeePass and modifying encrypted key file authorization when other brand tokens are known to the host.
    * ECC521 requires plugin version 1.2.1 or newer
