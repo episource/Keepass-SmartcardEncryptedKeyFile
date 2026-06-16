@@ -28,7 +28,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                      || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEY)
                      || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEYSET)
                      || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_SMARTCARD)
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_READERS_AVAILABLE);
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_READERS_AVAILABLE)
+                     || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_PERM);
 
         public static bool IsCancelledByUserException(CryptographicException ex) {
             return ex is CryptoOperationCancelledException || unchecked((CryptoResult)ex.HResult) == CryptoResult.SCARD_W_CANCELLED_BY_USER;
