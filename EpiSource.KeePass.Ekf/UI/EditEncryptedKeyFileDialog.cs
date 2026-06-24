@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 using EpiSource.KeePass.Ekf.Crypto;
@@ -9,6 +10,7 @@ using EpiSource.KeePass.Ekf.Plugin;
 
 using Episource.KeePass.EKF.Resources;
 
+using EpiSource.KeePass.Ekf.UI.Windows;
 using EpiSource.Unblocker.Util;
 
 using KeePass.App;
@@ -25,6 +27,7 @@ namespace EpiSource.KeePass.Ekf.UI {
 
             private readonly bool permitNewKey;
             private readonly IOConnectionInfo dbPath;
+            private readonly string defaultKeyFileName;
 
             private readonly LiveKeyDataStore activeDbKey;
             private IKeyDataStore nextKey;
@@ -32,6 +35,7 @@ namespace EpiSource.KeePass.Ekf.UI {
 
             internal EditEncryptedKeyFileDialog(IOConnectionInfo dbPath, IUserKey activeDbKey, IKeyPairProvider authCandidates, bool permitNewKey) {
                 this.dbPath = dbPath;
+                this.defaultKeyFileName = Path.GetFileName(dbPath.Path) + ".keyx";
                 this.activeDbKey = activeDbKey == null ? null : new LiveKeyDataStore(activeDbKey);
                 this.nextKey = (IKeyDataStore) this.activeDbKey ?? new RandomKeyDataStore();
                 this.keyWasExported = false;
@@ -56,18 +60,22 @@ namespace EpiSource.KeePass.Ekf.UI {
                     return;
                 }
 
-                var saveFileDialog = UIUtil.CreateSaveFileDialog(KPRes.KeyFileCreate, string.Empty, UIUtil.CreateFileTypeFilter("keyx", KPRes.KeyFiles, true), 1, "key", AppDefs.FileDialogContext.KeyFile);
-                if (saveFileDialog.ShowDialog() != DialogResult.OK) {
+                var exportKeyFile = this.ShowSaveFileDialog();
+                if (exportKeyFile == null) {
                     return;
                 }
-
+                
                 try {
-                    using (var s = File.Open(saveFileDialog.FileName, FileMode.Create, FileAccess.Write)) {
+                    if (File.Exists(exportKeyFile) && File.GetAttributes(exportKeyFile).HasFlag(FileAttributes.Directory)) {
+                        exportKeyFile = Path.Combine(exportKeyFile, this.defaultKeyFileName);
+                    }
+                    
+                    using (var s = File.Open(exportKeyFile, FileMode.Create, FileAccess.Write)) {
                         const ulong v2 = 0x0002000000000000;
                         KfxFile.Create(v2, this.nextKey.KeyData.ReadData(), null).Save(s);
                     }
                 } catch (IOException e) {
-                    MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFailureExportingKey, e, e.Message, saveFileDialog.FileName),
+                    MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFailureExportingKey, e, e.Message, exportKeyFile),
                         Strings.EditEncryptedKeyFileDialog_DialogTitleFailureExportingKey,
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
@@ -78,30 +86,30 @@ namespace EpiSource.KeePass.Ekf.UI {
             }
 
             private void ImportKey() {
-                var openFileDialog = UIUtil.CreateOpenFileDialog(KPRes.KeyFileSelect, UIUtil.CreateFileTypeFilter("key|keyx", KPRes.KeyFiles, true), 2, null, false, AppDefs.FileDialogContext.KeyFile);
-                if (openFileDialog.ShowDialog() != DialogResult.OK) {
+                var importKeyFile = this.ShowOpenFileDialog();
+                if (importKeyFile == null) {
                     return;
                 }
 
-                if (!File.Exists(openFileDialog.FileName)) {
-                    MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFileNotFound, openFileDialog.FileName),
+                if (!File.Exists(importKeyFile)) {
+                    MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextFileNotFound, importKeyFile),
                         Strings.EditEncryptedKeyFileDialog_DialogTitleFileNotFound,
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                var importedKey = ImportedKeyDataStore.FromKfxFile(openFileDialog.FileName);
+                var importedKey = ImportedKeyDataStore.FromKfxFile(importKeyFile);
                 if (importedKey == null) {
-                    var result = MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextNoXmlKeyFile, openFileDialog.FileName),
+                    var result = MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextNoXmlKeyFile, importKeyFile),
                         Strings.EditEncryptedKeyFileDialog_DialogTitleNoXmlKeyFile,
                         MessageBoxButtons.YesNo, MessageBoxIcon.Information);
 
                     if (result == DialogResult.No) return;
 
-                    importedKey = ImportedKeyDataStore.FromPlainKeyFile(openFileDialog.FileName);
+                    importedKey = ImportedKeyDataStore.FromPlainKeyFile(importKeyFile);
                 }
                 if (importedKey == null) {
-                    MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextInvalidPlainKeyFile, openFileDialog.FileName),
+                    MessageBox.Show(string.Format(Strings.Culture, Strings.EditEncryptedKeyFileDialog_DialogTextInvalidPlainKeyFile, importKeyFile),
                         Strings.EditEncryptedKeyFileDialog_DialogTitleInvalidPlainKeyFile,
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
@@ -196,6 +204,34 @@ namespace EpiSource.KeePass.Ekf.UI {
                 }
 
                 return Strings.EditEncryptedKeyFileDialog_KeySourceUnknown;
+            }
+
+            private string ShowOpenFileDialog() {
+                return ShowFileDialog(false);
+            }
+
+            private string ShowSaveFileDialog() {
+                return ShowFileDialog(true);
+            }
+
+            private string ShowFileDialog(bool isSave) {
+                if (!NativeForms.IsOnDefaultDesktop(this)) {
+                    var keepassMinimalisticFileDialog = new FileBrowserForm();
+
+                    try {
+                        keepassMinimalisticFileDialog.InitEx(isSave, isSave ? KPRes.KeyFileCreate : KPRes.KeyFileSelect, KPRes.SecDeskFileDialogHint, AppDefs.FileDialogContext.KeyFile);
+                        keepassMinimalisticFileDialog.SuggestedFile = this.defaultKeyFileName;
+
+                        return keepassMinimalisticFileDialog.ShowDialog(this) == DialogResult.OK ? keepassMinimalisticFileDialog.SelectedFile : null;
+                    } finally {
+                        UIUtil.DestroyForm(keepassMinimalisticFileDialog);    
+                    }
+                }
+
+                var nativeFileDialog = isSave
+                    ? (FileDialogEx)UIUtil.CreateSaveFileDialog(KPRes.KeyFileCreate, string.Empty, UIUtil.CreateFileTypeFilter("keyx", KPRes.KeyFiles, true), 1, "key", AppDefs.FileDialogContext.KeyFile)
+                    : (FileDialogEx)UIUtil.CreateOpenFileDialog(KPRes.KeyFileSelect, UIUtil.CreateFileTypeFilter("key|keyx", KPRes.KeyFiles, true), 2, null, false, AppDefs.FileDialogContext.KeyFile);
+                return nativeFileDialog.ShowDialog(this) == DialogResult.OK ? nativeFileDialog.FileName : null;
             }
         }
     }

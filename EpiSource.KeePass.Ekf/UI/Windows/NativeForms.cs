@@ -6,6 +6,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 
+using KeePass;
+using KeePass.UI;
+
 namespace EpiSource.KeePass.Ekf.UI.Windows {
     public static partial class NativeForms {
         
@@ -44,6 +47,23 @@ namespace EpiSource.KeePass.Ekf.UI.Windows {
 
         public static string GetCurrentThreadDesktopName() {
             return GetDesktopName(GetCurrentThreadDesktop());
+        }
+        
+        public static string GetControlsDesktopName(Control window) {
+            int processId;
+            int threadIdAndSuccess = NativeFormsPinvoke.GetWindowThreadProcessId(window.Handle, out processId);
+            if (threadIdAndSuccess == 0) {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+            return GetDesktopName(GetThreadDesktop((uint)threadIdAndSuccess));
+        }
+
+        public static bool IsOnDefaultDesktop(Control window) {
+            if (!Program.Config.Security.MasterKeyOnSecureDesktop) {
+                return true;
+            }
+            
+            return GetControlsDesktopName(Program.MainForm) == GetControlsDesktopName(window);
         }
 
         public static void SetCurrentThreadDesktop(IntPtr desktop) {
