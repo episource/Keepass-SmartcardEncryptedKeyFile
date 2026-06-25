@@ -404,7 +404,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
                     ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle)) {
                 var errorCode = unchecked((CryptoResult)Marshal.GetLastWin32Error());
-                Console.WriteLine("Failed to get private key info for certificate '{0}' ({1}): {2} (0x{3:X})",
+                Console.WriteLine("[QueryCertificatePrivateKey] Failed to get private key info for certificate '{0}' ({1}): {2} (0x{3:X})",
                     cert.Subject, String.IsNullOrEmpty(cert.FriendlyName) ? "N/A" : cert.FriendlyName,
                     Enum.GetName(typeof(CryptoResult), errorCode) ?? "N/A", errorCode);
                 return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, false, isHardware, isRemovable);
