@@ -20,16 +20,6 @@ using KeePassLib.Cryptography;
 
 namespace EpiSource.KeePass.Ekf.Crypto.Windows {
     public static partial class NativeCapi {
-        
-        private static readonly Func<PinvokeUtil.PinvokeResult<bool>, bool> isSuccessOrMissingKeyPredicate = r =>
-            r.Result || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_NO_KEY)
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.CRYPT_E_NOT_FOUND)
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.CRYPT_E_NO_KEY_PROPERTY)
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEY)
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_BAD_KEYSET)
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_SMARTCARD)
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.SCARD_E_NO_READERS_AVAILABLE)
-                     || r.Win32ErrorCode == unchecked((int) CryptoResult.NTE_PERM);
 
         public static bool IsCancelledByUserException(CryptographicException ex) {
             return ex is CryptoOperationCancelledException || unchecked((CryptoResult)ex.HResult) == CryptoResult.SCARD_W_CANCELLED_BY_USER;
@@ -406,14 +396,19 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             var keySpec = CryptPrivateKeySpec.UNDEFINED;
             var mustFreeHandle = false;
 
-            PinvokeUtil.DoPinvokeWithException(() => NativeCertPinvoke.CryptAcquireCertificatePrivateKey(cert.Handle,
+            if (!NativeCertPinvoke.CryptAcquireCertificatePrivateKey(cert.Handle,
                     CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_USE_PROV_INFO_FLAG
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_NO_HEALING
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
-                    ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle),
-                isSuccessOrMissingKeyPredicate);
+                    ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle)) {
+                var errorCode = unchecked((CryptoResult)Marshal.GetLastWin32Error());
+                Console.WriteLine("Failed to get private key info for certificate '{0}' ({1}): {2} (0x{3:X})",
+                    cert.Subject, String.IsNullOrEmpty(cert.FriendlyName) ? "N/A" : cert.FriendlyName,
+                    Enum.GetName(typeof(CryptoResult), errorCode) ?? "N/A", errorCode);
+                return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, false, isHardware, isRemovable);
+            }
 
             using (NcryptOrContextHandle keyHandle = NcryptOrContextHandle.of(keyHandleRaw, mustFreeHandle, keySpec)) {
                 if (keyHandle.IsInvalid) {
