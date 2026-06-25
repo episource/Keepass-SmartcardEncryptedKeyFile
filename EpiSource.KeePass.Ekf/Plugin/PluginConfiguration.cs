@@ -20,7 +20,10 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         private const string configKeyUseNativePinDialog = "EpiSource.KeePass.Ekf.UseNativePinDialog";
 
         public PluginConfiguration(AceCustomConfig keypassCustomConfig) {
-            this.DebugMode = Environment.CommandLine.ToLowerInvariant().Contains("--debug");
+            var lowerCommandLine = Environment.CommandLine.ToLowerInvariant();
+            this.DebugMode = lowerCommandLine.Contains("--debug-no-unblocker")
+                ? DebugMode.DebugNoUnblocker
+                : (lowerCommandLine.Contains("--debug") ? DebugMode.Debug : DebugMode.None);
             
             this.StrictRfc5753 = keypassCustomConfig.GetBool(configKeyStrictRfc5753, false);
             this.UseNativePinDialog = keypassCustomConfig.GetBool(configKeyUseNativePinDialog, false);
@@ -48,9 +51,11 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         }
 
         /// <summary>
-        /// Whether debug output should be enabled. Use command line argument `--debug` to enable.
+        /// Whether debug output should be enabled.
+        /// Use command line argument `--debug` to enable debug output.
+        /// Use command line argument `--debug-no-unblocker` to enable debug output and disable unblocker.
         /// </summary>
-        public bool DebugMode {
+        public DebugMode DebugMode {
             get;
             private set;
         }

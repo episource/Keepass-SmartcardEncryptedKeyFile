@@ -10,19 +10,16 @@ using EpiSource.Unblocker.Hosting;
 
 using KeePass.UI;
 
+using PluginDebugMode = EpiSource.KeePass.Ekf.Plugin.DebugMode;
+using UnblockerDebugMode = EpiSource.Unblocker.Hosting.DebugMode;
+
 namespace EpiSource.KeePass.Ekf.UI {
     public sealed partial class SmartcardOperationDialogFactory {
         public static readonly TimeSpan UsuallyShortTaskRecommendedDialogDelay = TimeSpan.FromSeconds(1);
 
         private const int gracefulAbortTimeoutMs = 100;
         
-        /// disable unblocker (background process) to simplify debugging
-        private const bool debugWithoutUnblocker = 
-            #if NO_UNBLOCKER
-            true;
-            #else
-            false;
-            #endif
+        private readonly PluginDebugMode pluginDebugMode;
 
         // A dedicated worker process pool is used:
         // - smartcard operations involve native code without support for cancellation; hence the process needs
@@ -36,10 +33,11 @@ namespace EpiSource.KeePass.Ekf.UI {
         private readonly UnblockerHost smartcardWorker;
 
         public SmartcardOperationDialogFactory(PluginConfiguration pluginConfiguration) {
+            this.pluginDebugMode = pluginConfiguration.DebugMode;
             this.smartcardWorker = new UnblockerHost(
                 standbyDelay: TimeSpan.FromSeconds(500000), maxWorkers: 1,
                 bootstrapMode: pluginConfiguration.UnblockerBootstrapMode,
-                debug: pluginConfiguration.DebugMode ? DebugMode.Console : DebugMode.None);
+                debug: pluginConfiguration.DebugMode != PluginDebugMode.None ? UnblockerDebugMode.Console : UnblockerDebugMode.None);
         }    
             
         #region DoCryptoWithMessagePump factory methods
@@ -134,12 +132,10 @@ namespace EpiSource.KeePass.Ekf.UI {
             InvocationRequest<TTarget, TReturn> cryptoOperationRequest, CancellationToken ct, TimeSpan? showDialogDelay
         ) {
             // on request: disable unblocker (background process) to simplify debugging
-#pragma warning disable CS0162
-            if (debugWithoutUnblocker) {
+            if (this.pluginDebugMode == PluginDebugMode.DebugNoUnblocker) {
                 var synchronousResult = cryptoOperationRequest.Invoke(ct);
                 return new InvocationResult<TTarget, TReturn>(cryptoOperationRequest.Target, synchronousResult, true);
             }
-#pragma warning restore CS0162
 
             var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 

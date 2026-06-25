@@ -188,7 +188,7 @@ Setting below option configures the plugin to strictly adhere to these recommend
 
 With this disabled (the default) the following variations are allowed:
  - Using SHA384 based key derivation function for ECC521 curves (instead of recommended SHA512) - this is required for 
-   compatibility with all known windows builds. Otherwise, authorizing a smart card using ECC521 curves will fail with
+   compatibility with all known windows builds. Otherwise, authorizing a smartcard using ECC521 curves will fail with
    an invalid parameter error. See also #3.
 
 Add below snippet to `KeePass.config.xml` to strictly follow RFC5753 parameters.
@@ -253,11 +253,14 @@ Add below snippet to `KeePass.config.xml` with your preferred option chosen as `
 </Configuration>
 ```
 
+## Debug options
+To get debug output and stacktraces invoke KeePass with command line option `--debug`. Use `--debug --debug-no-unblocker` to additionally disable unblocker for testing purposes. Be aware: without unblocker, KeePass UI freezes during smartcard operations! Disabling unblocker is required to debugger-step-through smartcard related operations.
+
 # Known Issues & Limitations
 1. Non-Local databases have not been tested, but might work as well.
 2. KeePass builtin synchronization won't synchronize changes related to the encrypted key file (e.g. access granted to additional smartcard).
-3. Smart Card operations / unlocking an encrypted key file fails with message _"Failed to start unblocker process. Wasn't ready within ...s!"_ for some company environments with strict threat protection system. Please refer to custom configuration options above for solutions. The message also appears when using `InstallUtilPlain` bootstrapper configuration and the `.dll` files [downloaded-from-internet flag is not cleared](https://private-user-images.githubusercontent.com/3219567/544555631-80e5d99f-dc75-40e4-8247-4e2fc7395d02.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzEyNDIzMDQsIm5iZiI6MTc3MTI0MjAwNCwicGF0aCI6Ii8zMjE5NTY3LzU0NDU1NTYzMS04MGU1ZDk5Zi1kYzc1LTQwZTQtODI0Ny00ZTJmYzczOTVkMDIucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI2MDIxNiUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNjAyMTZUMTE0MDA0WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9MThhYjA5NTVlZmMzNmU1N2YyMTk0MjBlNmVkN2ZjZDBlMzJhZGM2YTU5YjhiMGZhNzUxMzc4MGJjNmZlMTkyZiZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.H9bqBhPrVeublieXYJYjHpUCC8FWx8hfEhlRiPqEhi8).
-4. Smart Card operations / unlocking an encrypted key file fails (with Exception dialog) if YubiKey Authenticator is running in parallel (note: only when using windows builtin smartcard driver, issue does not occur if YubiKey minidriver is installed)
+3. Smartcard operations / unlocking an encrypted key file fails with message _"Failed to start unblocker process. Wasn't ready within ...s!"_ for some company environments with strict threat protection system. Please refer to custom configuration options above for solutions. The message also appears when using `InstallUtilPlain` bootstrapper configuration and the `.dll` files [downloaded-from-internet flag is not cleared](https://private-user-images.githubusercontent.com/3219567/544555631-80e5d99f-dc75-40e4-8247-4e2fc7395d02.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzEyNDIzMDQsIm5iZiI6MTc3MTI0MjAwNCwicGF0aCI6Ii8zMjE5NTY3LzU0NDU1NTYzMS04MGU1ZDk5Zi1kYzc1LTQwZTQtODI0Ny00ZTJmYzczOTVkMDIucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI2MDIxNiUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNjAyMTZUMTE0MDA0WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9MThhYjA5NTVlZmMzNmU1N2YyMTk0MjBlNmVkN2ZjZDBlMzJhZGM2YTU5YjhiMGZhNzUxMzc4MGJjNmZlMTkyZiZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.H9bqBhPrVeublieXYJYjHpUCC8FWx8hfEhlRiPqEhi8).
+4. Smartcard operations / unlocking an encrypted key file fails (with Exception dialog) if YubiKey Authenticator is running in parallel (note: only when using windows builtin smartcard driver, issue does not occur if YubiKey minidriver is installed)
 
 
 [1]: https://csrc.nist.gov/pubs/sp/800/73/pt1/5/final

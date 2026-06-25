@@ -20,8 +20,6 @@
     <Optimize>false</Optimize>
     <OutputPath>bin\$(Configuration)\Plugins</OutputPath>
     <DefineConstants Condition="'$(Configuration)' == 'Debug'">DEBUG;TRACE</DefineConstants>
-    <DefineConstants Condition="'$(Configuration)' == 'DebugUnblockerInstallUtil'">DEBUG;TRACE;useInstallUtil</DefineConstants>
-    <DefineConstants Condition="'$(Configuration)' == 'DebugNoUnblocker'">DEBUG;TRACE;NO_UNBLOCKER</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
@@ -32,7 +30,6 @@
     <Optimize>true</Optimize>
     <OutputPath>bin\$(Configuration)\Plugins</OutputPath>
     <DefineConstants Condition="'$(Configuration)' == 'Release'">TRACE;PLGX;</DefineConstants>
-    <DefineConstants Condition="'$(Configuration)' == 'ReleaseUnblockerInstallUtil'">TRACE;useInstallUtil;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
@@ -48,7 +45,6 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Configuration.Install" Condition="$(DefineConstants.Contains(useInstallUtil))" />
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -125,6 +121,7 @@
     <Compile Include="Keys\IKeyDataStore.cs" />
     <Compile Include="Keys\ImportedKeyDataStore.cs" />
     <Compile Include="Keys\RandomKeyDataStore.cs" />
+    <Compile Include="Plugin\DebugMode.cs" />
     <Compile Include="Plugin\KeyFileLocation.cs" />
     <Compile Include="Plugin\PluginConfiguration.cs" />
     <Compile Include="Plugin\SmartcardEncryptedKeyFileExt.cs" />
