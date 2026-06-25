@@ -242,6 +242,10 @@ namespace EpiSource.KeePass.Ekf.UI.Windows {
         
         #region Misc
 
+        public static bool AllocConsole() {
+            return NativeFormsPinvoke.AllocConsole();
+        }
+
         public static int GetProcessIdOfWindow(IntPtr hwnd) {
             int processId;
             int threadIdAndSuccess = NativeFormsPinvoke.GetWindowThreadProcessId(hwnd, out processId);

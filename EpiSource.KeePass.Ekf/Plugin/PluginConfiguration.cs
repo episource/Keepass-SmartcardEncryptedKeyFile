@@ -21,6 +21,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
 
         public PluginConfiguration(AceCustomConfig keypassCustomConfig) {
             var lowerCommandLine = Environment.CommandLine.ToLowerInvariant();
+            this.AllocConsole = lowerCommandLine.Contains("--alloc-console");
             this.DebugMode = lowerCommandLine.Contains("--debug-no-unblocker")
                 ? DebugMode.DebugNoUnblocker
                 : (lowerCommandLine.Contains("--debug") ? DebugMode.Debug : DebugMode.None);
@@ -48,6 +49,14 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                 keypassCustomConfig.SetString(configKeyPinStoreKey, MemUtil.ByteArrayToHexString(keyBytes));
             }
             this.PinStoreKey = PortableProtectedBinary.Move(keyBytes);
+        }
+        
+        /// <summary>
+        /// Whether console for debug output should be allocated.
+        /// </summary>
+        public bool AllocConsole {
+            get;
+            private set;
         }
 
         /// <summary>

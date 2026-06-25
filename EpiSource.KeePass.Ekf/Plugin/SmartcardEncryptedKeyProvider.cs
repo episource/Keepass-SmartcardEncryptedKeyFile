@@ -11,6 +11,7 @@ using EpiSource.KeePass.Ekf.Crypto.Windows;
 using Episource.KeePass.EKF.Resources;
 
 using EpiSource.KeePass.Ekf.UI;
+using EpiSource.KeePass.Ekf.UI.Windows;
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.KeePass.Ekf.Util.Windows;
 using EpiSource.Unblocker.Hosting;
@@ -43,6 +44,10 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             
             this.pluginHost = pluginHost;
             this.configuration = new PluginConfiguration(this.pluginHost.CustomConfig);
+            if (this.configuration.AllocConsole) {
+                NativeForms.AllocConsole();
+            }
+            
             this.uiFactory = new UIFactory(this.configuration);
 
             this.rememberedSmartcardPinStore = new ProtectedWinCred(this.configuration.PinStoreKey);

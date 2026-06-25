@@ -50,6 +50,10 @@ namespace EpiSource.KeePass.Ekf.UI.Windows {
 
         [SuppressMessage("ReSharper", "MemberHidesStaticFromOuterClass")]
         private static class NativeFormsPinvoke {
+            
+            [DllImport("kernel32.dll", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            internal static extern bool AllocConsole();
 
             [DllImport("user32.dll", CharSet = CharSet.Auto)]
             public static extern IntPtr GetActiveWindow();
