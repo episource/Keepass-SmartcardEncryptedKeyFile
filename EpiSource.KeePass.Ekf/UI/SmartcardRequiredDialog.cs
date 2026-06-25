@@ -317,7 +317,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                             this.refreshSmartcardOperationPending = true;
                             refreshResult = this.uiFactory.SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
                                 this.keyPairProvider, (ct, _) => _.Refresh());
-                        } catch (TaskCanceledException e) {
+                        } catch (TaskCanceledException) {
                             // that's fine - skip this refresh
                             return;
                         } finally {
