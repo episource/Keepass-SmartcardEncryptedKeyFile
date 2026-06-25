@@ -254,7 +254,7 @@ Add below snippet to `KeePass.config.xml` with your preferred option chosen as `
 ```
 
 ## Debug options
-To get debug output and stacktraces invoke KeePass with command line option `--debug`. Use `--debug --debug-no-unblocker` to additionally disable unblocker for testing purposes. Be aware: without unblocker, KeePass UI freezes during smartcard operations! Disabling unblocker is required to debugger-step-through smartcard related operations.
+To get debug output and stacktraces invoke KeePass with command line option `--debug`. Use `--debug --debug-no-unblocker` to additionally disable unblocker for testing purposes. Be aware: without unblocker, KeePass UI freezes during smartcard operations! Disabling unblocker is required to debugger-step-through smartcard related operations. `--alloc-console` is useful to force allocation of a console (and actually see output) when running outside an IDE.
 
 # Known Issues & Limitations
 1. Non-Local databases have not been tested, but might work as well.
