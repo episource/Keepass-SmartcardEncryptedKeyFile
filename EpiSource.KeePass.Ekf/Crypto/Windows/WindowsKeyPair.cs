@@ -125,16 +125,30 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
 
+        // Key usage flags asserting the certificate may be used for CMS encryption/decryption.
+        // Besides the standard RSA keyEncipherment and (EC)DH keyAgreement bits, some smartcards
+        // (e.g. PIV cards) mark their encryption certificate with dataEncipherment instead of
+        // keyEncipherment. Gate on any of these bits and let the key algorithm (pubKeyInfo) decide
+        // between key transfer and key agreement - requiring an exact bit per primitive locks out
+        // otherwise valid encryption keys (see issue #12). Absent a key usage extension all bits are
+        // assumed set (see UpdateKeyUsageFlags), so unrestricted certificates keep working.
+        private const X509KeyUsageFlags encryptionKeyUsage =
+            X509KeyUsageFlags.KeyEncipherment | X509KeyUsageFlags.DataEncipherment | X509KeyUsageFlags.KeyAgreement;
+
+        private bool KeyUsageAllowsEncryption {
+            get { return (this.keyUsageFlags & encryptionKeyUsage) != X509KeyUsageFlags.None; }
+        }
+
         public bool CanKeyAgree {
             get {
-                return (this.keyUsageFlags & X509KeyUsageFlags.KeyAgreement) == X509KeyUsageFlags.KeyAgreement
+                return this.KeyUsageAllowsEncryption
                         && this.pubKeyInfo.CanKeyAgree && (this.privKeyInfo == null || this.privKeyInfo.CanKeyAgree);
             }
         }
 
         public bool CanKeyTransfer {
             get {
-                return (this.keyUsageFlags & X509KeyUsageFlags.KeyEncipherment) == X509KeyUsageFlags.KeyEncipherment
+                return this.KeyUsageAllowsEncryption
                         && this.pubKeyInfo.CanKeyTransfer && (this.privKeyInfo == null || this.privKeyInfo.CanKeyTransfer);
             }
         }
