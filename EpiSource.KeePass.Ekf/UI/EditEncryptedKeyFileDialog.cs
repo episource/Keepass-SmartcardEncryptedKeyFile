@@ -42,8 +42,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 this.permitNewKey = permitNewKey;
 
                 this.InitializeUI();
-
-                // AddKeyIfNew requires UI to be initialized!
+                
                 foreach (var keyPair in authCandidates.GetAvailableKeyPairs()) {
                     if (!this.AddKeyIfNew(keyPair)) {
                         throw new ArgumentException(
@@ -51,6 +50,9 @@ namespace EpiSource.KeePass.Ekf.UI {
                             "authCandidates");
                     }
                 }
+                
+                // RefreshKeyList requires UI to be initialized!
+                this.RefreshKeyListView();
 
                 this.ValidateInput();
             }

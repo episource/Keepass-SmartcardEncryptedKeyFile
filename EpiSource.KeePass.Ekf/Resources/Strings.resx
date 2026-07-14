@@ -96,6 +96,9 @@
   <data name="EditEncryptedKeyFileDialog.ButtonExport" xml:space="preserve">
     <value>Export</value>
   </data>
+  <data name="EditEncryptedKeyFileDialog.CheckBoxShowOtherUsage" xml:space="preserve">
+    <value>Ignore key usage restrictions (show all)</value>
+  </data>
   <data name="EditEncryptedKeyFileDialog.ButtonSelectActiveDbKeyFile" xml:space="preserve">
     <value>Select active key file</value>
   </data>

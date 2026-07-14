@@ -123,6 +123,15 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Ignore key usage restrictions (show all).
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_CheckBoxShowOtherUsage {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.CheckBoxShowOtherUsage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Algorithm.
         /// </summary>
         internal static string EditEncryptedKeyFileDialog_ColumnAlgorithm {
