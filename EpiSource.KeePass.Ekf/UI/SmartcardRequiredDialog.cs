@@ -33,7 +33,6 @@ namespace EpiSource.KeePass.Ekf.UI {
                 Interval = 150
             };
             
-            private readonly UIFactory uiFactory;
             private readonly KeyPairProviderDeviceEventUpdater updatingKeyPairProvider;
 
             internal SmartcardRequiredDialog(Form owner, IKeyPairProvider keyPairProvider, UIFactory uiFactory) {
@@ -41,8 +40,6 @@ namespace EpiSource.KeePass.Ekf.UI {
                     this.Owner = owner;
                 }
 
-                this.uiFactory = uiFactory;
-                
                 this.updatingKeyPairProvider = new KeyPairProviderDeviceEventUpdater(keyPairProvider, uiFactory);
                 this.updatingKeyPairProvider.Changed += (s, e) => this.ReplaceList();
 

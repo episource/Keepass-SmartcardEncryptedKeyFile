@@ -117,6 +117,9 @@
   <data name="EditEncryptedKeyFileDialog.ColumnChange" xml:space="preserve">
     <value>☑ Change</value>
   </data>
+  <data name="EditEncryptedKeyFileDialog.ColumnState" xml:space="preserve">
+    <value>Private Key</value>
+  </data>
   <data name="EditEncryptedKeyFileDialog.ColumnSubject" xml:space="preserve">
     <value>Subject</value>
   </data>
@@ -132,6 +135,12 @@
   <data name="EditEncryptedKeyFileDialog.LabelThumbprint" xml:space="preserve">
     <value>Thumbprint: {0}</value>
     <comment>{0} is thumbprint</comment>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.KeyStateConnected" xml:space="preserve">
+    <value>connected</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.KeyStateNotConnected" xml:space="preserve">
+    <value>not connected</value>
   </data>
   <data name="SmartcardOperationDialog.DialogTitle" xml:space="preserve">
     <value>Waiting for smartcard...</value>

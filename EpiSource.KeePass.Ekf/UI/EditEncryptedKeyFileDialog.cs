@@ -1,17 +1,15 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 using EpiSource.KeePass.Ekf.Crypto;
 using EpiSource.KeePass.Ekf.Keys;
-using EpiSource.KeePass.Ekf.Plugin;
 
 using Episource.KeePass.EKF.Resources;
 
+using EpiSource.KeePass.Ekf.UI.Util;
 using EpiSource.KeePass.Ekf.UI.Windows;
-using EpiSource.Unblocker.Util;
 
 using KeePass.App;
 using KeePass.Forms;
@@ -32,8 +30,10 @@ namespace EpiSource.KeePass.Ekf.UI {
             private readonly LiveKeyDataStore activeDbKey;
             private IKeyDataStore nextKey;
             private bool keyWasExported;
+            
+            private readonly KeyPairProviderDeviceEventUpdater updatingKeyPairProvider;
 
-            internal EditEncryptedKeyFileDialog(IOConnectionInfo dbPath, IUserKey activeDbKey, IKeyPairProvider authCandidates, bool permitNewKey) {
+            internal EditEncryptedKeyFileDialog(IOConnectionInfo dbPath, IUserKey activeDbKey, IKeyPairProvider authCandidates, bool permitNewKey, UIFactory uiFactory) {
                 this.dbPath = dbPath;
                 this.defaultKeyFileName = Path.GetFileName(dbPath.Path) + ".keyx";
                 this.activeDbKey = activeDbKey == null ? null : new LiveKeyDataStore(activeDbKey);
@@ -43,13 +43,8 @@ namespace EpiSource.KeePass.Ekf.UI {
 
                 this.InitializeUI();
                 
-                foreach (var keyPair in authCandidates.GetAvailableKeyPairs()) {
-                    if (!this.AddKeyIfNew(keyPair)) {
-                        throw new ArgumentException(
-                            @"Duplicated key pair: " + keyPair.KeyPair.Certificate.Thumbprint,
-                            "authCandidates");
-                    }
-                }
+                this.updatingKeyPairProvider = new KeyPairProviderDeviceEventUpdater(authCandidates, uiFactory);
+                this.updatingKeyPairProvider.Changed += (s, e) => this.RefreshKeyListView();
                 
                 // RefreshKeyList requires UI to be initialized!
                 this.RefreshKeyListView();
@@ -155,7 +150,7 @@ namespace EpiSource.KeePass.Ekf.UI {
 
                 var authorizationChanged =
                     this.DialogResult == DialogResult.OK ||
-                    this.keyList.Values
+                    this.keyListView.ItemTags<KeyPairModel>()
                         .Select(x => x.NextAuthorization != x.CurrentAuthorization)
                         .FirstOrDefault();
                 if (!authorizationChanged) {
@@ -163,14 +158,14 @@ namespace EpiSource.KeePass.Ekf.UI {
                 }
 
                 var selectedKeys =
-                    this.keyList.Values
+                    this.keyListView.ItemTags<KeyPairModel>()
                         .Where(x => x.NextAuthorization == KeyPairModel.Authorization.Authorized)
                         .Select(x => x.KeyPair);
                 return new KeyEncryptionRequest(this.dbPath, this.nextKey.KeyData, selectedKeys);
             }
 
             private bool ValidateInput() {
-                if (this.keyList.Count == 0) {
+                if (this.keyListView.ItemTags<KeyPairModel>().FirstOrDefault() == null) {
                     this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageNoSmartcard);
                     return false;
                 }
@@ -181,8 +176,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                     return false;
                 }
 
-                var anyKeySelected =
-                    this.keyList.Any(x => x.Value.NextAuthorization == KeyPairModel.Authorization.Authorized);
+                var anyKeySelected = this.keyListView.ItemTags<KeyPairModel>().Any(x => x.NextAuthorization == KeyPairModel.Authorization.Authorized);
                 if (!anyKeySelected) {
                     this.ShowValidationError(Strings.EditEncryptedKeyFileDialog_ValidationMessageSelectSmartcard);
                     return false;

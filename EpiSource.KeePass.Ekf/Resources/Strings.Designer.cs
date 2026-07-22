@@ -168,6 +168,15 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Private Key.
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_ColumnState {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.ColumnState", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Subject.
         /// </summary>
         internal static string EditEncryptedKeyFileDialog_ColumnSubject {
@@ -308,6 +317,24 @@ namespace Episource.KeePass.EKF.Resources {
         internal static string EditEncryptedKeyFileDialog_KeySourceUnknown {
             get {
                 return ResourceManager.GetString("EditEncryptedKeyFileDialog.KeySourceUnknown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to connected.
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_KeyStateConnected {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.KeyStateConnected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to not connected.
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_KeyStateNotConnected {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.KeyStateNotConnected", resourceCulture);
             }
         }
         
