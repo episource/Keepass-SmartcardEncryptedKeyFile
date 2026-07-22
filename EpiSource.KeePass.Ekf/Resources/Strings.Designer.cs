@@ -321,24 +321,6 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to connected.
-        /// </summary>
-        internal static string EditEncryptedKeyFileDialog_KeyStateConnected {
-            get {
-                return ResourceManager.GetString("EditEncryptedKeyFileDialog.KeyStateConnected", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to not connected.
-        /// </summary>
-        internal static string EditEncryptedKeyFileDialog_KeyStateNotConnected {
-            get {
-                return ResourceManager.GetString("EditEncryptedKeyFileDialog.KeyStateNotConnected", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Database:.
         /// </summary>
         internal static string EditEncryptedKeyFileDialog_LabelDatabase {
@@ -389,6 +371,33 @@ namespace Episource.KeePass.EKF.Resources {
         internal static string EditEncryptedKeyFileDialog_ValidationMessageSelectSmartcard {
             get {
                 return ResourceManager.GetString("EditEncryptedKeyFileDialog.ValidationMessageSelectSmartcard", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to connected.
+        /// </summary>
+        internal static string KeyPairExtension_KeyStateConnected {
+            get {
+                return ResourceManager.GetString("KeyPairExtension.KeyStateConnected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to mismatch.
+        /// </summary>
+        internal static string KeyPairExtension_KeyStateMismatch {
+            get {
+                return ResourceManager.GetString("KeyPairExtension.KeyStateMismatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to not connected.
+        /// </summary>
+        internal static string KeyPairExtension_KeyStateNotConnected {
+            get {
+                return ResourceManager.GetString("KeyPairExtension.KeyStateNotConnected", resourceCulture);
             }
         }
         
@@ -616,24 +625,6 @@ namespace Episource.KeePass.EKF.Resources {
         internal static string SmartcardRequiredDialog_DialogTitle {
             get {
                 return ResourceManager.GetString("SmartcardRequiredDialog.DialogTitle", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to connected.
-        /// </summary>
-        internal static string SmartcardRequiredDialog_KeyStateConnected {
-            get {
-                return ResourceManager.GetString("SmartcardRequiredDialog.KeyStateConnected", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to not connected.
-        /// </summary>
-        internal static string SmartcardRequiredDialog_KeyStateNotConnected {
-            get {
-                return ResourceManager.GetString("SmartcardRequiredDialog.KeyStateNotConnected", resourceCulture);
             }
         }
         

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -25,8 +24,6 @@ namespace EpiSource.KeePass.Ekf.UI {
             private static readonly string noChangeCaption = Strings.EditEncryptedKeyFileDialog_KeyActionNoChange;
             private static readonly string newKeyAction = Strings.EditEncryptedKeyFileDialog_KeyActionAuthorize;
             private static readonly string delKeyAction = Strings.EditEncryptedKeyFileDialog_KeyActionUnauthorize;
-            private static readonly string stateConnected = Strings.EditEncryptedKeyFileDialog_KeyStateConnected;
-            private static readonly string stateNotConnected = Strings.EditEncryptedKeyFileDialog_KeyStateNotConnected;
             
             private readonly TableLayoutPanel layout = new TableLayoutPanel();
             private readonly CustomListViewEx keyListView = new CustomListViewEx();
@@ -356,7 +353,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                         this.UpdateItemAction(item);
                         
                         var cert = m.KeyPair.Certificate;
-                        item.SubItems.Add(m.KeyPair.IsReadyForDecryptCms ? stateConnected : stateNotConnected);
+                        item.SubItems.Add(m.DescribePrivateKeyState());
                         item.SubItems.Add(cert.Subject);
                         item.SubItems.Add(cert.SerialNumber);
                         item.SubItems.Add(cert.PublicKey.Oid.FriendlyName);

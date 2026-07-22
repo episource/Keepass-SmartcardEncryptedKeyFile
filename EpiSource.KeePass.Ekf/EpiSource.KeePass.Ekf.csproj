@@ -160,6 +160,7 @@
     <Compile Include="UI\SmartcardRequiredDialogFactory.cs" />
     <Compile Include="UI\UIConstants.cs" />
     <Compile Include="UI\UIFactory.cs" />
+    <Compile Include="UI\Util\KeyPairExtensions.cs" />
     <Compile Include="UI\Util\KeyPairProviderDeviceEventUpdater.cs" />
     <Compile Include="UI\Util\ListViewExtensions.cs" />
     <Compile Include="UI\Util\TimerExtensions.cs" />

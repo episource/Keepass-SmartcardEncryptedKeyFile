@@ -19,9 +19,6 @@ using Timer = System.Windows.Forms.Timer;
 namespace EpiSource.KeePass.Ekf.UI {
     public partial class SmartcardRequiredDialogFactory {
         private sealed class SmartcardRequiredDialog : Form, IGwmWindow {
-            private static readonly string stateConnected = Strings.SmartcardRequiredDialog_KeyStateConnected;
-            private static readonly string stateNotConnected = Strings.SmartcardRequiredDialog_KeyStateNotConnected;
-
             internal readonly CustomListViewEx keyListView = new CustomListViewEx();
             
             private bool loaded = false;
@@ -223,8 +220,9 @@ namespace EpiSource.KeePass.Ekf.UI {
 
                 // Add every possible state value for proper sizing
                 // Dummy items will be deleted after size has been calculated (form load event)
-                this.keyListView.Items.Add(stateConnected);
-                this.keyListView.Items.Add(stateNotConnected);
+                this.keyListView.Items.Add(Strings.KeyPairExtension_KeyStateConnected);
+                this.keyListView.Items.Add(Strings.KeyPairExtension_KeyStateMismatch);
+                this.keyListView.Items.Add(Strings.KeyPairExtension_KeyStateNotConnected);
 
                 // prevent changing column width
                 this.keyListView.ColumnWidthChanging += (sender, args) => {
@@ -323,10 +321,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                                             .DistinctBy(kp => kp.KeyPair.Certificate.Thumbprint)) {
 
                         var cert = kpm.KeyPair.Certificate;
-                        var stateText = stateNotConnected;
-                        if (kpm.KeyPair.IsReadyForDecryptCms) {
-                            stateText = stateConnected;
-                        }
+                        var stateText = kpm.DescribePrivateKeyState();
 
                         var item = new ListViewItem(stateText);
                         item.UseItemStyleForSubItems = false;

@@ -136,10 +136,13 @@
     <value>Thumbprint: {0}</value>
     <comment>{0} is thumbprint</comment>
   </data>
-  <data name="EditEncryptedKeyFileDialog.KeyStateConnected" xml:space="preserve">
+  <data name="KeyPairExtension.KeyStateConnected" xml:space="preserve">
     <value>connected</value>
   </data>
-  <data name="EditEncryptedKeyFileDialog.KeyStateNotConnected" xml:space="preserve">
+  <data name="KeyPairExtension.KeyStateMismatch" xml:space="preserve">
+    <value>mismatch</value>
+  </data>
+  <data name="KeyPairExtension.KeyStateNotConnected" xml:space="preserve">
     <value>not connected</value>
   </data>
   <data name="SmartcardOperationDialog.DialogTitle" xml:space="preserve">
@@ -153,12 +156,6 @@
   </data>
   <data name="SmartcardRequiredDialog.DialogTitle" xml:space="preserve">
     <value>Smartcard required</value>
-  </data>
-  <data name="SmartcardRequiredDialog.KeyStateConnected" xml:space="preserve">
-    <value>connected</value>
-  </data>
-  <data name="SmartcardRequiredDialog.KeyStateNotConnected" xml:space="preserve">
-    <value>not connected</value>
   </data>
   <data name="SmartcardRequiredDialog.DialogText" xml:space="preserve">
     <value>Please insert and select a smartcard from the list below.</value>
