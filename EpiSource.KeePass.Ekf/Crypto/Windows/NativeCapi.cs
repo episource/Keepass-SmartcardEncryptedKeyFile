@@ -400,7 +400,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             if (!NativeCertPinvoke.CryptAcquireCertificatePrivateKey(cert.Handle,
                     CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_COMPARE_KEY_FLAG
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_USE_PROV_INFO_FLAG
-                    | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_NO_HEALING
+                    // allowing healing sometimes resolves NTE_BAD_PUBLIC_KEY; the actual decryption doesn't use this either
+                    //| CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_NO_HEALING
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
                     ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle)) {
@@ -417,7 +418,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                     // retry without CRYPT_ACQUIRE_COMPARE_KEY_FLAG
                     acquireFailed = !NativeCertPinvoke.CryptAcquireCertificatePrivateKey(cert.Handle,
                         CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_USE_PROV_INFO_FLAG
-                        | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_NO_HEALING
+                        // allowing healing sometimes resolves NTE_BAD_PUBLIC_KEY; the actual decryption doesn't use this either
+                        //| CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_NO_HEALING
                         | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                         | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
                         ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle);
