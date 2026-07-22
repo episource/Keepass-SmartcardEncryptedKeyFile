@@ -23,6 +23,13 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         bool IsAccessible { get; }
         
         /// <summary>
+        /// Retrieves whether the key container reports a mismatch between the certificate and the private key.
+        /// This happens e.g. if the key slot of the smart card has been overwritten and no longer matches the
+        /// cached certificate. 
+        /// </summary>
+        bool? IsMismatch { get; }
+        
+        /// <summary>
         /// Retrieves whether the decrypt CMS operation is likely to succeed now. Some hardware devices might require
         /// confirmation for this operation to succeed.
         /// </summary>

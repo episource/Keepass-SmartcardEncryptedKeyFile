@@ -347,7 +347,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             }
         }
         
-        public static KeyInfo QueryCertificatePrivateKey(X509Certificate2 cert) {
+        public static KeyInfo QueryCertificatePrivateKey(X509Certificate2 cert, bool comparePublicKey = true) {
             // see also:
             //  - https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers
             //  - https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptgetprovparam
@@ -363,6 +363,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             bool? isRemovable = null;
             bool canExport = false;
             bool canKeyAgree = pubKeyInfo.CanKeyAgree;
+            bool isPubKeyMismatch = false;
             
             // 0: Ncrypt Key Provider (no indication) - let's assume CanDecrypt until we've got more information
             // 1: We can decrypt, the key is of type Exchange
@@ -403,16 +404,45 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
                     | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
                     ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle)) {
+                var acquireFailed = true;
                 var errorCode = unchecked((CryptoResult)Marshal.GetLastWin32Error());
-                Console.WriteLine("[QueryCertificatePrivateKey] Failed to get private key info for certificate '{0}' ({1}): {2} (0x{3:X})",
-                    cert.Subject, String.IsNullOrEmpty(cert.FriendlyName) ? "N/A" : cert.FriendlyName,
-                    Enum.GetName(typeof(CryptoResult), errorCode) ?? "N/A", errorCode);
-                return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, false, isHardware, isRemovable);
+                
+                if (errorCode == CryptoResult.NTE_BAD_PUBLIC_KEY) {
+                    isPubKeyMismatch = true;
+                    
+                    Console.WriteLine("[QueryCertificatePrivateKey] Failed to validate key association for certificate '{0}' ({1}): {2} (0x{3:X})",
+                        cert.Subject, String.IsNullOrEmpty(cert.FriendlyName) ? "N/A" : cert.FriendlyName,
+                        CryptoResult.NTE_BAD_PUBLIC_KEY, errorCode);
+                    
+                    // retry without CRYPT_ACQUIRE_COMPARE_KEY_FLAG
+                    acquireFailed = !NativeCertPinvoke.CryptAcquireCertificatePrivateKey(cert.Handle,
+                        CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_USE_PROV_INFO_FLAG
+                        | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_NO_HEALING
+                        | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG
+                        | CryptAcquireCertificatePrivateKeyFlags.CRYPT_ACQUIRE_SILENT_FLAG,
+                        ref optOwner, out keyHandleRaw, out keySpec, out mustFreeHandle);
+                    if (acquireFailed) {
+                        errorCode = unchecked((CryptoResult)Marshal.GetLastWin32Error());
+                    }
+                }
+
+                if (acquireFailed) {
+                    Console.WriteLine("[QueryCertificatePrivateKey] Failed to get private key info for certificate '{0}' ({1}): {2} (0x{3:X})",
+                        cert.Subject, String.IsNullOrEmpty(cert.FriendlyName) ? "N/A" : cert.FriendlyName,
+                        Enum.GetName(typeof(CryptoResult), errorCode) ?? "N/A", errorCode);
+                    
+                    return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, false,
+                            isPubKeyMismatch 
+                                || errorCode == CryptoResult.NTE_BAD_KEYSET
+                                || errorCode == CryptoResult.NTE_BAD_KEY
+                                || errorCode == CryptoResult.NTE_BAD_ALGID,
+                            isHardware, isRemovable);
+                }
             }
 
             using (NcryptOrContextHandle keyHandle = NcryptOrContextHandle.of(keyHandleRaw, mustFreeHandle, keySpec)) {
                 if (keyHandle.IsInvalid) {
-                    return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, false, isHardware, isRemovable);
+                    return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, false, isPubKeyMismatch, isHardware, isRemovable);
                 }
                 
                 byte[] keyImplementation = GetNcryptOrCspProperty(keyHandle, "Impl Type", CryptGetProvParamType.PP_IMPTYPE, true);
@@ -434,13 +464,13 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 }
             }
             
-            return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, true, isHardware, isRemovable);
+            return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, true, isPubKeyMismatch, isHardware, isRemovable);
         }
 
         public static KeyInfo QueryCertificatePublicKey(X509Certificate2 cert) {
             return new KeyInfo(
                 IsKeyAgreeSupported(cert), IsEncryptionSupported(cert), false /*tbd*/,
-                true, true, false, false);
+                true, true, false, false, false);
         }
 
         private static PortableProtectedBinary DecryptEnvelopedCmsImpl(CryptMsgHandle cryptMsgHandle, CryptMsgRecipient recipient, bool alwaysSilent, string optContextDescription, IntPtr optOwner, PortableProtectedString optPin

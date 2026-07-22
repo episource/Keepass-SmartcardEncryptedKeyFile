@@ -75,7 +75,11 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         public bool IsAccessible {
             get { return this.privKeyInfo != null && this.privKeyInfo.IsAccessible && this.pubKeyInfo != null && this.pubKeyInfo.IsAccessible; }
         }
-        
+
+        public bool? IsMismatch {
+            get { return this.privKeyInfo == null ? (bool?) null : this.privKeyInfo.IsKeyMismatch; }
+        }
+
         public bool? CanExportPrivateKey {
             get {
                 var info = this.privKeyInfo;
@@ -131,7 +135,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
         }
         
         public bool IsReadyForDecryptCms {
-            get { return this.CanDecryptCms && this.IsAccessible; }
+            get { return this.CanDecryptCms && this.IsAccessible && this.IsMismatch != true; }
         }
         
         public bool IsReadyForEncryptCms {
