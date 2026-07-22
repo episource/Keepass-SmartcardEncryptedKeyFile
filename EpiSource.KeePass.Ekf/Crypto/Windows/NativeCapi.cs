@@ -432,10 +432,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                         Enum.GetName(typeof(CryptoResult), errorCode) ?? "N/A", errorCode);
                     
                     return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, false,
-                            isPubKeyMismatch 
-                                || errorCode == CryptoResult.NTE_BAD_KEYSET
-                                || errorCode == CryptoResult.NTE_BAD_KEY
-                                || errorCode == CryptoResult.NTE_BAD_ALGID,
+                            isPubKeyMismatch || errorCode == CryptoResult.NTE_BAD_KEY,
                             isHardware, isRemovable);
                 }
             }
