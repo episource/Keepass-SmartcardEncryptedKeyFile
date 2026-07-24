@@ -325,6 +325,8 @@ namespace EpiSource.KeePass.Ekf.UI {
                     .Where(kpm => kpm.CurrentAuthorization != kpm.NextAuthorization)
                     .ToDictionary(kpm => kpm.KeyPair.Certificate.Thumbprint, kpm => kpm.NextAuthorization);
                 this.keyListView.Items.Clear();
+                this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.None);
+                this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.None);
 
                 this.updatingKeyPairProvider.KeyPairProvider.GetAvailableKeyPairs()
                     .OrderBy(m => String.IsNullOrWhiteSpace(m.KeyPair.Certificate.Subject))
@@ -363,11 +365,11 @@ namespace EpiSource.KeePass.Ekf.UI {
                         this.keyListView.Items.Add(item);
                     });
                 
-                // autosize
-                this.keyListView.EndUpdate();
+                // autosize (inbetween Begin/End Update for much better performance!)
                 this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
                 this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
                 
+                this.keyListView.EndUpdate();
                 this.ValidateInput();
             }
 

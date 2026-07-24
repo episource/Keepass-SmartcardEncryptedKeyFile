@@ -310,6 +310,8 @@ namespace EpiSource.KeePass.Ekf.UI {
                                                .Select(m => m.KeyPair.Certificate.Thumbprint)
                                                .ToHashSet();
                         this.keyListView.Items.Clear();
+                        this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.None);
+                        this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.None);
 
                         // re-enabled by checking an item
                         this.btnOk.Enabled = false;
@@ -349,15 +351,17 @@ namespace EpiSource.KeePass.Ekf.UI {
                         this.Close();
                         return;
                     }
+                    
+                    // autosize (inbetween Begin/End Update for much better performance!)
+                    this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
+                    this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
                 } finally {
                     if (!this.Disposing && !this.IsDisposed) {
                         this.keyListView.EndUpdate();
                     }
                 }
 
-                // autosize
-                this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
-                this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
+                
             }
 
             protected override void OnLoad(EventArgs e) {
