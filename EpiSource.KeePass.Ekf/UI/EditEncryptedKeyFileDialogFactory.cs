@@ -26,7 +26,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             // Note: DefaultKeyPairProvider#FromDbPath constructor blocks if busy HW is involved - unblock
             var keyPairProvider = this.uiFactory.SmartcardOperationDialog.DoCryptoWithMessagePumpShort(ct => DefaultKeyPairProvider.FromSystemKeyStore());
 
-            var dialog = new EditEncryptedKeyFileDialog(dbPath, activeDbKey, keyPairProvider, true);
+            var dialog = new EditEncryptedKeyFileDialog(dbPath, activeDbKey, keyPairProvider, true, this.uiFactory);
             return dialog.ShowDialogAndGenerateEncryptionRequest();
         }
 
@@ -48,7 +48,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             // Note: DefaultKeyPairProvider#FromDbPath constructor blocks if busy HW is involved - unblock
             var keyPairProvider = this.uiFactory.SmartcardOperationDialog.DoCryptoWithMessagePumpShort(ct => DefaultKeyPairProvider.FromEncryptedKeyFileBinary(encryptedKeyFileData));
 
-            var dialog = new EditEncryptedKeyFileDialog(dbPath, keyFile, keyPairProvider, false);
+            var dialog = new EditEncryptedKeyFileDialog(dbPath, keyFile, keyPairProvider, false, this.uiFactory);
             return dialog.ShowDialogAndGenerateEncryptionRequest();
         }
 

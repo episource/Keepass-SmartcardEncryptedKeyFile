@@ -160,6 +160,10 @@
     <Compile Include="UI\SmartcardRequiredDialogFactory.cs" />
     <Compile Include="UI\UIConstants.cs" />
     <Compile Include="UI\UIFactory.cs" />
+    <Compile Include="UI\Util\KeyPairExtensions.cs" />
+    <Compile Include="UI\Util\KeyPairProviderDeviceEventUpdater.cs" />
+    <Compile Include="UI\Util\ListViewExtensions.cs" />
+    <Compile Include="UI\Util\TimerExtensions.cs" />
     <Compile Include="UI\Windows\InvalidWindowHandleException.cs" />
     <Compile Include="UI\Windows\NativeForms.pinvoke.cs">
       <DependentUpon>NativeForms.cs</DependentUpon>

@@ -117,6 +117,9 @@
   <data name="EditEncryptedKeyFileDialog.ColumnChange" xml:space="preserve">
     <value>☑ Change</value>
   </data>
+  <data name="EditEncryptedKeyFileDialog.ColumnState" xml:space="preserve">
+    <value>Private Key</value>
+  </data>
   <data name="EditEncryptedKeyFileDialog.ColumnSubject" xml:space="preserve">
     <value>Subject</value>
   </data>
@@ -133,6 +136,15 @@
     <value>Thumbprint: {0}</value>
     <comment>{0} is thumbprint</comment>
   </data>
+  <data name="KeyPairExtension.KeyStateConnected" xml:space="preserve">
+    <value>connected</value>
+  </data>
+  <data name="KeyPairExtension.KeyStateMismatch" xml:space="preserve">
+    <value>mismatch</value>
+  </data>
+  <data name="KeyPairExtension.KeyStateNotConnected" xml:space="preserve">
+    <value>not connected</value>
+  </data>
   <data name="SmartcardOperationDialog.DialogTitle" xml:space="preserve">
     <value>Waiting for smartcard...</value>
   </data>
@@ -144,12 +156,6 @@
   </data>
   <data name="SmartcardRequiredDialog.DialogTitle" xml:space="preserve">
     <value>Smartcard required</value>
-  </data>
-  <data name="SmartcardRequiredDialog.KeyStateConnected" xml:space="preserve">
-    <value>connected</value>
-  </data>
-  <data name="SmartcardRequiredDialog.KeyStateNotConnected" xml:space="preserve">
-    <value>not connected</value>
   </data>
   <data name="SmartcardRequiredDialog.DialogText" xml:space="preserve">
     <value>Please insert and select a smartcard from the list below.</value>

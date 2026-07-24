@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -10,6 +9,7 @@ using EpiSource.KeePass.Ekf.Plugin;
 
 using Episource.KeePass.EKF.Resources;
 
+using EpiSource.KeePass.Ekf.UI.Util;
 using EpiSource.KeePass.Ekf.Util;
 
 using KeePass.UI;
@@ -33,8 +33,6 @@ namespace EpiSource.KeePass.Ekf.UI {
             private Label lblValidationError;
             private CheckBox chkAnyKeyUsage;
             private Button btnOk;
-
-            private readonly Dictionary<string, KeyPairModel> keyList = new Dictionary<string, KeyPairModel>();
 
             // ReSharper disable once InconsistentNaming
             private void InitializeUI() {
@@ -211,6 +209,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 // width "-2" -> auto size respecting header width
                 const int autoSizeHeader = -2;
                 this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnChange, autoSizeHeader);
+                this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnState, autoSizeHeader);
                 this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnSubject, autoSizeHeader);
                 this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnSerial, autoSizeHeader);
                 this.keyListView.Columns.Add(Strings.EditEncryptedKeyFileDialog_ColumnAlgorithm, autoSizeHeader);
@@ -220,7 +219,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 this.layout.Controls.Add(this.keyListView, 0, 4);
                 this.layout.SetColumnSpan(this.keyListView, this.layout.ColumnCount);
 
-                // Add every possible change value for proper sizing
+                // Add every possible change/state value for proper sizing
                 // Dummy items will be deleted after size has been calculated (form load event)
                 this.keyListView.Items.Add(newKeyAction).Font = new Font(this.keyListView.Font, actionFont);
                 this.keyListView.Items.Add(delKeyAction).Font = new Font(this.keyListView.Font, actionFont);
@@ -319,30 +318,25 @@ namespace EpiSource.KeePass.Ekf.UI {
                 this.lblValidationError.Text = message;
             }
 
-            private void ClearKeyList() {
-                this.keyList.Clear();
-            }
-            
-            private bool AddKeyIfNew(KeyPairModel keyModel) {
-                var cert = keyModel.KeyPair.Certificate;
-                if (this.keyList.ContainsKey(cert.Thumbprint)) {
-                    return false;
-                }
-                
-                this.keyList.Add(cert.Thumbprint, keyModel);
-                return true;
-            }
-
             private void RefreshKeyListView() {
                 this.keyListView.BeginUpdate();
                 
+                var changedAuthorizations = this.keyListView.ItemTags<KeyPairModel>()
+                    .Where(kpm => kpm.CurrentAuthorization != kpm.NextAuthorization)
+                    .ToDictionary(kpm => kpm.KeyPair.Certificate.Thumbprint, kpm => kpm.NextAuthorization);
                 this.keyListView.Items.Clear();
 
-                this.keyList.Values
+                this.updatingKeyPairProvider.KeyPairProvider.GetAvailableKeyPairs()
                     .OrderBy(m => String.IsNullOrWhiteSpace(m.KeyPair.Certificate.Subject))
                     .ThenBy(m => m.KeyPair.Certificate.Subject)
                     .ThenBy(m => m.KeyPair.Certificate.SerialNumber)
                     .ForEach(m => {
+                        var thumbprint = m.KeyPair.Certificate.Thumbprint;
+                        KeyPairModel.Authorization authorization;
+                        if (changedAuthorizations.TryGetValue(thumbprint, out authorization)) {
+                            m.NextAuthorization = authorization;
+                        }
+                        
                         if (!this.chkAnyKeyUsage.Checked 
                                 && m.NextAuthorization != KeyPairModel.Authorization.Authorized
                                 && m.NextAuthorization == m.CurrentAuthorization
@@ -359,6 +353,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                         this.UpdateItemAction(item);
                         
                         var cert = m.KeyPair.Certificate;
+                        item.SubItems.Add(m.DescribePrivateKeyState());
                         item.SubItems.Add(cert.Subject);
                         item.SubItems.Add(cert.SerialNumber);
                         item.SubItems.Add(cert.PublicKey.Oid.FriendlyName);
@@ -372,6 +367,8 @@ namespace EpiSource.KeePass.Ekf.UI {
                 this.keyListView.EndUpdate();
                 this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
                 this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
+                
+                this.ValidateInput();
             }
 
             private void UpdateItemAction(ListViewItem item) {
@@ -394,12 +391,16 @@ namespace EpiSource.KeePass.Ekf.UI {
                 base.OnShown(e);
 
                 GlobalWindowManager.AddWindow(this, this);
+                
+                this.updatingKeyPairProvider.StartUpdates();
             }
 
             protected override void OnClosed(EventArgs e) {
                 base.OnClosed(e);
 
                 GlobalWindowManager.RemoveWindow(this);
+                
+                this.updatingKeyPairProvider.Dispose();
             }
 
             bool IGwmWindow.CanCloseWithoutDataLoss { get { return false; } }

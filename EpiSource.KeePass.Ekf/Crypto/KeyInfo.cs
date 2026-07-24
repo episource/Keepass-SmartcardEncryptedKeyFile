@@ -10,19 +10,21 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         private readonly bool canSign;
         private readonly bool canExport;
         private readonly bool isAccessible;
+        private readonly bool isKeyMismatch;
         private readonly bool? isHardware;
         private readonly bool? isRemovable;
 
-        public KeyInfo() : this(false, false, false, false, false, null, null) {
+        public KeyInfo() : this(false, false, false, false, false, false, null, null) {
             
         }
 
-        public KeyInfo(bool canKeyAgree, bool canKeyTransfer, bool canSign, bool canExport, bool isAccessible, bool? isHardware, bool? isRemovable) {
+        public KeyInfo(bool canKeyAgree, bool canKeyTransfer, bool canSign, bool canExport, bool isAccessible, bool isKeyMismatch, bool? isHardware, bool? isRemovable) {
             this.canKeyTransfer = canKeyTransfer;
             this.canKeyAgree = canKeyAgree;
             this.canSign = canSign;
             this.canExport = canExport;
             this.isAccessible = isAccessible;
+            this.isKeyMismatch = isKeyMismatch;
             this.isHardware = isHardware;
             this.isRemovable = isRemovable;
         }
@@ -57,6 +59,12 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             }
         }
 
+        public bool IsKeyMismatch {
+            get {
+                return this.isKeyMismatch;
+            }
+        }
+
         public bool? IsHardware {
             get {
                 return this.isHardware;
@@ -70,7 +78,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         }
         
         private bool Equals(KeyInfo other) {
-            return this.canKeyAgree == other.canKeyAgree && this.canKeyTransfer == other.canKeyTransfer && this.canExport == other.canExport && this.canSign == other.canSign && this.isAccessible == other.isAccessible && this.isHardware == other.isHardware && this.isRemovable == other.isRemovable;
+            return this.canKeyAgree == other.canKeyAgree && this.canKeyTransfer == other.canKeyTransfer && this.canExport == other.canExport && this.canSign == other.canSign && this.isAccessible == other.isAccessible && this.isKeyMismatch == other.isKeyMismatch && this.isHardware == other.isHardware && this.isRemovable == other.isRemovable;
         }
         public override bool Equals(object obj) {
             if (ReferenceEquals(null, obj)) return false;
@@ -84,6 +92,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
                 hashCode = (hashCode * 397) ^ this.canExport.GetHashCode();
                 hashCode = (hashCode * 397) ^ this.canSign.GetHashCode();
                 hashCode = (hashCode * 397) ^ this.isAccessible.GetHashCode();
+                hashCode = (hashCode * 397) ^ this.isKeyMismatch.GetHashCode();
                 hashCode = (hashCode * 397) ^ this.isHardware.GetHashCode();
                 hashCode = (hashCode * 397) ^ this.isRemovable.GetHashCode();
                 return hashCode;

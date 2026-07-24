@@ -7,6 +7,7 @@ using System.Windows.Forms;
 
 using Episource.KeePass.EKF.Resources;
 
+using EpiSource.KeePass.Ekf.UI.Util;
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.KeePass.Ekf.Util.Windows;
 using EpiSource.Unblocker.Hosting;
@@ -18,40 +19,29 @@ using Timer = System.Windows.Forms.Timer;
 namespace EpiSource.KeePass.Ekf.UI {
     public partial class SmartcardRequiredDialogFactory {
         private sealed class SmartcardRequiredDialog : Form, IGwmWindow {
-            private static readonly string stateConnected = Strings.SmartcardRequiredDialog_KeyStateConnected;
-            private static readonly string stateNotConnected = Strings.SmartcardRequiredDialog_KeyStateNotConnected;
-
             internal readonly CustomListViewEx keyListView = new CustomListViewEx();
             
             private bool loaded = false;
-            private bool refreshSmartcardOperationPending = false;
 
             private readonly TableLayoutPanel layout = new TableLayoutPanel();
             private Button btnOk;
-
-            private NativeDeviceEvents deviceEventListener;
-            private readonly Timer refreshDelayTimer = new Timer() {
-                Interval = 250
-            };
+            
             private readonly Timer redrawAfterScrollDelayTimer = new Timer() {
                 Interval = 150
             };
-
-            private readonly IKeyPairProvider keyPairProvider;
-            private readonly UIFactory uiFactory;
+            
+            private readonly KeyPairProviderDeviceEventUpdater updatingKeyPairProvider;
 
             internal SmartcardRequiredDialog(Form owner, IKeyPairProvider keyPairProvider, UIFactory uiFactory) {
                 if (owner != null) {
                     this.Owner = owner;
                 }
 
-                this.keyPairProvider = keyPairProvider;
-                this.uiFactory = uiFactory;
+                this.updatingKeyPairProvider = new KeyPairProviderDeviceEventUpdater(keyPairProvider, uiFactory);
+                this.updatingKeyPairProvider.Changed += (s, e) => this.ReplaceList();
 
                 this.InitializeUI();
                 this.ReplaceList();
-
-                this.refreshDelayTimer.Tick += this.OnRefreshRequested;
             }
 
             private void InitializeUI() {
@@ -206,7 +196,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                     // detect scrolling and redraw control after scrolling has finished (using delay)
                     if (args.ItemIndex == 0 && args.Bounds.Location != keyListViewScrollDetectionReferenceLocation) {
                         keyListViewScrollDetectionReferenceLocation = args.Bounds.Location;
-                        RestartFormsTimer(this.redrawAfterScrollDelayTimer);
+                        this.redrawAfterScrollDelayTimer.Restart();
                     }
                 };
                 this.keyListView.DrawColumnHeader += (sender, args) => args.DrawDefault = true;
@@ -230,8 +220,9 @@ namespace EpiSource.KeePass.Ekf.UI {
 
                 // Add every possible state value for proper sizing
                 // Dummy items will be deleted after size has been calculated (form load event)
-                this.keyListView.Items.Add(stateConnected);
-                this.keyListView.Items.Add(stateNotConnected);
+                this.keyListView.Items.Add(Strings.KeyPairExtension_KeyStateConnected);
+                this.keyListView.Items.Add(Strings.KeyPairExtension_KeyStateMismatch);
+                this.keyListView.Items.Add(Strings.KeyPairExtension_KeyStateNotConnected);
 
                 // prevent changing column width
                 this.keyListView.ColumnWidthChanging += (sender, args) => {
@@ -309,27 +300,10 @@ namespace EpiSource.KeePass.Ekf.UI {
                 var prevCheckedItems = new HashSet<string>();
                 try {
                     if (this.loaded) {
-                        // note: result == false does not imply IsReadyForDecryptCms to be unchanged!
-                        // => replace list independent of result
-                        // NOTE: Refresh blocks if busy HW is involved -> unblocker
-                        IFunctionInvocationResult<IKeyPairProvider, bool> refreshResult;
-                        try {
-                            this.refreshSmartcardOperationPending = true;
-                            refreshResult = this.uiFactory.SmartcardOperationDialog.DoCryptoWithMessagePumpShort(
-                                this.keyPairProvider, (ct, _) => _.Refresh());
-                        } catch (TaskCanceledException) {
-                            // that's fine - skip this refresh
-                            return;
-                        } finally {
-                            this.refreshSmartcardOperationPending = false;
-                        }
-
                         // closing dialog was requested while waiting for Refresh - skip update
                         if (this.DialogResult != DialogResult.None) {
                             return;
                         }
-
-                        this.keyPairProvider.Refresh(refreshResult.PostInvocationTarget);
 
                         prevCheckedItems = this.keyListView.CheckedItems.Cast<ListViewItem>()
                                                .Select(i => i.Tag as KeyPairModel)
@@ -343,14 +317,11 @@ namespace EpiSource.KeePass.Ekf.UI {
 
                     ListViewItem firstAvailItem = null;
                     var availItemCount = 0;
-                    foreach (var kpm in this.keyPairProvider.GetAuthorizedKeyPairs()
+                    foreach (var kpm in this.updatingKeyPairProvider.KeyPairProvider.GetAuthorizedKeyPairs()
                                             .DistinctBy(kp => kp.KeyPair.Certificate.Thumbprint)) {
 
                         var cert = kpm.KeyPair.Certificate;
-                        var stateText = stateNotConnected;
-                        if (kpm.KeyPair.IsReadyForDecryptCms) {
-                            stateText = stateConnected;
-                        }
+                        var stateText = kpm.DescribePrivateKeyState();
 
                         var item = new ListViewItem(stateText);
                         item.UseItemStyleForSubItems = false;
@@ -389,16 +360,6 @@ namespace EpiSource.KeePass.Ekf.UI {
                 this.keyListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
             }
 
-            private void OnRefreshRequested(object sender, EventArgs args) {
-                this.refreshDelayTimer.Stop();
-
-                if (this.refreshSmartcardOperationPending) {
-                    RestartFormsTimer(this.refreshDelayTimer);
-                } else {
-                    this.ReplaceList();
-                }
-            }
-
             protected override void OnLoad(EventArgs e) {
                 base.OnLoad(e);
 
@@ -416,23 +377,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                     this.Owner.Enabled = false;
                 }
 
-                if (this.deviceEventListener == null) {
-                    this.deviceEventListener = new NativeDeviceEvents();
-
-                    this.deviceEventListener.AnyDeviceEvent += (sender, args) => {
-                        if (args.Reason == NativeDeviceEvents.NotificationReason.Unknown) {
-                            // ignore unrelated events
-                            return;
-                        }
-
-                        if (this.InvokeRequired) {
-                            this.Invoke((MethodInvoker) (() => RestartFormsTimer(this.refreshDelayTimer)));
-                        } else {
-                            RestartFormsTimer(this.refreshDelayTimer);
-                        }
-
-                    };
-                }
+                this.updatingKeyPairProvider.StartUpdates();
             }
 
             protected override void OnClosed(EventArgs e) {
@@ -443,21 +388,8 @@ namespace EpiSource.KeePass.Ekf.UI {
                 if (this.Owner != null) {
                     this.Owner.Enabled = true;
                 }
-
-                if (this.deviceEventListener != null) {
-                    this.deviceEventListener.Dispose();
-                    this.deviceEventListener = null;
-                }
-            }
-
-            private static void RestartFormsTimer(Timer t) {
-                t.Stop();
-
-                // restart timer: force change of interval; else interval continues!
-                var modulo = t.Interval % 5;
-                t.Interval += modulo == 0 ? 1 : -1 * modulo;
-
-                t.Start();
+                
+                this.updatingKeyPairProvider.Dispose();
             }
 
             bool IGwmWindow.CanCloseWithoutDataLoss {
