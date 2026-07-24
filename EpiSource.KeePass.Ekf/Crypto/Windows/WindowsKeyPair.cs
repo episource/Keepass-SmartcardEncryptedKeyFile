@@ -22,8 +22,6 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
         private KeyInfo pubKeyInfo;
         
-        private X509KeyUsageFlags keyUsageFlags;
-        
         public void GetObjectData(SerializationInfo info, StreamingContext context) {
             info.AddValue("cert", this.cert);
             info.AddValue("privKeyInfo", this.privKeyInfo);
@@ -48,21 +46,10 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
                 
                 this.cert = matchingCert ?? preliminaryCert;
             }
-            
-            this.UpdateKeyUsageFlags();
         }
         
         private WindowsKeyPair(X509Certificate2 cert) {
             this.cert = cert;
-            this.UpdateKeyUsageFlags();
-        }
-
-        private void UpdateKeyUsageFlags() {
-            this.keyUsageFlags = this.cert.Extensions
-                .OfType<X509KeyUsageExtension>()
-                .Select(usage => usage.KeyUsages)
-                .DefaultIfEmpty(~X509KeyUsageFlags.None)
-                .FirstOrDefault();
         }
 
         public static WindowsKeyPair FromX509Certificate(X509Certificate2 cert) {
@@ -127,22 +114,19 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
         public bool CanKeyAgree {
             get {
-                return (this.keyUsageFlags & X509KeyUsageFlags.KeyAgreement) == X509KeyUsageFlags.KeyAgreement
-                        && this.pubKeyInfo.CanKeyAgree && (this.privKeyInfo == null || this.privKeyInfo.CanKeyAgree);
+                return this.pubKeyInfo.CanKeyAgree && (this.privKeyInfo == null || this.privKeyInfo.CanKeyAgree);
             }
         }
 
         public bool CanKeyTransfer {
             get {
-                return (this.keyUsageFlags & X509KeyUsageFlags.KeyEncipherment) == X509KeyUsageFlags.KeyEncipherment
-                        && this.pubKeyInfo.CanKeyTransfer && (this.privKeyInfo == null || this.privKeyInfo.CanKeyTransfer);
+                return this.pubKeyInfo.CanKeyTransfer && (this.privKeyInfo == null || this.privKeyInfo.CanKeyTransfer);
             }
         }
 
         public bool CanSign {
             get {
-                return (this.keyUsageFlags & X509KeyUsageFlags.DigitalSignature) == X509KeyUsageFlags.DigitalSignature
-                        && this.pubKeyInfo.CanSign && (this.privKeyInfo == null || this.privKeyInfo.CanSign);
+                return this.pubKeyInfo.CanSign && (this.privKeyInfo == null || this.privKeyInfo.CanSign);
             }
         }
         
@@ -174,8 +158,6 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
             this.privKeyInfo = nextPrivKeyInfo;
             this.pubKeyInfo = nextPubKeyInfo;
             
-            this.UpdateKeyUsageFlags();
-
             return true;
         }
     }

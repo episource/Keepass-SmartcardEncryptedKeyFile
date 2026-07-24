@@ -26,6 +26,13 @@ namespace EpiSource.KeePass.Ekf.Util {
                 }
             }
         }
+        
+        public static IEnumerable<T> ForEach<T>(this IEnumerable<T> enumerable, Action<T> action) {
+            foreach (T item in enumerable) {
+                action(item);
+            }
+            return enumerable;
+        }
 
         private class StructuralEqualityComparer<T> : IEqualityComparer<T> where T : IStructuralEquatable {
 
