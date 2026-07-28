@@ -84,9 +84,14 @@ namespace EpiSource.KeePass.Ekf.UI {
                 };
                 this.layout.Controls.Add(lblDb, column: 0, row: 0);
 
+                var dbPathWithEkfHint = this.dbPath.Path + " (" +
+                    (this.storePrecedence == EkfStorePrecedence.EXTERNAL
+                    ? Strings.EditEncryptedKeyFileDialog_HintExternalEkf 
+                    : Strings.EditEncryptedKeyFileDialog_HintEmbeddedEkf) +
+                    ")";
                 var txtDb = new TextBox {
                     ReadOnly = true,
-                    Text = this.dbPath.Path,
+                    Text = dbPathWithEkfHint,
                     AutoSize = true,
                     Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top | AnchorStyles.Bottom,
                     TabStop = false

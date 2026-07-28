@@ -108,6 +108,12 @@
   <data name="EditEncryptedKeyFileDialog.ButtonImportKey" xml:space="preserve">
     <value>Import key file</value>
   </data>
+  <data name="EditEncryptedKeyFileDialog.HintEmbeddedEkf" xml:space="preserve">
+    <value>embedded EKF</value>
+  </data>
+  <data name="EditEncryptedKeyFileDialog.HintExternalEkf" xml:space="preserve">
+    <value>companion EKF</value>
+  </data>
   <data name="EditEncryptedKeyFileDialog.KeyActionAuthorize" xml:space="preserve">
     <value>add</value>
   </data>

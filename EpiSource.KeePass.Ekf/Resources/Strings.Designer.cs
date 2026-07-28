@@ -258,6 +258,24 @@ namespace Episource.KeePass.EKF.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to embedded EKF.
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_HintEmbeddedEkf {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.HintEmbeddedEkf", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to companion EKF.
+        /// </summary>
+        internal static string EditEncryptedKeyFileDialog_HintExternalEkf {
+            get {
+                return ResourceManager.GetString("EditEncryptedKeyFileDialog.HintExternalEkf", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to add.
         /// </summary>
         internal static string EditEncryptedKeyFileDialog_KeyActionAuthorize {

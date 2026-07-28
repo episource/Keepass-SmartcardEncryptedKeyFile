@@ -5,6 +5,7 @@ using System.Windows.Forms;
 
 using EpiSource.KeePass.Ekf.Crypto;
 using EpiSource.KeePass.Ekf.Keys;
+using EpiSource.KeePass.Ekf.Plugin;
 
 using Episource.KeePass.EKF.Resources;
 
@@ -26,6 +27,7 @@ namespace EpiSource.KeePass.Ekf.UI {
             private readonly bool permitNewKey;
             private readonly IOConnectionInfo dbPath;
             private readonly string defaultKeyFileName;
+            private readonly EkfStorePrecedence storePrecedence;
 
             private readonly LiveKeyDataStore activeDbKey;
             private IKeyDataStore nextKey;
@@ -40,6 +42,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 this.nextKey = (IKeyDataStore) this.activeDbKey ?? new RandomKeyDataStore();
                 this.keyWasExported = false;
                 this.permitNewKey = permitNewKey;
+                this.storePrecedence = this.storePrecedence;
 
                 this.InitializeUI();
                 
