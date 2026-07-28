@@ -1,4 +1,12 @@
 # Changelog
+
+## vNext (not released yet)
+- Fix: `Tools > Edit Encrypted Key File` entry has wrong state if databases with and without EKF are loaded
+- Use KeePass builtin command line parsing
+
+### Known Issues
+- Smart Card operations / unlocking an encrypted key file fails (with Exception dialog) if YubiKey Authenticator is running in parallel (note: only when using windows builtin smartcard driver, issue does not occur if YubiKey minidriver is installed)
+
 ## v1.3.5 (2026-07-24)
 - Show only certificates permitted by their key usage extension (optional, the dialog has a check box do bypass filter)
 - Allow (cache) healing when querying certificate private key (#15)
