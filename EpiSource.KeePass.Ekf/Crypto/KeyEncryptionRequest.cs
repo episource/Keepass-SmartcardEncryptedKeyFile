@@ -1,34 +1,29 @@
+using System;
 using System.Collections.Generic;
 
 using EpiSource.KeePass.Ekf.Plugin;
 using EpiSource.KeePass.Ekf.Util;
 
+using KeePassLib;
+using KeePassLib.Keys;
 using KeePassLib.Security;
 using KeePassLib.Serialization;
 
 namespace EpiSource.KeePass.Ekf.Crypto {
     public class KeyEncryptionRequest {
-        private readonly IOConnectionInfo dbPath;
         private readonly PortableProtectedBinary plaintextKey;
+        private readonly KcpKeyFile virtualKeyFile;
         private readonly IList<IKeyPair> authorizedKeyPairs;
         
-        public KeyEncryptionRequest(IOConnectionInfo dbPath, PortableProtectedBinary plaintextKey, IEnumerable<IKeyPair> authorizedKeyPairs) {
-            this.dbPath = dbPath.CloneDeep();
+        public KeyEncryptionRequest(PortableProtectedBinary plaintextKey, IEnumerable<IKeyPair> authorizedKeyPairs) {
             this.plaintextKey = plaintextKey;
+            this.virtualKeyFile = plaintextKey.ToVirtualKeyFile();
             this.authorizedKeyPairs = new List<IKeyPair>(authorizedKeyPairs).AsReadOnly();
         }
 
-        public KeyEncryptionRequest(IOConnectionInfo dbPath, ProtectedBinary plaintextKey, IEnumerable<IKeyPair> authorizedKeyPairs)
-            : this(dbPath, plaintextKey.ToPortable(), authorizedKeyPairs) { }
+        public KeyEncryptionRequest(ProtectedBinary plaintextKey, IEnumerable<IKeyPair> authorizedKeyPairs)
+            : this(plaintextKey.ToPortable(), authorizedKeyPairs) { }
 
-        public IOConnectionInfo DbPath {
-            get { return this.dbPath.CloneDeep(); }
-        }
-
-        public IOConnectionInfo EncryptedKeyFilePath {
-            get { return this.dbPath.ResolveEncryptedKeyFile(); }
-        }
-        
         /// <summary>
         /// The raw key to be stored in an encrypted key file.
         /// </summary>
@@ -39,15 +34,21 @@ namespace EpiSource.KeePass.Ekf.Crypto {
             get { return this.plaintextKey; }
         }
 
+        /// <summary>
+        /// The <see cref="PlaintextKey"/> wrapped in a (virtual) <see cref="KcpKeyFile"/>:
+        /// as if the plaintext key data was read from a key file by KeePass itself.
+        /// </summary>
+        public KcpKeyFile VirtualKeyFile {
+            get { return this.virtualKeyFile; }
+        }
+
         public IList<IKeyPair> AuthorizedKeyPairs {
             get { return this.authorizedKeyPairs; }
         }
 
-        public void WriteEncryptedKeyFile(bool strictRfc5753) {
-            var encrypted = new DecryptedKeyFile(this.AuthorizedKeyPairs, this.PlaintextKey).Encrypt(strictRfc5753);
-            using (var stream = IOConnection.OpenWrite(this.EncryptedKeyFilePath)) {
-                encrypted.Write(stream);
-            }
+        public EncryptedKeyFile Encrypt(bool strictRfc5753) {
+            return new DecryptedKeyFile(this.AuthorizedKeyPairs, this.PlaintextKey).Encrypt(strictRfc5753);
         }
+
     }
 }

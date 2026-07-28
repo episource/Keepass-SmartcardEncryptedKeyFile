@@ -40,18 +40,6 @@ namespace EpiSource.KeePass.Ekf.UI {
         public static DefaultKeyPairProvider FromSystemKeyStore() {
             return new DefaultKeyPairProvider();
         }
-        
-        /// <remarks>
-        /// Blocks if a busy hardware device is involved.
-        /// </remarks>
-        public static DefaultKeyPairProvider FromDbPath(IOConnectionInfo dbPath) {
-            var ekfPath = dbPath.ResolveEncryptedKeyFile();
-
-            if (!IOConnection.FileExists(ekfPath)) return new DefaultKeyPairProvider();
-            using (var stream = IOConnection.OpenRead(ekfPath)) {
-                return new DefaultKeyPairProvider(EncryptedKeyFile.Read(stream));
-            }
-        }
 
         /// <remarks>
         /// Blocks if a busy hardware device is involved.

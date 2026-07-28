@@ -174,7 +174,7 @@ namespace EpiSource.KeePass.Ekf.Crypto {
         }
 
         public byte[] Encode() {
-            return this.encryptedKeyStore;
+            return (byte[])this.encryptedKeyStore.Clone();
         }
         
         public void Write(Stream target) {

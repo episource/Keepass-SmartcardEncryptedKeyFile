@@ -16,7 +16,7 @@ The following smartcards have been tested:
  - [Token2 Pin+ R3.3 Series USB](https://www.token2.com/shop/category/pin-release3-series) - RSA & ECC
    * both RSA & ECC work without [Token2 minidriver](https://www.token2.com/site/page/piv-management-tools-minidriver) ~~[Token2 minidriver](https://www.token2.com/site/page/piv-management-tools-minidriver) strictly required - even RSA won't work without~~ 
    * no touch policy available for PIV
-- [Token2 Pin+ R3.3 Series NFC Card](https://www.token2.com/shop/product/t2f2-nfc-card-pin-release3-nonbranded-and-printable) - RSA only
+ - [Token2 Pin+ R3.3 Series NFC Card](https://www.token2.com/shop/product/t2f2-nfc-card-pin-release3-nonbranded-and-printable) - RSA only
    * At least [Token2 Companion App v2.0.2 R6](https://www.token2.com/site/page/token2-companion-app-v2-user-manual) was required to initialize card (v2.0.2 without R6 failed for me)
    * RSA works without [Token2 minidriver](https://www.token2.com/site/page/piv-management-tools-minidriver) ([Token2 minidriver](https://www.token2.com/site/page/piv-management-tools-minidriver) makes available ECC certificates to windows, but incompatible with this plugin)
    * ECC incompatible with this plugin
@@ -165,6 +165,29 @@ $ .\build-plgx-project.ps1 -csproj .\SmartcardEncryptedKeyFile.csproj -outdir .\
 Important warning: This script cleans `outdir` and `objdir` without asking for confirmation! Carefully choose the paths you enter here!
 
 # Advanced options
+## Encrypted Key File location
+Starting with v1.4 of this plugin, the Encrypted Key File is usually embedded into the kdbx file ([public custom data header field][14])
+
+Prior to v1.4, the Encrypted Key File was always written to a companion file. The name was the database file name extend by `.ekf`.
+
+The `Tools > Edit Encrypted Key File` dialog automatically migrates between formats: No need to change the authorization, just open the dialog and select `OK`.
+
+Use below advanced configuration within `KeePass.config.xml` to change between `KDBX` embedded storage (v1.4 default) and `EXTERNAL` companion file:
+
+```xml
+<Configuration>
+    <Custom>
+       ...
+       <Item>
+          <Key>EpiSource.KeePass.Ekf.PreferredEkfStore</Key>
+          <Value>KDBX</Value><!-- v1.4 default: embed EKF into kdbx file -->
+          <!-- <Value>EXTERNAL</Value>--><!-- pre v1.4 default: use companion file to store EKF -->
+       </Item>
+       ...
+    </Custom>
+</Configuration>
+```
+
 ## Force native smartcard PIN prompt
 Per default a custom PIN prompt is used. The custom PIN prompt enables secure desktop support and provides an option to remember encrypted/obfuscated PINs in the windows credential store.
 
@@ -276,3 +299,4 @@ To get debug output and stacktraces invoke KeePass with command line option `--d
 [11]: https://github.com/episource/unblocker
 [12]: https://keepass.info/help/v2/plugins.html#cache
 [13]: https://learn.microsoft.com/en-us/dotnet/framework/tools/installutil-exe-installer-tool
+[14]: https://keepass.info/help/kb/kdbx.html#header

@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Windows.Forms;
 
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.Unblocker.Hosting;
@@ -19,6 +20,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         private const string configKeyStrictRfc5753 = "EpiSource.KeePass.Ekf.StrictRfc5753";
         private const string configKeyUnblockerBootstrapMode = "EpiSource.KeePass.Ekf.UnblockerBootstrapMode";
         private const string configKeyUseNativePinDialog = "EpiSource.KeePass.Ekf.UseNativePinDialog";
+        private const string configKeyPreferredEkfStore = "EpiSource.KeePass.Ekf.PreferredEkfStore";
 
         public PluginConfiguration(AceCustomConfig keypassCustomConfig, CommandLineArgs cmdArgs) {
             this.AllocConsole = cmdArgs["alloc-console"] != null;
@@ -28,6 +30,8 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             
             this.StrictRfc5753 = keypassCustomConfig.GetBool(configKeyStrictRfc5753, false);
             this.UseNativePinDialog = keypassCustomConfig.GetBool(configKeyUseNativePinDialog, false);
+            this.PreferredEkfStore = String.Equals(keypassCustomConfig.GetString(configKeyPreferredEkfStore), EkfStorePrecedence.EXTERNAL.ToString(), StringComparison.InvariantCultureIgnoreCase)
+                ? EkfStorePrecedence.EXTERNAL : EkfStorePrecedence.KDBX;
 
             var bootstrapMode = BootstrapMode.CustomBootstrapper;
             BootstrapMode.TryParse(keypassCustomConfig.GetString(configKeyUnblockerBootstrapMode), true, out bootstrapMode);
@@ -117,5 +121,20 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             get;
             private set;
         }
+
+        /// <summary>
+        /// Configures the preferred EKF store: embedded into kdbx (default starting with v1.4)
+        /// or as parallel *.ekf file (default prior to v1.4).
+        ///  - On modification, the EKF is written to the preferred location. If that location does not yet contain
+        ///    an EKF, but the alternative location does, the existing data is migrated. Otherwise, EKF data in the
+        ///    alternative location is ignored.
+        ///  - When reading, the preferred location is checked first. If no EKF is found, the alternative location is
+        ///    used as fallback.
+        /// </summary>
+        public EkfStorePrecedence PreferredEkfStore {
+            get;
+            private set;
+        }
+
     }
 }

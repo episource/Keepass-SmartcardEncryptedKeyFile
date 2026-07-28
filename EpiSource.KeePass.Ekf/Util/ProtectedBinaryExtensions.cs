@@ -1,5 +1,6 @@
 using System;
 
+using KeePassLib.Keys;
 using KeePassLib.Security;
 
 namespace EpiSource.KeePass.Ekf.Util {

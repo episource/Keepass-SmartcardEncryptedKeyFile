@@ -161,7 +161,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                     this.keyListView.ItemTags<KeyPairModel>()
                         .Where(x => x.NextAuthorization == KeyPairModel.Authorization.Authorized)
                         .Select(x => x.KeyPair);
-                return new KeyEncryptionRequest(this.dbPath, this.nextKey.KeyData, selectedKeys);
+                return new KeyEncryptionRequest(this.nextKey.KeyData, selectedKeys);
             }
 
             private bool ValidateInput() {

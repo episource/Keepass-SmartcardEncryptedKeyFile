@@ -18,10 +18,11 @@ using EpiSource.Unblocker.Hosting;
 using EpiSource.Unblocker.Util;
 
 using KeePass.App;
+using KeePass.Forms;
 using KeePass.Plugins;
 using KeePass.UI;
 
-using KeePassLib.Cryptography;
+using KeePassLib;
 using KeePassLib.Keys;
 using KeePassLib.Serialization;
 using KeePassLib.Utility;
@@ -36,6 +37,8 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         private readonly PluginConfiguration configuration;
         private readonly ProtectedWinCred rememberedSmartcardPinStore;
         private readonly UIFactory uiFactory;
+
+        private KeyEncryptionRequest pendingKeyToSave = null;
 
         public SmartcardEncryptedKeyProvider(IPluginHost pluginHost) {
             if (pluginHost == null) {
@@ -62,6 +65,9 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                                              .CanAskForSettings(this.GetActiveEkfKey());
             this.pluginHost.MainWindow.MasterKeyChanged += (sender, args) => updateEditEkfMenuItem();
             this.pluginHost.MainWindow.DocumentManager.ActiveDocumentSelected += (sender, args) => updateEditEkfMenuItem();
+            
+            this.pluginHost.MainWindow.MasterKeyChanged += (sender, args) => this.WritePendingEkfUpdate(args.Database);
+            this.pluginHost.MainWindow.FileCreated += (sender, args) => this.WritePendingEkfUpdate(args.Database);
         }
 
         public override byte[] GetKey(KeyProviderQueryContext ctx) {
@@ -93,13 +99,9 @@ namespace EpiSource.KeePass.Ekf.Plugin {
 
             // treat plaintext key as if it was read from a key file:
             // ensure ekf is 100% compatible with built-in key file support
-            var plainKeyData = plainKey.ReadUnprotected();
-            var keyAsDataUri = StrUtil.DataToDataUri(plainKeyData, null);
-            Array.Clear(plainKeyData, 0, plainKeyData.Length);
-            var keyAsConnInfo = IOConnectionInfo.FromPath(keyAsDataUri);
-            var virtualKeyFile = new KcpKeyFile(keyAsConnInfo);
-
-            return virtualKeyFile.KeyData.ReadData();
+            // the KeePass builtin KcpKeyFile class also performs the necessary hashing,
+            // therefore DirectKey==true is a valid choice.
+            return plainKey.ToVirtualKeyFile().KeyData.ReadData();
         }
 
         public override string Name {
@@ -127,9 +129,10 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             if (this.uiFactory.EditEncryptedKeyFileDialog.CanAskForSettings(activeKey)) {
                 try {
                     var encryptionRequest = this.uiFactory.EditEncryptedKeyFileDialog.AskForSettings(
-                        this.pluginHost.Database.IOConnectionInfo, this.GetActiveEkfKey());
+                        this.pluginHost.Database, activeKey);
                     if (encryptionRequest != null) {
-                        encryptionRequest.WriteEncryptedKeyFile(this.configuration.StrictRfc5753);
+                        var ekfStore = new EkfStore(this.pluginHost.Database, this.configuration);
+                        ekfStore.Write(encryptionRequest);
                     }
                 } catch (DeniedByVirusScannerFalsePositive e) {
                     var result = MessageBox.Show(string.Format(Strings.Culture, Strings.SmartcardEncryptedKeyProvider_DialogTextUnblockerDeniedByVirusScanner, ProviderName, e.FilePath),
@@ -139,42 +142,37 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         }
 
         private IUserKey GetActiveEkfKey() {
-            var db = this.pluginHost.Database;
-            if (db == null || db.MasterKey == null) {
-                return null;
-            }
-            
-            return db.MasterKey.UserKeys.SingleOrDefault(k =>
-                k is KcpKeyFile ||
-                k is KcpCustomKey && ((KcpCustomKey) k).Name == ProviderName);
+            return this.pluginHost.Database.GetEkfKey();
         }
 
         private PortableProtectedBinary CreateNewKey(KeyProviderQueryContext ctx) {
             var activeDb = this.pluginHost.Database;
-            IUserKey activeKey = null;
-            if (string.Equals(ctx.DatabaseIOInfo.Path, activeDb.IOConnectionInfo.Path,
-                StringComparison.InvariantCultureIgnoreCase)) {
-                activeKey = this.GetActiveEkfKey();
+            
+            PwDatabase db;
+            if (string.Equals(ctx.DatabaseIOInfo.Path, activeDb.IOConnectionInfo.Path, StringComparison.InvariantCultureIgnoreCase)) {
+                db = activeDb;
+            } else {
+                try {
+                    db = PwDatabase.LoadHeader(ctx.DatabaseIOInfo);
+                } catch (IOException e) {
+                    db = null;
+                }
             }
 
             var encryptionRequest = this.uiFactory.EditEncryptedKeyFileDialog
-                                        .AskForNewEncryptedKeyFile(ctx.DatabaseIOInfo, activeKey);
-            if (encryptionRequest == null) {
-                return null;
-            }
-
-            encryptionRequest.WriteEncryptedKeyFile(this.configuration.StrictRfc5753);
-            return encryptionRequest.PlaintextKey;
+                    .AskForNewEncryptedKeyFile(ctx.DatabaseIOInfo, db);
+            this.pendingKeyToSave = encryptionRequest;
+            return encryptionRequest == null ? null : encryptionRequest.PlaintextKey;
         }
 
         private PortableProtectedBinary DecryptEncryptedKeyFile(KeyProviderQueryContext ctx, bool retryOnCrash = true) {
-            // IOConnection not serializable - need to read file outside unlocker task
-            var ekfPath = ctx.DatabaseIOInfo.ResolveEncryptedKeyFile();
-            var encryptedKeyFileData = IOConnection.OpenRead(ekfPath).ReadAllBinaryAndClose();
-
+            var ekfStore = new EkfStore(ctx.DatabaseIOInfo, this.configuration);
+            
             // EncryptedKeyFile.Read/Decode blocks if busy HW is involved
-            var ekfFile = this.uiFactory.SmartcardOperationDialog
-                .DoCryptoWithMessagePumpShort(ct => EncryptedKeyFile.Decode(encryptedKeyFileData));
+            var ekfFile = ekfStore.Read(this.uiFactory);
+            if (ekfFile == null) {
+                throw new FileNotFoundException("no embedded nor external EKF data");
+            }
 
             var recipient = this.uiFactory.SmartcardRequiredDialog
                 .ChooseKeyPairForDecryption(ekfFile, GlobalWindowManager.TopWindow);
@@ -259,6 +257,16 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             }
             
             return null;
+        }
+
+        private void WritePendingEkfUpdate(PwDatabase db) {
+            if (this.pendingKeyToSave == null) {
+                return;
+            }
+            
+            var ekfStore = new EkfStore(db, this.configuration);
+            ekfStore.Write(this.pendingKeyToSave);
+            this.pendingKeyToSave = null;
         }
     }
 }

@@ -12,6 +12,8 @@ namespace EpiSource.KeePass.Ekf.UI {
             this.SmartcardOperationDialog = new SmartcardOperationDialogFactory(pluginConfiguration);
             this.SmartcardRequiredDialog = new SmartcardRequiredDialogFactory(this);
         }
+        
+        public PluginConfiguration PluginConfiguration { get { return this.pluginConfiguration; } }
 
         public EditEncryptedKeyFileDialogFactory EditEncryptedKeyFileDialog {
             get;
