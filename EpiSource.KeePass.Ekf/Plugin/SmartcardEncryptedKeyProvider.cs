@@ -43,7 +43,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             }
             
             this.pluginHost = pluginHost;
-            this.configuration = new PluginConfiguration(this.pluginHost.CustomConfig);
+            this.configuration = new PluginConfiguration(this.pluginHost.CustomConfig, this.pluginHost.CommandLineArgs);
             if (this.configuration.AllocConsole) {
                 NativeForms.AllocConsole();
             }
@@ -81,7 +81,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                 // => prevent duplicate text in error message
                 if (ex.InnerException != null 
                         && ex.InnerException.Message == ex.Message
-                        && Environment.GetCommandLineArgs().All(a => a.ToLowerInvariant().TrimStart('-') != AppDefs.CommandLineOptions.Debug)) {
+                        && this.configuration.DebugMode != DebugMode.None) {
                     throw new ApplicationException(ex.Message);
                 }
                 throw;

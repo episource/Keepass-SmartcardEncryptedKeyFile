@@ -7,6 +7,7 @@ using EpiSource.Unblocker.Util;
 
 using KeePass.App.Configuration;
 using KeePass.Plugins;
+using KeePass.Util;
 
 using KeePassLib.Cryptography;
 using KeePassLib.Utility;
@@ -19,12 +20,11 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         private const string configKeyUnblockerBootstrapMode = "EpiSource.KeePass.Ekf.UnblockerBootstrapMode";
         private const string configKeyUseNativePinDialog = "EpiSource.KeePass.Ekf.UseNativePinDialog";
 
-        public PluginConfiguration(AceCustomConfig keypassCustomConfig) {
-            var lowerCommandLine = Environment.CommandLine.ToLowerInvariant();
-            this.AllocConsole = lowerCommandLine.Contains("--alloc-console");
-            this.DebugMode = lowerCommandLine.Contains("--debug-no-unblocker")
+        public PluginConfiguration(AceCustomConfig keypassCustomConfig, CommandLineArgs cmdArgs) {
+            this.AllocConsole = cmdArgs["alloc-console"] != null;
+            this.DebugMode = cmdArgs["debug-no-unblocker"] != null
                 ? DebugMode.DebugNoUnblocker
-                : (lowerCommandLine.Contains("--debug") ? DebugMode.Debug : DebugMode.None);
+                : (cmdArgs["debug"] != null ? DebugMode.Debug : DebugMode.None);
             
             this.StrictRfc5753 = keypassCustomConfig.GetBool(configKeyStrictRfc5753, false);
             this.UseNativePinDialog = keypassCustomConfig.GetBool(configKeyUseNativePinDialog, false);
