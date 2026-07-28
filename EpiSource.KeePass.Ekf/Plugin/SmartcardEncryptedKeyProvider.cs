@@ -60,8 +60,8 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             Action updateEditEkfMenuItem = 
                 () => editMenu.Enabled = this.uiFactory.EditEncryptedKeyFileDialog
                                              .CanAskForSettings(this.GetActiveEkfKey());
-            this.pluginHost.MainWindow.FileOpened += (sender, args) => updateEditEkfMenuItem();
-            this.pluginHost.MainWindow.FileClosed += (sender, args) => updateEditEkfMenuItem();
+            this.pluginHost.MainWindow.MasterKeyChanged += (sender, args) => updateEditEkfMenuItem();
+            this.pluginHost.MainWindow.DocumentManager.ActiveDocumentSelected += (sender, args) => updateEditEkfMenuItem();
         }
 
         public override byte[] GetKey(KeyProviderQueryContext ctx) {

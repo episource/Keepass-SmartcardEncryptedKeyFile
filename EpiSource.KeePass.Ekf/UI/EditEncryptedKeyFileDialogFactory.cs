@@ -53,7 +53,7 @@ namespace EpiSource.KeePass.Ekf.UI {
         }
 
         public bool CanAskForSettings(IUserKey keyFile) {
-            return keyFile is KcpKeyFile || keyFile is KcpCustomKey && ((KcpCustomKey) keyFile).Name == SmartcardEncryptedKeyProvider.ProviderName;
+            return keyFile is KcpCustomKey && ((KcpCustomKey) keyFile).Name == SmartcardEncryptedKeyProvider.ProviderName;
         }
     }
 }
