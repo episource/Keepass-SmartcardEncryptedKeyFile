@@ -23,7 +23,7 @@
 ## v1.3.3 (2026-06-26)
 - Add [(more) debug command line options](https://github.com/episource/Keepass-SmartcardEncryptedKeyFile#debug-options)
 - Fix export/import key dialog for secure desktop ([#8](https://github.com/episource/Keepass-SmartcardEncryptedKeyFile/issues/8))
-- Continue querying certificate keys when accessing private key info fails ([#5](https://github.com/episource/Keepass-SmartcardEncryptedKeyFile/issues/5), [#6]((https://github.com/episource/Keepass-SmartcardEncryptedKeyFile/issues/6)))
+- Continue querying certificate keys when accessing private key info fails ([#5](https://github.com/episource/Keepass-SmartcardEncryptedKeyFile/issues/5), [#6](https://github.com/episource/Keepass-SmartcardEncryptedKeyFile/issues/6))
 
 ### Known Issues
 - Smart Card operations / unlocking an encrypted key file fails (with Exception dialog) if YubiKey Authenticator is running in parallel (note: only when using windows builtin smartcard driver, issue does not occur if YubiKey minidriver is installed)
