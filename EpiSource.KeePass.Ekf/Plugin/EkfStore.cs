@@ -1,16 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.ComponentModel;
 using System.IO;
-using System.Net;
 
 using EpiSource.KeePass.Ekf.Crypto;
 using EpiSource.KeePass.Ekf.UI;
 using EpiSource.Unblocker.Util;
 
 using KeePassLib;
-using KeePassLib.Collections;
 using KeePassLib.Serialization;
 
 namespace EpiSource.KeePass.Ekf.Plugin {

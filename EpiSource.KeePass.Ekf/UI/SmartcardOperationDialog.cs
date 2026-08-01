@@ -1,16 +1,9 @@
 using System;
-using System.Diagnostics;
 using System.Drawing;
-using System.Linq.Expressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using Episource.KeePass.EKF.Resources;
-
-using EpiSource.KeePass.Ekf.Util;
-using EpiSource.Unblocker;
-using EpiSource.Unblocker.Hosting;
 
 using KeePass.UI;
 

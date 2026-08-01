@@ -7,7 +7,6 @@ using System.Text;
 using System.Windows.Forms;
 
 using KeePass;
-using KeePass.UI;
 
 namespace EpiSource.KeePass.Ekf.UI.Windows {
     public static partial class NativeForms {

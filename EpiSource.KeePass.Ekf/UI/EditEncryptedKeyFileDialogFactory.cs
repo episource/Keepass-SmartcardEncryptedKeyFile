@@ -1,10 +1,7 @@
 using System;
-using System.IO;
-using System.Runtime.CompilerServices;
 
 using EpiSource.KeePass.Ekf.Crypto;
 using EpiSource.KeePass.Ekf.Plugin;
-using EpiSource.Unblocker.Util;
 
 using KeePassLib;
 using KeePassLib.Keys;

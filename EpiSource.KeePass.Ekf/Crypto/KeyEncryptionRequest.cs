@@ -1,13 +1,10 @@
-using System;
 using System.Collections.Generic;
 
 using EpiSource.KeePass.Ekf.Plugin;
 using EpiSource.KeePass.Ekf.Util;
 
-using KeePassLib;
 using KeePassLib.Keys;
 using KeePassLib.Security;
-using KeePassLib.Serialization;
 
 namespace EpiSource.KeePass.Ekf.Crypto {
     public class KeyEncryptionRequest {

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -15,17 +14,12 @@ using EpiSource.KeePass.Ekf.UI.Windows;
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.KeePass.Ekf.Util.Windows;
 using EpiSource.Unblocker.Hosting;
-using EpiSource.Unblocker.Util;
 
-using KeePass.App;
-using KeePass.Forms;
 using KeePass.Plugins;
 using KeePass.UI;
 
 using KeePassLib;
 using KeePassLib.Keys;
-using KeePassLib.Serialization;
-using KeePassLib.Utility;
 
 namespace EpiSource.KeePass.Ekf.Plugin {
     
@@ -154,7 +148,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             } else {
                 try {
                     db = PwDatabase.LoadHeader(ctx.DatabaseIOInfo);
-                } catch (IOException e) {
+                } catch (IOException) {
                     db = null;
                 }
             }

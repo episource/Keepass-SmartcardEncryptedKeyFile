@@ -1,13 +1,10 @@
 using System;
-using System.Runtime.CompilerServices;
-using System.Windows.Forms;
 
 using EpiSource.KeePass.Ekf.Util;
 using EpiSource.Unblocker.Hosting;
 using EpiSource.Unblocker.Util;
 
 using KeePass.App.Configuration;
-using KeePass.Plugins;
 using KeePass.Util;
 
 using KeePassLib.Cryptography;

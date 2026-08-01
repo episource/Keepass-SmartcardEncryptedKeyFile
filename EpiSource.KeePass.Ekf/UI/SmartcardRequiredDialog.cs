@@ -2,15 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using Episource.KeePass.EKF.Resources;
 
 using EpiSource.KeePass.Ekf.UI.Util;
 using EpiSource.KeePass.Ekf.Util;
-using EpiSource.KeePass.Ekf.Util.Windows;
-using EpiSource.Unblocker.Hosting;
 
 using KeePass.UI;
 
