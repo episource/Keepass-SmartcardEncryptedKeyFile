@@ -1,6 +1,6 @@
 # Changelog
 
-## vNext (not released yet)
+## v1.3.6 (2026-08-01)
 - Fix: `Tools > Edit Encrypted Key File` entry has wrong state if databases with and without EKF are loaded
 - Use KeePass builtin command line parsing
 
