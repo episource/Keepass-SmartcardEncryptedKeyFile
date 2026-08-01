@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -42,7 +41,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 this.nextKey = (IKeyDataStore) this.activeDbKey ?? new RandomKeyDataStore();
                 this.keyWasExported = false;
                 this.permitNewKey = permitNewKey;
-                this.storePrecedence = this.storePrecedence;
+                this.storePrecedence = uiFactory.PluginConfiguration.PreferredEkfStore;
 
                 this.InitializeUI();
                 
