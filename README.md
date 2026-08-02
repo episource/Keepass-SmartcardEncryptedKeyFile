@@ -99,13 +99,14 @@ Note: If the current database already uses a plaintext key file in addition to t
 1. Open and unlock a database using an encrypted or plaintext key file.
 2. In the `Tools` menu, select `Edit Encrypted Key File`. A dialog like the one below appears:
 <br/>![Change authorization: EKF editor](./doc/change-authorization_edit-ekf.png)
-   1. All currently authorized smartcards are preselected.
-   2. Smartcards that are currently authorized but not known to the current computer are reported as having the `unknown / EKF` provider. Authorization of these smartcards is preserved by default.
-   3. Smartcards known to the current computer that are not yet authorized are available for manual selection.
-   4. Uncheck entries to revoke authorization for the corresponding smartcards.
-   5. Check previously unchecked entries to grant authorization.
-   6. Use the `Export` button to export the encrypted key to a plaintext backup key file.
-   7. The encrypted key itself cannot be changed from within this dialog (the extended features provided by the drop-down menu next to the `Export` button are disabled). Use `Change Master Key...` from the `File` menu instead to change the encrypted key.
+   1. Only certificates with matching `Key Usage Extension` or shown - tick `Ignore key usage restrictions` to show all.
+   2. All currently authorized smartcards are preselected.
+   3. Smartcards that are currently authorized but not known to the current computer are reported as having the `unknown / EKF` provider. Authorization of these smartcards is preserved by default.
+   4. Smartcards known to the current computer that are not yet authorized are available for manual selection.
+   5. Uncheck entries to revoke authorization for the corresponding smartcards.
+   6. Check previously unchecked entries to grant authorization.
+   7. Use the `Export` button to export the encrypted key to a plaintext backup key file.
+   8. The encrypted key itself cannot be changed from within this dialog (the extended features provided by the drop-down menu next to the `Export` button are disabled). Use `Change Master Key...` from the `File` menu instead to change the encrypted key.
 
 # YubiKey 5 PIV setup
 
