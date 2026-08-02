@@ -135,8 +135,8 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             }
         }
 
-        private IUserKey GetActiveEkfKey() {
-            return this.pluginHost.Database.GetEkfKey();
+        private IUserKey GetActiveEkfKey(bool includePlainKeyFile=true) {
+            return this.pluginHost.Database.GetEkfKey(includePlainKeyFile);
         }
 
         private PortableProtectedBinary CreateNewKey(KeyProviderQueryContext ctx) {
@@ -254,11 +254,16 @@ namespace EpiSource.KeePass.Ekf.Plugin {
         }
 
         private void WritePendingEkfUpdate(PwDatabase db) {
+            var ekfStore = new EkfStore(db, this.configuration);
+            
             if (this.pendingKeyToSave == null) {
+                if (this.GetActiveEkfKey(includePlainKeyFile: false) == null) {
+                    ekfStore.Clear();
+                }
+                
                 return;
             }
             
-            var ekfStore = new EkfStore(db, this.configuration);
             ekfStore.Write(this.pendingKeyToSave);
             this.pendingKeyToSave = null;
         }

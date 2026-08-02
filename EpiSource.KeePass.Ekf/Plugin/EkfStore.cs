@@ -79,6 +79,11 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             return null;
         }
 
+        public void Clear() {
+            this.ClearEmbeddedEkf();
+            this.ClearExternalEkf();
+        }
+
         public void Write(KeyEncryptionRequest keyEncryptionRequest) {
             if (this.db == null || !this.db.IsOpen) {
                 throw new ArgumentException("db is null or not open");
@@ -113,12 +118,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
                 return;
             }
             
-            // do not delete key, it would be restored on db sync; instead write empty data
-            this.db.PublicCustomData.SetByteArray(EkfPublicCustomDataHeaderKey, new byte[]{});
-            
-            // mark the database as changed (allow save) and set changed date (for proper kdbx sync)
-            this.db.Modified = true;
-            this.db.SettingsChanged = DateTime.Now;
+            this.ClearEmbeddedEkf();
         }
 
         private void WriteEmbeddedEkf(EncryptedKeyFile ekf) {
@@ -133,16 +133,7 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             this.db.Modified = true;
             this.db.SettingsChanged = DateTime.Now;
             
-            var externalEkf = this.ResolveExternalEkf();
-            if (externalEkf == null || !IOConnection.FileExists(externalEkf)) {
-                return;
-            }
-
-            try {
-                IOConnection.RenameFile(externalEkf, this.AddBackupExtension(externalEkf));
-            } catch (IOException) {
-                // continue silently
-            }
+            this.ClearExternalEkf();
         }
         
         private byte[] ReadEncodedExternalEkf() {
@@ -174,6 +165,34 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             }
 
             return embeddedEkf;
+        }
+
+        private void ClearEmbeddedEkf() {
+            // do not delete key, it would be restored on db sync; instead write empty data
+            this.db.PublicCustomData.SetByteArray(EkfPublicCustomDataHeaderKey, new byte[]{});
+            
+            // mark the database as changed (allow save) and set changed date (for proper kdbx sync)
+            this.db.Modified = true;
+            this.db.SettingsChanged = DateTime.Now;
+        }
+
+        private void ClearExternalEkf() {
+            var externalEkf = this.ResolveExternalEkf();
+            if (externalEkf == null || !IOConnection.FileExists(externalEkf)) {
+                return;
+            }
+
+            try {
+                var backupFile = this.AddBackupExtension(externalEkf);
+                
+                if (IOConnection.FileExists(backupFile)) {
+                    IOConnection.DeleteFile(backupFile);
+                }
+                
+                IOConnection.RenameFile(externalEkf, backupFile);
+            } catch (IOException) {
+                // continue silently
+            }
         }
 
         private IOConnectionInfo ResolveExternalEkf() {

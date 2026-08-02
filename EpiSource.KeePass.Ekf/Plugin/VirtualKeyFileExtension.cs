@@ -26,22 +26,22 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             return new KcpKeyFile(keyAsConnInfo);
         }
         
-        public static IUserKey GetEkfKey(this PwDatabase db) {
+        public static IUserKey GetEkfKey(this PwDatabase db, bool includePlainKeyFile=true) {
             if (db == null || db.MasterKey == null) {
                 return null;
             }
 
-            return db.MasterKey.GetEkfKey();
+            return db.MasterKey.GetEkfKey(includePlainKeyFile);
         }
 
-        public static IUserKey GetEkfKey(this CompositeKey compositeKey) {
+        public static IUserKey GetEkfKey(this CompositeKey compositeKey, bool includePlainKeyFile=true) {
             if (compositeKey == null) {
                 return null;
             }
             
             return compositeKey.UserKeys.SingleOrDefault(k =>
-                k is KcpKeyFile ||
-                k is KcpCustomKey && ((KcpCustomKey) k).Name == SmartcardEncryptedKeyProvider.ProviderName);
+                (includePlainKeyFile && k is KcpKeyFile) ||
+                (k is KcpCustomKey && ((KcpCustomKey) k).Name == SmartcardEncryptedKeyProvider.ProviderName));
         }
     }
 }
