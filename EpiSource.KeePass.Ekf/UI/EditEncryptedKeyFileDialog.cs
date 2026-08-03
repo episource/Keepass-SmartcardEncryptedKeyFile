@@ -26,6 +26,8 @@ namespace EpiSource.KeePass.Ekf.UI {
             private readonly bool permitNewKey;
             private readonly IOConnectionInfo dbPath;
             private readonly string defaultKeyFileName;
+
+            private readonly EkfStorePrecedence? currentStore;
             private readonly EkfStorePrecedence storePrecedence;
 
             private readonly LiveKeyDataStore activeDbKey;
@@ -34,13 +36,15 @@ namespace EpiSource.KeePass.Ekf.UI {
             
             private readonly KeyPairProviderDeviceEventUpdater updatingKeyPairProvider;
 
-            internal EditEncryptedKeyFileDialog(IOConnectionInfo dbPath, IUserKey activeDbKey, IKeyPairProvider authCandidates, bool permitNewKey, UIFactory uiFactory) {
+            internal EditEncryptedKeyFileDialog(IOConnectionInfo dbPath, IUserKey activeDbKey, IKeyPairProvider authCandidates, bool permitNewKey, EkfStorePrecedence? currentStore, UIFactory uiFactory) {
                 this.dbPath = dbPath;
                 this.defaultKeyFileName = Path.GetFileName(dbPath.Path) + ".keyx";
                 this.activeDbKey = activeDbKey == null ? null : new LiveKeyDataStore(activeDbKey);
                 this.nextKey = (IKeyDataStore) this.activeDbKey ?? new RandomKeyDataStore();
                 this.keyWasExported = false;
                 this.permitNewKey = permitNewKey;
+
+                this.currentStore = currentStore;
                 this.storePrecedence = uiFactory.PluginConfiguration.PreferredEkfStore;
 
                 this.InitializeUI();
@@ -227,7 +231,7 @@ namespace EpiSource.KeePass.Ekf.UI {
                 }
 
                 var nativeFileDialog = isSave
-                    ? (FileDialogEx)UIUtil.CreateSaveFileDialog(KPRes.KeyFileCreate, string.Empty, UIUtil.CreateFileTypeFilter("keyx", KPRes.KeyFiles, true), 1, "key", AppDefs.FileDialogContext.KeyFile)
+                    ? (FileDialogEx)UIUtil.CreateSaveFileDialog(KPRes.KeyFileCreate, this.defaultKeyFileName, UIUtil.CreateFileTypeFilter("keyx", KPRes.KeyFiles, true), 1, "key", AppDefs.FileDialogContext.KeyFile)
                     : (FileDialogEx)UIUtil.CreateOpenFileDialog(KPRes.KeyFileSelect, UIUtil.CreateFileTypeFilter("key|keyx", KPRes.KeyFiles, true), 2, null, false, AppDefs.FileDialogContext.KeyFile);
                 return nativeFileDialog.ShowDialog(this) == DialogResult.OK ? nativeFileDialog.FileName : null;
             }

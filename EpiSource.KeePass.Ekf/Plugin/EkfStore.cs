@@ -34,6 +34,25 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             this.config = config;
         }
 
+        public EkfStorePrecedence StorePrecedence {
+            get {
+                return this.config.PreferredEkfStore;
+            }
+        }
+        
+        public void Clear() {
+            this.ClearEmbeddedEkf();
+            this.ClearExternalEkf();
+        }
+
+        public EkfStorePrecedence? DetermineEffectiveStore() {
+            var encodedWithSource = this.ReadEncodedImpl();
+            if (encodedWithSource == null) {
+                return null;
+            }
+            return encodedWithSource.Item2;
+        }
+
         /// <summary>
         /// Blocking, but pumps UI message loop!
         /// </summary>
@@ -62,26 +81,13 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             // Note: DefaultKeyPairProvider#FromDbPath constructor blocks if busy HW is involved - unblock
             return  uiFactory.SmartcardOperationDialog.DoCryptoWithMessagePumpShort(ct => DefaultKeyPairProvider.FromEncryptedKeyFileBinary(encodedEkf));
         }
-        
+
         public byte[] ReadEncoded() {
-            var storeReadOrder = 
-                this.config.PreferredEkfStore == EkfStorePrecedence.EXTERNAL
-                    ? new List<EkfStorePrecedence> { EkfStorePrecedence.EXTERNAL, EkfStorePrecedence.KDBX }
-                    : new List<EkfStorePrecedence> { EkfStorePrecedence.KDBX, EkfStorePrecedence.EXTERNAL };
-            
-            foreach (var source in storeReadOrder) {
-                var encodedEkf = source == EkfStorePrecedence.KDBX ? this.ReadEncodedEmbeddedEkf() : this.ReadEncodedExternalEkf();
-                if (encodedEkf != null) {
-                    return encodedEkf;
-                }
+            var encodedWithSource = this.ReadEncodedImpl();
+            if (encodedWithSource == null) {
+                return null;
             }
-
-            return null;
-        }
-
-        public void Clear() {
-            this.ClearEmbeddedEkf();
-            this.ClearExternalEkf();
+            return (byte[]) encodedWithSource.Item1.Clone();
         }
 
         public void Write(KeyEncryptionRequest keyEncryptionRequest) {
@@ -134,6 +140,22 @@ namespace EpiSource.KeePass.Ekf.Plugin {
             this.db.SettingsChanged = DateTime.Now;
             
             this.ClearExternalEkf();
+        }
+        
+        private Tuple<byte[], EkfStorePrecedence> ReadEncodedImpl() {
+            var storeReadOrder = 
+                this.config.PreferredEkfStore == EkfStorePrecedence.EXTERNAL
+                    ? new List<EkfStorePrecedence> { EkfStorePrecedence.EXTERNAL, EkfStorePrecedence.KDBX }
+                    : new List<EkfStorePrecedence> { EkfStorePrecedence.KDBX, EkfStorePrecedence.EXTERNAL };
+            
+            foreach (var source in storeReadOrder) {
+                var encodedEkf = source == EkfStorePrecedence.KDBX ? this.ReadEncodedEmbeddedEkf() : this.ReadEncodedExternalEkf();
+                if (encodedEkf != null) {
+                    return new Tuple<byte[], EkfStorePrecedence>(encodedEkf, source);
+                }
+            }
+
+            return null;
         }
         
         private byte[] ReadEncodedExternalEkf() {

@@ -85,10 +85,9 @@ namespace EpiSource.KeePass.Ekf.UI {
                 this.layout.Controls.Add(lblDb, column: 0, row: 0);
 
                 var dbPathWithEkfHint = this.dbPath.Path + " (" +
-                    (this.storePrecedence == EkfStorePrecedence.EXTERNAL
-                    ? Strings.EditEncryptedKeyFileDialog_HintExternalEkf 
-                    : Strings.EditEncryptedKeyFileDialog_HintEmbeddedEkf) +
-                    ")";
+                    (this.currentStore != null && this.storePrecedence != this.currentStore
+                    ? (FormatStore(this.currentStore.Value) + " 🠊 ") : "") +
+                    FormatStore(this.storePrecedence) + ")";
                 var txtDb = new TextBox {
                     ReadOnly = true,
                     Text = dbPathWithEkfHint,
@@ -199,6 +198,12 @@ namespace EpiSource.KeePass.Ekf.UI {
                 };
                 this.layout.Controls.Add(btnCancel, column: 4, row: 5);
                 this.CancelButton = btnCancel;
+            }
+
+            private static string FormatStore(EkfStorePrecedence store) {
+                return store == EkfStorePrecedence.EXTERNAL
+                    ? Strings.EditEncryptedKeyFileDialog_HintExternalEkf
+                    : Strings.EditEncryptedKeyFileDialog_HintEmbeddedEkf;
             }
 
             private void InitializeKeyList() {

@@ -31,16 +31,18 @@ namespace EpiSource.KeePass.Ekf.UI {
             }
 
             IKeyPairProvider keyPairProvider;
+            EkfStorePrecedence? currentStore = null;
             if (dbOrNull != null && activeDbKey != null) {
                 var ekfStore = new EkfStore(dbOrNull, this.uiFactory.PluginConfiguration);
                 keyPairProvider = ekfStore.ReadAsKeyProvider(this.uiFactory);
+                currentStore = ekfStore.DetermineEffectiveStore();
             } else {
                 // Note: DefaultKeyPairProvider#FromDbPath constructor blocks if busy HW is involved - unblock
                 keyPairProvider = this.uiFactory.SmartcardOperationDialog
                         .DoCryptoWithMessagePumpShort(ct => DefaultKeyPairProvider.FromSystemKeyStore());
             }
 
-            var dialog = new EditEncryptedKeyFileDialog(dbPath, activeDbKey, keyPairProvider, true, this.uiFactory);
+            var dialog = new EditEncryptedKeyFileDialog(dbPath, activeDbKey, keyPairProvider, true, currentStore, this.uiFactory);
             return dialog.ShowDialogAndGenerateEncryptionRequest();
         }
 
@@ -57,8 +59,9 @@ namespace EpiSource.KeePass.Ekf.UI {
 
             var ekfStore = new EkfStore(db, this.uiFactory.PluginConfiguration);
             var keyPairProvider = ekfStore.ReadAsKeyProvider(this.uiFactory);
+            var currentStore = ekfStore.DetermineEffectiveStore();
 
-            var dialog = new EditEncryptedKeyFileDialog(db.IOConnectionInfo,keyFile, keyPairProvider, false, this.uiFactory);
+            var dialog = new EditEncryptedKeyFileDialog(db.IOConnectionInfo,keyFile, keyPairProvider, false, currentStore, this.uiFactory);
             return dialog.ShowDialogAndGenerateEncryptionRequest();
         }
 
