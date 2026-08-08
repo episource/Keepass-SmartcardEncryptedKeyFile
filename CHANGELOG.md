@@ -1,6 +1,16 @@
 # Changelog
 
+## v1.4.0 (2026-08-08)
+- Embed EKF into KDBX file
+  * backwards compatible: external companion file still read if no embedded data is found
+  * automatic migration on next EKF update by `Tools > Edit Encrypted Key File`
+  * enabled per default, with [advanced option to revert to companion EKF files](README.md#encrypted-key-file-location)
+
+### Known Issues
+- Smart Card operations / unlocking an encrypted key file fails (with Exception dialog) if YubiKey Authenticator is running in parallel (note: only when using windows builtin smart card driver, issue does not occur if YubiKey minidriver is installed)
+
 ## v1.3.6 (2026-08-01)
+- Last release not supporting EKF embedded into KDBX headers
 - Fix: `Tools > Edit Encrypted Key File` entry has wrong state if databases with and without EKF are loaded
 - Use KeePass builtin command line parsing
 
