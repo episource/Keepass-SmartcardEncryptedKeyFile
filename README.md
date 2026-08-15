@@ -160,7 +160,7 @@ This project is best built using JetBrains Rider, though plain MSBuild or Visual
 Building the plgx plugin file requires only PowerShell — no development tools needed:
 ```posh
 $ cd <project dir containing .csproj>
-$ .\build-plgx-project.ps1 -csproj .\SmartcardEncryptedKeyFile.csproj -outdir .\bin\Release\Plugins -objdir .\obj\Release\plgx -plgxArgs "--plgx-prereq-kp:2.44,--plgx-prereq-net:4.7,--plgx-prereq-os:Windows"
+$ .\build-plgx-project.ps1 -csproj .\EpiSource.KeePass.Ekf.csproj -outdir .\bin\Release\Plugins -objdir .\obj\Release\plgx -plgxArgs "--plgx-prereq-kp:2.61,--plgx-prereq-net:4.8,--plgx-prereq-os:Windows"
 ```
 
 Important: this script deletes the contents of `outdir` and `objdir` without asking for confirmation. Choose these paths carefully!
