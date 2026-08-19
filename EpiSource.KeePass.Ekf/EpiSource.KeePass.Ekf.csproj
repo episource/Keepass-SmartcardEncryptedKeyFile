@@ -12,6 +12,9 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <LangVersion>5</LangVersion>
+    
+    <!-- Prevent leaking of build system's paths into the dll build [CallerFilePath] -->
+    <PathMap>$(SolutionDir)=./</PathMap>
   </PropertyGroup>
   <PropertyGroup Condition=" $(Configuration.Contains('Debug')) AND '$(Platform)' == 'AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -176,7 +179,9 @@
     <Compile Include="Unblocker\EpiSource.Unblocker\**\*.cs" Exclude="Unblocker\EpiSource.Unblocker\Properties\*" />
     <Compile Include="Util\EnumerableExtensions.cs" />
     <Compile Include="Util\HGlobalHandle.cs" />
+    <Compile Include="Util\ILOpcodeLut.cs" />
     <Compile Include="Util\MarshaledStructureHandleCollection.cs" />
+    <Compile Include="Util\PinvokeException.cs" />
     <Compile Include="Util\PinvokeUtil.cs" />
     <Compile Include="Util\PortableProtectedBinary.cs" />
     <Compile Include="Util\PortableProtectedBinaryHandle.cs" />

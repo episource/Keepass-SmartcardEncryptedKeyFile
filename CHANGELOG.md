@@ -1,5 +1,8 @@
 # Changelog
 
+## vNext (to be released)
+- Improve WinAPI error reporting
+
 ## v1.4.0 (2026-08-08)
 - Embed EKF into KDBX file
   * backwards compatible: external companion file still read if no embedded data is found
