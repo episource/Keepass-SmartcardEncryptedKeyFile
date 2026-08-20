@@ -17,11 +17,8 @@ namespace EpiSource.KeePass.Ekf.Util {
             this.HResult = lastErr;
         }
         
-        public PinvokeException(int lastErr, Exception innerException=null) 
-                : this(string.Format("{0} (0x{1:X})", new Win32Exception(lastErr).Message, lastErr), lastErr, innerException: innerException) { }
-
-        public PinvokeException(int lastErr, PinvokeUtil.PinvokeDescription pinvokeMethodDescription, Exception innerException = null)
-            : this(string.Format("{0} (0x{1:X}) @ {2}", new Win32Exception(lastErr).Message, lastErr, pinvokeMethodDescription.Description), lastErr, pinvokeMethodDescription, innerException) { }
+        public PinvokeException(int lastErr, PinvokeUtil.PinvokeDescription pinvokeMethodDescription=default(PinvokeUtil.PinvokeDescription), Exception innerException = null)
+            : this(PinvokeUtil.DescribeLastWin32Error(lastErr, pinvokeMethodDescription), lastErr, pinvokeMethodDescription, innerException) { }
 
         protected PinvokeException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }

@@ -79,6 +79,7 @@ namespace EpiSource.KeePass.Ekf.Util {
             var pinvokeMethod = DescribePInvokeInvocation(pinvokeFunc);
             var ex = exceptionFactory != null ? exceptionFactory.Invoke(combinedResult) : new PinvokeException(lastErr, pinvokeMethod);
             ex.SetPinvokeData(pinvokeMethod);
+            ex.SetLastWin32ErrorData(lastErr, pinvokeMethod);
             
             // unblocker/remoting: remote stacktrace lost, capture some relevant information explicitly
             ex.SetCallerData(memberName, sourceFilePath, sourceLineNumber);
@@ -172,6 +173,12 @@ namespace EpiSource.KeePass.Ekf.Util {
                 return new PinvokeDescription("<failed to find P/Invoke target: " + e.Message + ">", null);
             }
         }
+
+        public static string DescribeLastWin32Error(int lastWin32Error, PinvokeDescription pinvoke = default(PinvokeDescription)) {
+            return pinvoke.Description == null 
+                ? string.Format("{0} (0x{1:X})", new Win32Exception(lastWin32Error).Message, lastWin32Error) 
+                : string.Format("{0} (0x{1:X}) @ {2}", new Win32Exception(lastWin32Error).Message, lastWin32Error, pinvoke.Description);
+        }
         
         /// <summary>
         /// Evaluates state of <see cref="MethodAttributes.PinvokeImpl"/> flag./>
@@ -220,6 +227,10 @@ namespace EpiSource.KeePass.Ekf.Util {
             }
             
             ex.Data["Caller"] = sb.ToString();
+        }
+
+        private static void SetLastWin32ErrorData(this Exception ex, int lastWin32Error, PinvokeDescription pinvoke = default(PinvokeDescription)) {
+            ex.Data["LastWin32Error"] = DescribeLastWin32Error(lastWin32Error, pinvoke);
         }
         
     }
