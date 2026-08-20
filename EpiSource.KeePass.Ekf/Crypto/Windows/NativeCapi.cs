@@ -373,8 +373,8 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
             NcryptOrContextHandle providerHandle = null;
             
-            // CryptNG
-            if (cspParams.KeyNumber == 0) {
+            // CryptNG: KeyNumber maybe != 0 even for CryptNG providers!
+            if (cspParams.KeyNumber == 0 || cspParams.ProviderType == 0) {
                 NCryptContextHandle ncryptProviderHandle = null;
                 DoNcryptWithException(() => NativeNCryptPinvoke.NCryptOpenStorageProvider(out ncryptProviderHandle, cspParams.ProviderName, 0));
                 providerHandle = ncryptProviderHandle;
@@ -430,7 +430,7 @@ namespace EpiSource.KeePass.Ekf.Crypto.Windows {
 
                 if (acquireFailed) {
                     Console.WriteLine("[QueryCertificatePrivateKey] Failed to get private key info for certificate '{0}' ({1}): {2} (0x{3:X})",
-                        cert.Subject, String.IsNullOrEmpty(cert.FriendlyName) ? "N/A" : cert.FriendlyName,
+                        cert.Subject, string.IsNullOrEmpty(cert.FriendlyName) ? "N/A" : cert.FriendlyName,
                         Enum.GetName(typeof(CryptoResult), errorCode) ?? "N/A", errorCode);
                     
                     return new KeyInfo(canKeyAgree, canKeyTransfer, canSign, canExport, false,
