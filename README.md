@@ -13,6 +13,7 @@ The following smartcards have been tested:
    * When connected, this slows down querying key parameters of certificates backed by non-SafeNet tokens/cards. This noticeably increases the time needed to unlock KeePass and to modify Encrypted Key File authorization whenever other brands of tokens are also known to the host.
    * ECC521 requires plugin version 1.2.1 or newer
    * IdPrime tested with a ReinerSCT CyberJack RFID standard reader.
+   * Not a PIV compatible token/card, instead [implements different applet (IDPrime MD Applet / IAS Classic)](https://csrc.nist.gov/CSRC/media/projects/cryptographic-module-validation-program/documents/security-policies/140sp3322.pdf). Supported "by accident" via minidriver making this card compatible with the windows [CryptMsg-API](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptmsgcontrol) currently used by this plugin. Later versions of this plugin might be limited to real PIV cards only! 
  - [Token2 Pin+ R3.3 Series USB](https://www.token2.com/shop/category/pin-release3-series) - RSA & ECC
    * Both RSA and ECC work without the [Token2 minidriver](https://www.token2.com/site/page/piv-management-tools-minidriver).
    * No touch policy is available for PIV.
