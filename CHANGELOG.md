@@ -1,6 +1,6 @@
 # Changelog
 
-## vNext (to be released)
+## v1.4.1 (2026-09-02)
 - Choose correct crypto provider if `KeyNumber != 0` ([#17](https://github.com/episource/Keepass-SmartcardEncryptedKeyFile/issues/17))
 - Improve WinAPI error reporting
 
